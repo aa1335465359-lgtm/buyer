@@ -99,7 +99,7 @@ export const analyzeImageAndText = async (
       throw new Error("No input provided");
     }
 
-    // System Prompt：带“商家资料卡片合并”规则
+    // System Prompt：带“商家资料卡片合并”规则 + 优先级分级修正
     const systemPrompt = `
 【角色：
 你是「Temu 大码女装买手的待办拆解助手」。你的目标是：
@@ -117,6 +117,7 @@ export const analyzeImageAndText = async (
       "title": "一句话标题",
       "description": "简短说明，要做什么",
       "merchant_type": "新商 / 老商 / 低录款 / 已起量 / 不确定",
+      "merchant_grade": "S | A | B | 其他",
       "targeting_goal": "仅当 type=发定向 时填写",
       "style_focus": "仅当 type=发定向 时填写",
       "spu_ids": ["仅当 type=发定向 时，解析到的SPU或商品ID"],
@@ -157,11 +158,15 @@ export const analyzeImageAndText = async (
     - 如果文本中有“老店”“老店激活”等 → "老商"
     - 有“新商”“新店”“刚做大码”等 → "新商"
     - 其他情况 → "不确定"
-- targeting_goal: 可简要概括为 "首月起量定向" 或类似表达
+- merchant_grade: 
+    - 如果出现“S商、S级、P0、重点商家”等 → "S"
+    - 如果出现“A商、A级”等 → "A"
+    - 如果出现“B商、B级”等 → "B"
+    - 没提则留空
 - priority:
-    - 如果出现“S商、S级、P0、重点商家”等，高优先级 → "高"
-    - 出现“A商、A级”等，中高优先级，可用 "中"
-    - 其他默认 "中"
+    - 商家分级为 S → "高"
+    - 商家分级为 A → "中高" (但 json enum 限制，可输出 "中") -> 实际上我会在代码里根据 merchant_grade 覆盖 priority
+    - 商家分级为 B → "中"
 - title: 按下面格式生成：
     - 若有 style_focus 和 targeting_count：
       "给{merchant_id}发{targeting_count}款{style_focus}定向"
@@ -189,34 +194,10 @@ export const analyzeImageAndText = async (
    - 对同一个商家、同一语境，尽量只生成 1 条任务，把要做的事写在 description 或 follow_detail 里，不要拆成很多碎任务。
    - 只有当文本中明确出现多个不同商家，且各自有独立动作时，才为多个商家分别生成任务。
 
-四、字段填充细则（概括版）
-
-【发定向】：
-- merchant_id：提取店铺ID或名称。
-- style_focus：从语义中提炼风格或品类。
-- targeting_goal：概括本次定向目标，如「起量」「测款」「补类目」「冲活动」。
-- targeting_count：有数字就用数字，没有就根据语气估一个合理默认值（例如 5）。
-
-【跟进】：
-- follow_topic：如「录款进度」「打版确认」「上新排期」「成本确认」「效果复盘」等。
-- follow_detail：用你自己的话，写出方便执行的一句说明。
-- follow_time：从文本中提取时间信息，如「今晚」「明天白天」「周五之前」「这两天」等，填成易理解的表达。
-- priority：语气紧急则 "高"，普通则 "中"，很佛系可以 "低"。
-
-【其他】：
-- 当不属于发定向或跟进，但有明确要做的事，可以用 type = "其他"，写清 title 和 description。
-
-五、输出要求
-
-1）始终输出合法 JSON，结构为：
-{
-  "tasks": [ ... ]
-}
-
-2）不要输出解释文字、不要加注释、不要加多余字段。
-
-3）对「商家资料卡片」输入：
-   - 必须生成且仅生成 1 条任务（type="发定向"），不得返回空数组，也不得拆成多条。
+四、优先级(Priority) 特别映射规则
+S级商家 = 高 (P0)
+A级商家 = 中高 (P1) -> 注意json这里只接受 高/中/低，请尽量在merchant_grade中标注准确，由后端代码处理P1。
+B级商家 = 中 (P2)
 `.trim();
 
     const payload = {
@@ -240,6 +221,7 @@ export const analyzeImageAndText = async (
                   title: { type: SchemaType.STRING },
                   description: { type: SchemaType.STRING },
                   merchant_type: { type: SchemaType.STRING },
+                  merchant_grade: { type: SchemaType.STRING },
                   targeting_goal: { type: SchemaType.STRING },
                   style_focus: { type: SchemaType.STRING },
                   spu_ids: {
@@ -271,10 +253,23 @@ export const analyzeImageAndText = async (
     const rawTasks = rawData.tasks || [];
 
     const mappedTasks = rawTasks.map((item: any) => {
-      let p = "P2";
-      if (item.priority === "高") p = "P0";
-      else if (item.priority === "中") p = "P2";
-      else if (item.priority === "低") p = "P4";
+      // 优先级映射逻辑更新
+      let p = "P2"; // Default B级/Normal
+
+      // 1. 优先使用 Merchant Grade 判断
+      const grade = (item.merchant_grade || "").toUpperCase();
+      if (grade.includes("S")) {
+        p = "P0"; // S -> P0
+      } else if (grade.includes("A")) {
+        p = "P1"; // A -> P1
+      } else if (grade.includes("B")) {
+        p = "P2"; // B -> P2
+      } else {
+        // 2. 兜底使用 Priority 字段
+        if (item.priority === "高") p = "P0";
+        else if (item.priority === "中") p = "P2";
+        else if (item.priority === "低") p = "P4";
+      }
 
       let desc = item.description || "";
       if (item.type === "发定向") {

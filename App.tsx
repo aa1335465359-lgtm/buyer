@@ -129,96 +129,6 @@ const App: React.FC = () => {
   const activeCount = todos.filter(t => !t.isCompleted).length;
   const p0Count = todos.filter(t => !t.isCompleted && (t.priority === Priority.P0 || (t.priority as string) === 'HIGH')).length;
 
-  const renderContent = () => {
-    switch (currentView) {
-      case 'image-editor':
-        return <ImageEditor />;
-      case 'script-matcher':
-        return <ScriptMatcher />;
-      case 'bot':
-        return <AiAssistant />;
-      case 'indie-chi':
-        const url = 'https://indie-chi.vercel.app/';
-        const title = 'Indie Chi 选款';
-        return (
-           <div className="h-full flex flex-col bg-white">
-              <div className="h-12 border-b border-slate-200 flex items-center justify-between px-6 bg-slate-50/50 shrink-0">
-                 <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
-                    <h2 className="font-semibold text-slate-700 text-sm">{title}</h2>
-                 </div>
-                 <a href={url} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-3 py-1.5 rounded-md transition-colors">
-                    <ExternalLink size={12} /> 在新窗口打开
-                 </a>
-              </div>
-              <iframe 
-                src={url} 
-                className="flex-1 w-full border-none bg-white" 
-                title={title}
-              />
-           </div>
-        );
-      default: // todos
-        return (
-          <>
-            {/* Top Bar */}
-            <div className="h-16 border-b border-mac-border flex items-center justify-between px-8 bg-white/40 backdrop-blur-md sticky top-0 z-10 shrink-0">
-              <div className="flex flex-col">
-                  <h2 className="font-semibold text-slate-800 flex items-center gap-2 text-lg">
-                  {filter === 'all' && '工作台'}
-                  {filter === 'p0' && '紧急事项 (P0)'}
-                  {filter === 'completed' && '历史归档'}
-                  </h2>
-                  <span className="text-[10px] text-slate-500 font-medium">
-                      {new Date().toLocaleDateString('zh-CN', { weekday: 'long', month: 'short', day: 'numeric' })}
-                  </span>
-              </div>
-              
-              <div className="relative group">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input 
-                    type="text" 
-                    placeholder="搜索..." 
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9 pr-4 py-2 bg-white/50 border border-slate-200/50 focus:bg-white focus:border-blue-400/50 rounded-lg text-sm outline-none transition-all w-48 focus:w-64 placeholder-slate-400 shadow-sm"
-                />
-              </div>
-            </div>
-
-            {/* Todo List (Scrollable) */}
-            <div className="flex-1 overflow-y-auto p-6 md:p-8 scroll-smooth">
-              {filteredTodos.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-slate-400">
-                    <Layout className="w-16 h-16 mb-4 opacity-10" />
-                    <p className="text-sm font-medium opacity-50">暂无任务，享受当下</p>
-                </div>
-              ) : (
-                <div className="space-y-3 pb-24">
-                  {filteredTodos.map(todo => (
-                    <TodoItem 
-                      key={todo.id} 
-                      todo={todo} 
-                      onToggle={handleToggleTodo} 
-                      onDelete={handleDeleteTodo}
-                      onUpdate={handleUpdateTodo}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Bottom Input Area */}
-            <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-slate-50/90 via-slate-50/80 to-transparent pt-12">
-              <div className="max-w-3xl mx-auto">
-                  <TaskInput onAddTodos={handleAddTodos} />
-              </div>
-            </div>
-          </>
-        );
-    }
-  };
-
   return (
     <div className="h-screen w-full flex items-center justify-center p-4 sm:p-8">
       {/* Main Window Container */}
@@ -292,16 +202,107 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        {/* Main Content Area */}
+        {/* Main Content Area - Keeping components alive */}
         <div className="flex-1 flex flex-col bg-white/40 relative backdrop-blur-3xl min-w-0">
-           {renderContent()}
+            
+            {/* View 1: Todos (Dashboard) */}
+            <div className={`flex flex-col h-full ${currentView === 'todos' ? 'flex' : 'hidden'}`}>
+                {/* Top Bar */}
+                <div className="h-16 border-b border-mac-border flex items-center justify-between px-8 bg-white/40 backdrop-blur-md sticky top-0 z-10 shrink-0">
+                  <div className="flex flex-col">
+                      <h2 className="font-semibold text-slate-800 flex items-center gap-2 text-lg">
+                      {filter === 'all' && '工作台'}
+                      {filter === 'p0' && '紧急事项 (P0)'}
+                      {filter === 'completed' && '历史归档'}
+                      </h2>
+                      <span className="text-[10px] text-slate-500 font-medium">
+                          {new Date().toLocaleDateString('zh-CN', { weekday: 'long', month: 'short', day: 'numeric' })}
+                      </span>
+                  </div>
+                  
+                  <div className="relative group">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <input 
+                        type="text" 
+                        placeholder="搜索..." 
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-9 pr-4 py-2 bg-white/50 border border-slate-200/50 focus:bg-white focus:border-blue-400/50 rounded-lg text-sm outline-none transition-all w-48 focus:w-64 placeholder-slate-400 shadow-sm"
+                    />
+                  </div>
+                </div>
+
+                {/* Todo List (Scrollable) */}
+                <div className="flex-1 overflow-y-auto p-6 md:p-8 scroll-smooth">
+                  {filteredTodos.length === 0 ? (
+                    <div className="h-full flex flex-col items-center justify-center text-slate-400">
+                        <Layout className="w-16 h-16 mb-4 opacity-10" />
+                        <p className="text-sm font-medium opacity-50">暂无任务，享受当下</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3 pb-24">
+                      {filteredTodos.map(todo => (
+                        <TodoItem 
+                          key={todo.id} 
+                          todo={todo} 
+                          onToggle={handleToggleTodo} 
+                          onDelete={handleDeleteTodo}
+                          onUpdate={handleUpdateTodo}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Bottom Input Area */}
+                <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-slate-50/90 via-slate-50/80 to-transparent pt-12 z-20">
+                  <div className="max-w-3xl mx-auto">
+                      <TaskInput onAddTodos={handleAddTodos} />
+                  </div>
+                </div>
+            </div>
+
+            {/* View 2: Image Editor */}
+            <div className={`h-full w-full ${currentView === 'image-editor' ? 'block' : 'hidden'}`}>
+                <ImageEditor />
+            </div>
+
+            {/* View 3: Script Matcher */}
+            <div className={`h-full w-full ${currentView === 'script-matcher' ? 'block' : 'hidden'}`}>
+                <ScriptMatcher />
+            </div>
+
+            {/* View 4: AI Assistant */}
+            <div className={`h-full w-full ${currentView === 'bot' ? 'block' : 'hidden'}`}>
+                <AiAssistant />
+            </div>
+
+            {/* View 5: Indie Chi */}
+            <div className={`h-full w-full flex flex-col bg-white ${currentView === 'indie-chi' ? 'flex' : 'hidden'}`}>
+                <div className="h-12 border-b border-slate-200 flex items-center justify-between px-6 bg-slate-50/50 shrink-0">
+                    <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
+                    <h2 className="font-semibold text-slate-700 text-sm">Indie Chi 选款</h2>
+                    </div>
+                    <a href="https://indie-chi.vercel.app/" target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-3 py-1.5 rounded-md transition-colors">
+                    <ExternalLink size={12} /> 在新窗口打开
+                    </a>
+                </div>
+                {/* Always render iframe but hide it to preserve state (if browser allows) */}
+                <iframe 
+                    src="https://indie-chi.vercel.app/" 
+                    className="flex-1 w-full border-none bg-white" 
+                    title="Indie Chi"
+                />
+            </div>
+
         </div>
       </div>
     </div>
   );
 };
 
-// Sub-component for sidebar items - Updated style
+// Sub-component for sidebar items
 const SidebarItem = ({ icon, label, count, active, onClick }: any) => (
   <button 
     onClick={onClick}
