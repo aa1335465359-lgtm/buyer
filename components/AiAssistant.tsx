@@ -5,7 +5,9 @@ import { chatWithBuyerAI } from '../services/geminiService';
 interface Message {
   role: 'user' | 'model';
   text: string;
-  image?: string; // base64 string for display
+  images?: string[]; // base64 strings
+  // Legacy support for single image if needed (though we'll migrate to array)
+  image?: string; 
 }
 
 interface ChatSession {
@@ -24,8 +26,10 @@ const AiAssistant: React.FC = () => {
   const [showHistory, setShowHistory] = useState(false);
   
   const [input, setInput] = useState('');
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  // Multi-image support
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  
   const [isLoading, setIsLoading] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -56,7 +60,7 @@ const AiAssistant: React.FC = () => {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, imagePreview]);
+  }, [messages, imagePreviews]);
 
   const startNewChat = () => {
     const initialMsg: Message = { role: 'model', text: '你好！我是 Temu 大码女装买手助理。不管是写 Listing、核算成本，还是怼商家，我都能帮你。今天我们推哪个款？' };
@@ -64,7 +68,7 @@ const AiAssistant: React.FC = () => {
     setCurrentSessionId(null);
     setShowHistory(false);
     setInput('');
-    clearImage();
+    clearImages();
   };
 
   const loadSession = (session: ChatSession) => {
@@ -84,32 +88,55 @@ const AiAssistant: React.FC = () => {
     }
   };
 
-  const handleImageSelect = (file: File) => {
-    if (!file.type.startsWith('image/')) return;
-    setSelectedImage(file);
-    const reader = new FileReader();
-    reader.onload = (e) => setImagePreview(e.target?.result as string);
-    reader.readAsDataURL(file);
+  // Helper to read file to base64
+  const fileToDataUrl = (file: File): Promise<string> => {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target?.result as string);
+        reader.readAsDataURL(file);
+    });
+  };
+
+  const handleImageSelect = async (files: FileList | File[]) => {
+    const newFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+    if (newFiles.length === 0) return;
+
+    // Limit total images to 5
+    const combinedFiles = [...selectedImages, ...newFiles].slice(0, 5);
+    setSelectedImages(combinedFiles);
+
+    // Generate previews
+    const newPreviews = await Promise.all(combinedFiles.map(fileToDataUrl));
+    setImagePreviews(newPreviews);
   };
 
   const handlePaste = (e: React.ClipboardEvent) => {
     if (e.clipboardData.files.length > 0) {
-      const file = e.clipboardData.files[0];
-      handleImageSelect(file);
+      handleImageSelect(e.clipboardData.files);
       e.preventDefault();
     }
   };
 
   const onFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      handleImageSelect(e.target.files[0]);
+    if (e.target.files && e.target.files.length > 0) {
+      handleImageSelect(e.target.files);
     }
   };
 
-  const clearImage = () => {
-    setSelectedImage(null);
-    setImagePreview(null);
+  const clearImages = () => {
+    setSelectedImages([]);
+    setImagePreviews([]);
     if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const removeImage = (index: number) => {
+    const newFiles = [...selectedImages];
+    newFiles.splice(index, 1);
+    setSelectedImages(newFiles);
+    
+    const newPreviews = [...imagePreviews];
+    newPreviews.splice(index, 1);
+    setImagePreviews(newPreviews);
   };
 
   const saveCurrentSession = (updatedMessages: Message[]) => {
@@ -140,12 +167,12 @@ const AiAssistant: React.FC = () => {
   };
 
   const handleSend = async () => {
-    if ((!input.trim() && !selectedImage) || isLoading) return;
+    if ((!input.trim() && selectedImages.length === 0) || isLoading) return;
 
     const userMessage: Message = {
       role: 'user',
       text: input,
-      image: imagePreview || undefined
+      images: imagePreviews.length > 0 ? [...imagePreviews] : undefined
     };
 
     const newMessages = [...messages, userMessage];
@@ -153,26 +180,28 @@ const AiAssistant: React.FC = () => {
     saveCurrentSession(newMessages);
 
     setInput('');
-    const currentImage = selectedImage;
-    clearImage();
+    const currentImages = [...selectedImages];
+    clearImages();
     setIsLoading(true);
 
     try {
       // Build history for the service.
-      // We pass the raw parts to the service. The service handles the strict JSON conversion (snake_case).
-      // Here we use camelCase 'inlineData' because we might be using it locally, 
-      // but to be safe, we let the service helper convert it.
-      // Actually, let's just construct simple objects and let service map them.
       const historyForApi = newMessages.map(msg => {
          const parts = [];
-         if (msg.image) {
-             // msg.image is "data:image/png;base64,..."
+         
+         // Support multiple images
+         if (msg.images && msg.images.length > 0) {
+             msg.images.forEach(imgStr => {
+                 const base64Data = imgStr.split(',')[1];
+                 parts.push({ inlineData: { mimeType: 'image/jpeg', data: base64Data } });
+             });
+         }
+         // Fallback support for old single image format
+         else if (msg.image) {
              const base64Data = msg.image.split(',')[1];
-             // Pass object with explicit keys so service can find them
-             // Using camelCase here to match the service's expected input for "legacy" checks or just standard js objects
-             // The updated geminiService.ts handles `inlineData` OR `inline_data`.
              parts.push({ inlineData: { mimeType: 'image/jpeg', data: base64Data } });
          }
+
          if (msg.text) {
              parts.push({ text: msg.text });
          }
@@ -182,7 +211,7 @@ const AiAssistant: React.FC = () => {
          };
       });
 
-      const responseText = await chatWithBuyerAI(historyForApi, userMessage.text, currentImage || undefined);
+      const responseText = await chatWithBuyerAI(historyForApi, userMessage.text, currentImages);
       
       const finalMessages = [...newMessages, { role: 'model', text: responseText } as Message];
       setMessages(finalMessages);
@@ -307,9 +336,19 @@ const AiAssistant: React.FC = () => {
                    </div>
                    
                    <div className={`flex flex-col gap-2 max-w-[80%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                      {msg.image && (
+                      {/* Render Images if any */}
+                      {msg.images && msg.images.length > 0 && (
+                          <div className={`flex flex-wrap gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                              {msg.images.map((imgStr, i) => (
+                                  <img key={i} src={imgStr} alt="Sent content" className="w-32 h-32 object-cover rounded-lg border border-white/50 shadow-sm bg-white" />
+                              ))}
+                          </div>
+                      )}
+                      {/* Fallback for old messages */}
+                      {msg.image && !msg.images && (
                          <img src={msg.image} alt="Sent content" className="max-w-[240px] rounded-lg border border-white/50 shadow-sm bg-white" />
                       )}
+                      
                       {msg.text && (
                           <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm whitespace-pre-wrap ${
                               msg.role === 'user' 
@@ -340,21 +379,29 @@ const AiAssistant: React.FC = () => {
           <div className="p-4 bg-white/60 border-t border-white/30 backdrop-blur-md shrink-0">
              <div className="relative bg-white border border-slate-200 rounded-2xl shadow-sm focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-400 transition-all overflow-hidden">
                 
-                {/* Image Preview */}
-                {imagePreview && (
-                  <div className="px-4 pt-3 pb-1 flex items-start gap-3 bg-slate-50 border-b border-slate-100">
-                     <div className="relative group">
-                        <img src={imagePreview} alt="Preview" className="h-16 rounded-md border border-slate-200" />
-                        <button 
-                          onClick={clearImage}
-                          className="absolute -top-1.5 -right-1.5 bg-slate-600 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-red-500"
-                        >
-                           <X size={10} />
-                        </button>
-                     </div>
-                     <div className="text-xs text-slate-400 pt-1">
-                        已添加图片
-                     </div>
+                {/* Image Previews */}
+                {imagePreviews.length > 0 && (
+                  <div className="px-4 pt-3 pb-2 flex gap-3 bg-slate-50 border-b border-slate-100 overflow-x-auto">
+                     {imagePreviews.map((preview, idx) => (
+                         <div key={idx} className="relative group shrink-0">
+                            <img src={preview} alt="Preview" className="h-16 w-16 object-cover rounded-md border border-slate-200" />
+                            <button 
+                              onClick={() => removeImage(idx)}
+                              className="absolute -top-1.5 -right-1.5 bg-slate-600 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-red-500"
+                            >
+                               <X size={10} />
+                            </button>
+                         </div>
+                     ))}
+                     {selectedImages.length < 5 && (
+                         <button 
+                            onClick={() => fileInputRef.current?.click()}
+                            className="h-16 w-16 flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-md text-slate-400 hover:text-indigo-500 hover:border-indigo-300 transition-colors bg-white"
+                         >
+                            <Plus size={16} />
+                            <span className="text-[10px] mt-1">加图</span>
+                         </button>
+                     )}
                   </div>
                 )}
 
@@ -378,17 +425,17 @@ const AiAssistant: React.FC = () => {
                             handleSend();
                          }
                       }}
-                      placeholder="输入消息，支持 Ctrl+V 粘贴截图..."
+                      placeholder={imagePreviews.length > 0 ? "描述图片内容..." : "输入消息，支持 Ctrl+V 粘贴截图..."}
                       className="flex-1 max-h-32 min-h-[40px] py-2 bg-transparent border-none outline-none text-sm text-slate-800 placeholder:text-slate-400 resize-none"
                       rows={1}
                    />
 
                    <button
                       onClick={handleSend}
-                      disabled={isLoading || (!input.trim() && !selectedImage)}
+                      disabled={isLoading || (!input.trim() && selectedImages.length === 0)}
                       className={`
                          p-2 rounded-xl transition-all shrink-0
-                         ${isLoading || (!input.trim() && !selectedImage)
+                         ${isLoading || (!input.trim() && selectedImages.length === 0)
                             ? 'bg-slate-100 text-slate-300 cursor-not-allowed'
                             : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-md active:scale-95'
                          }
@@ -398,7 +445,7 @@ const AiAssistant: React.FC = () => {
                    </button>
                 </div>
              </div>
-             <input type="file" ref={fileInputRef} onChange={onFileInputChange} accept="image/*" className="hidden" />
+             <input type="file" ref={fileInputRef} onChange={onFileInputChange} accept="image/*" multiple className="hidden" />
           </div>
        </div>
     </div>

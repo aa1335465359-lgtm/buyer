@@ -449,8 +449,10 @@ const TodoItem: React.FC<TodoItemProps> = ({
 
                      {/* Badges Row */}
                      <div className="flex items-center gap-2 mt-1.5">
-                        <div className={`
-                             flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold border
+                        <div 
+                           onClick={(e) => { e.stopPropagation(); onToggle(todo.id); }}
+                           className={`
+                             flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold border cursor-pointer hover:opacity-80 transition-opacity select-none
                              ${todo.isCompleted ? 'bg-slate-100 text-slate-500 border-slate-200' : 'bg-white text-slate-600 border-slate-200'}
                         `}>
                             <div className={`w-2 h-2 rounded-full ${todo.isCompleted ? 'bg-slate-400' : 'bg-green-400'}`}></div>

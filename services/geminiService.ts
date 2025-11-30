@@ -367,6 +367,8 @@ export const matchScript = async (
     // 强制在 Prompt 中约定 JSON 结构，因为代理层可能忽略 Schema 配置
     parts.push({
       text: `商家说: "${input}"。请分析商家的潜台词、情绪和核心抗拒点，并从下面的话术库中选择最合适的3条回复。
+      
+      重要原则：每一个输出内容必须由“80%原版话术库内容 + 20%根据商家实际情况的微调”组成。不要完全照搬，也不要完全重写，要保留话术库的核心逻辑和语气，但结合当前具体语境。
 
 话术库数据:
 ${JSON.stringify(SALES_SCRIPTS)}
@@ -442,7 +444,7 @@ ${JSON.stringify(SALES_SCRIPTS)}
 export const chatWithBuyerAI = async (
   history: { role: string; parts: any[] }[],
   message: string,
-  image?: File
+  images?: File[]
 ): Promise<string> => {
   try {
     const restHistory: GeminiContent[] = history.map((msg) => ({
@@ -464,9 +466,14 @@ export const chatWithBuyerAI = async (
     }));
 
     const newParts: GeminiPart[] = [];
-    if (image) {
-      newParts.push(await fileToGenerativePart(image));
+    
+    // Handle multiple images
+    if (images && images.length > 0) {
+      for (const img of images) {
+        newParts.push(await fileToGenerativePart(img));
+      }
     }
+    
     newParts.push({ text: message || " " });
 
     const contents: GeminiContent[] = [
