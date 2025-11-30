@@ -198,6 +198,9 @@ export const analyzeImageAndText = async (
 S级商家 = 高 (P0)
 A级商家 = 中高 (P1) -> 注意json这里只接受 高/中/低，请尽量在merchant_grade中标注准确，由后端代码处理P1。
 B级商家 = 中 (P2)
+
+五、默认时间规则 (DDL)
+若任务 type="发定向" 且输入内容中未明确提及具体截止时间（如“明天前”、“周五前”等），则请将 follow_time 字段默认填写为 "今天下班前"。
 `.trim();
 
     const payload = {

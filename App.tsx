@@ -16,7 +16,11 @@ import {
   ShoppingBag,
   MessageSquare,
   ExternalLink,
-  Bot
+  Bot,
+  ArrowUpDown,
+  Clock,
+  Calendar,
+  Filter
 } from 'lucide-react';
 
 const FASHION_QUOTES = [
@@ -29,7 +33,37 @@ const FASHION_QUOTES = [
   "“不要为了追赶潮流而迷失方向，你自己就是风向标。”",
   "“即使是最忙碌的买手，也要给自己留一杯咖啡的时间。”",
   "“优雅不是被注意，而是被记住。工作也是。”",
-  "“与其在此刻纠结，不如在下一季惊艳。”"
+  "“与其在此刻纠结，不如在下一季惊艳。”",
+  "“选品就像谈恋爱，始于颜值，终于品质。”",
+  "“没有卖不出去的货，只有没找对的人。”",
+  "“数据是冰冷的，但你对款式的直觉是滚烫的。”",
+  "“你现在的每一次审版，都是在为下一个爆款投票。”",
+  "“与其焦虑竞对的销量，不如打磨自己的详情页。”",
+  "“时尚是轮回，但爆款需要此时此刻的敏锐。”",
+  "“做买手最爽的瞬间，不是下班，是后台销量破千。”",
+  "“相信你的第一直觉，那是你看了几万个款换来的肌肉记忆。”",
+  "“今天少喝一杯奶茶，明天多出一个爆款。”",
+  "“别让 SKU 淹没了你的灵感。”",
+  "“只有足够努力，才能看起来毫不费力地押中爆款。”",
+  "“库存是买手的眼泪，售罄是买手的勋章。”",
+  "“在大码的世界里，自信才是最昂贵的单品。”",
+  "“每一个差评，都是一次产品升级的线索。”",
+  "“不要试图讨好所有人，只要抓住那 1% 的精准用户就够了。”",
+  "“今天的 P0，就是明天的业绩支柱。”",
+  "“休息是为了走更远的路，也是为了看更准的款。”",
+  "“买手的直觉，是大数据算不出来的玄学。”",
+  "“把生活过成秀场，把工作做成艺术。”",
+  "“哪怕是最基础的T恤，也要卖出高定的态度。”",
+  "“你的审美，决定了店铺的天花板。”",
+  "“与其等待风口，不如自己成为风口。”",
+  "“忙碌不代表高效，精准才是王道。”",
+  "“在这个快时尚的时代，坚持品质是一种奢侈的叛逆。”",
+  "“别忘了，你也是消费者，买自己想买的，卖自己想卖的。”",
+  "“选对一个款，养活一个厂。”",
+  "“让数据为你服务，而不是成为数据的奴隶。”",
+  "“保持饥渴，保持对美的敏感度。”",
+  "“每一个深夜的选品，终将变成清晨的爆单。”",
+  "“做有温度的买手，卖有灵魂的衣服。”"
 ];
 
 const App: React.FC = () => {
@@ -42,8 +76,14 @@ const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<'todos' | 'image-editor' | 'indie-chi' | 'script-matcher' | 'bot'>('todos');
   const [filter, setFilter] = useState<'all' | 'p0' | 'completed'>('all');
   
+  // Sorting State
+  const [sortMode, setSortMode] = useState<'priority' | 'deadline' | 'created'>('priority');
+
   const [searchQuery, setSearchQuery] = useState('');
   const [quote, setQuote] = useState('');
+
+  // Global Focus State
+  const [focusedTodoId, setFocusedTodoId] = useState<string | null>(null);
 
   // Initial Quote
   useEffect(() => {
@@ -64,10 +104,17 @@ const App: React.FC = () => {
     setTodos(prev => prev.map(t => 
       t.id === id ? { ...t, isCompleted: !t.isCompleted } : t
     ));
+    // If we complete the currently focused item, exit focus mode
+    if (focusedTodoId === id) {
+      setFocusedTodoId(null);
+    }
   };
 
   const handleDeleteTodo = (id: string) => {
     setTodos(prev => prev.filter(t => t.id !== id));
+    if (focusedTodoId === id) {
+      setFocusedTodoId(null);
+    }
   };
 
   const handleUpdateTodo = (id: string, updates: Partial<Todo>) => {
@@ -92,19 +139,36 @@ const App: React.FC = () => {
         // 1. Completion status (Active first)
         if (a.isCompleted !== b.isCompleted) return a.isCompleted ? 1 : -1;
         
-        // 2. Priority
-        const scoreA = getScore(a.priority);
-        const scoreB = getScore(b.priority);
-        if (scoreA !== scoreB) return scoreA - scoreB;
+        // 2. Sorting Mode
+        if (sortMode === 'priority') {
+            const scoreA = getScore(a.priority);
+            const scoreB = getScore(b.priority);
+            if (scoreA !== scoreB) return scoreA - scoreB;
+            
+            // Secondary: Deadline
+            if (a.deadline && b.deadline) return a.deadline - b.deadline;
+            if (a.deadline) return -1;
+            if (b.deadline) return 1;
+        } else if (sortMode === 'deadline') {
+            // Nearest deadline first
+            if (a.deadline && b.deadline) return a.deadline - b.deadline;
+            // Items with deadline come first
+            if (a.deadline && !b.deadline) return -1;
+            if (!a.deadline && b.deadline) return 1;
+            
+            // Fallback: Priority
+            const scoreA = getScore(a.priority);
+            const scoreB = getScore(b.priority);
+            if (scoreA !== scoreB) return scoreA - scoreB;
+        } else if (sortMode === 'created') {
+            // Newest created first
+            return b.createdAt - a.createdAt;
+        }
 
-        // 3. Deadline (Earliest first)
-        if (a.deadline && b.deadline) return a.deadline - b.deadline;
-        if (a.deadline) return -1;
-        if (b.deadline) return 1;
-
+        // Ultimate Fallback: Creation Time
         return b.createdAt - a.createdAt;
     });
-  }, [todos]);
+  }, [todos, sortMode]);
 
   const filteredTodos = sortedTodos.filter(todo => {
     // Search logic
@@ -138,7 +202,7 @@ const App: React.FC = () => {
         <div className="w-64 bg-mac-sidebar border-r border-mac-border flex flex-col pt-6 pb-4 hidden md:flex shrink-0">
           <div className="px-6 mb-8">
             <h1 className="text-sm font-bold tracking-wider text-slate-500 uppercase">Buyer Mate</h1>
-            <p className="text-[10px] text-slate-400 mt-1 font-mono">v2.3.0</p>
+            <p className="text-[10px] text-slate-400 mt-1 font-mono">v2.4.0</p>
           </div>
 
           <nav className="flex-1 px-4 space-y-1">
@@ -232,6 +296,49 @@ const App: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Sorting Toolbar */}
+                <div className="px-8 py-2 border-b border-mac-border/50 flex items-center gap-2 bg-white/20 backdrop-blur-sm shrink-0">
+                    <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider mr-2 flex items-center gap-1">
+                        <Filter size={10} /> 排序方式
+                    </span>
+                    
+                    <button 
+                        onClick={() => setSortMode('priority')}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                            sortMode === 'priority' 
+                            ? 'bg-slate-800 text-white shadow-sm' 
+                            : 'bg-transparent text-slate-500 hover:bg-white/50 hover:text-slate-700'
+                        }`}
+                    >
+                        <ArrowUpDown size={12} />
+                        优先级
+                    </button>
+
+                    <button 
+                        onClick={() => setSortMode('deadline')}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                            sortMode === 'deadline' 
+                            ? 'bg-slate-800 text-white shadow-sm' 
+                            : 'bg-transparent text-slate-500 hover:bg-white/50 hover:text-slate-700'
+                        }`}
+                    >
+                        <Clock size={12} />
+                        截止时间
+                    </button>
+
+                    <button 
+                        onClick={() => setSortMode('created')}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                            sortMode === 'created' 
+                            ? 'bg-slate-800 text-white shadow-sm' 
+                            : 'bg-transparent text-slate-500 hover:bg-white/50 hover:text-slate-700'
+                        }`}
+                    >
+                        <Calendar size={12} />
+                        创建时间
+                    </button>
+                </div>
+
                 {/* Todo List (Scrollable) */}
                 <div className="flex-1 overflow-y-auto p-6 md:p-8 scroll-smooth">
                   {filteredTodos.length === 0 ? (
@@ -240,7 +347,7 @@ const App: React.FC = () => {
                         <p className="text-sm font-medium opacity-50">暂无任务，享受当下</p>
                     </div>
                   ) : (
-                    <div className="space-y-3 pb-24">
+                    <div className="space-y-3 pb-24 relative">
                       {filteredTodos.map(todo => (
                         <TodoItem 
                           key={todo.id} 
@@ -248,6 +355,8 @@ const App: React.FC = () => {
                           onToggle={handleToggleTodo} 
                           onDelete={handleDeleteTodo}
                           onUpdate={handleUpdateTodo}
+                          focusedTodoId={focusedTodoId}
+                          setFocusedTodoId={setFocusedTodoId}
                         />
                       ))}
                     </div>

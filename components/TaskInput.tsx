@@ -81,18 +81,29 @@ const TaskInput: React.FC<TaskInputProps> = ({ onAddTodos }) => {
       } else {
         const aiResponse = await analyzeImageAndText(text, selectedImage || undefined);
         
-        const newTodos: Todo[] = aiResponse.tasks.map(task => ({
-          id: generateId(),
-          title: task.title,
-          description: task.description,
-          priority: (task.priority as Priority) || Priority.P2,
-          isCompleted: false,
-          createdAt: Date.now(),
-          deadline: task.estimatedMinutes ? Date.now() + (task.estimatedMinutes * 60 * 1000) : undefined,
-          shopId: task.shopId,
-          quantity: task.quantity,
-          actionTime: task.actionTime
-        }));
+        const newTodos: Todo[] = aiResponse.tasks.map(task => {
+          let deadline = task.estimatedMinutes ? Date.now() + (task.estimatedMinutes * 60 * 1000) : undefined;
+          
+          // AI 智能规则：如果 actionTime 提及"下班前"或"23:00"，自动设置截止时间为今天23:00
+          if (task.actionTime && (task.actionTime.includes('下班前') || task.actionTime.includes('23:00'))) {
+             const now = new Date();
+             now.setHours(23, 0, 0, 0);
+             deadline = now.getTime();
+          }
+
+          return {
+            id: generateId(),
+            title: task.title,
+            description: task.description,
+            priority: (task.priority as Priority) || Priority.P2,
+            isCompleted: false,
+            createdAt: Date.now(),
+            deadline: deadline,
+            shopId: task.shopId,
+            quantity: task.quantity,
+            actionTime: task.actionTime
+          };
+        });
 
         onAddTodos(newTodos);
         setText('');
