@@ -91,8 +91,8 @@ export default async function handler(req, res) {
     // 调用豆包文本/多模态模型
     // 如果有图片，且项目需要，这里可能需要根据是否有图片自动切换 model 名称
     // 但为了不破坏原有逻辑，先保持原 model，或者根据 header/env 配置
-    // 假设 doubao-seed-1-6-flash-250828 能处理或忽略
-    const modelToUse = 'doubao-seed-1-6-flash-250828'; 
+    // 假设 doubao-seed-1-6-251015 能处理或忽略
+    const modelToUse = 'doubao-seed-1-6-251015'; 
 
     const upstreamRes = await fetch(
       'https://ark.cn-beijing.volces.com/api/v3/chat/completions',
