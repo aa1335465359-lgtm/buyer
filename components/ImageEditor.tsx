@@ -206,9 +206,9 @@ const ImageEditor: React.FC = () => {
           <div>
             <h2 className="text-2xl font-semibold text-slate-800 flex items-center gap-2">
               <Wand2 className="text-purple-600" />
-              AI 改图助手
+              小番茄改图助手
             </h2>
-            <p className="text-sm text-slate-500 mt-1">上传商家图，告诉 AI 怎么改（如：换个简约背景、加个复古滤镜）</p>
+            <p className="text-sm text-slate-500 mt-1">上传商家图，告诉小番茄怎么改（如：换个简约背景、加个复古滤镜）</p>
           </div>
           <button 
             onClick={() => setShowHistory(!showHistory)}

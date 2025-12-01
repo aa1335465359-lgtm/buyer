@@ -19,7 +19,7 @@ interface ChatSession {
 
 const AiAssistant: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'model', text: '你好！我是 Temu 大码女装买手助理。不管是写 Listing、核算成本，还是怼商家，我都能帮你。今天我们推哪个款？' }
+    { role: 'model', text: '你好呀！我是小番茄。选品、定向、怼商家，今天咱先整哪个？不管是想吐槽奇葩老板还是找爆款，我都奉陪到底！' }
   ]);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
@@ -63,7 +63,7 @@ const AiAssistant: React.FC = () => {
   }, [messages, imagePreviews]);
 
   const startNewChat = () => {
-    const initialMsg: Message = { role: 'model', text: '你好！我是 Temu 大码女装买手助理。不管是写 Listing、核算成本，还是怼商家，我都能帮你。今天我们推哪个款？' };
+    const initialMsg: Message = { role: 'model', text: '你好呀！我是小番茄。选品、定向、怼商家，今天咱先整哪个？不管是想吐槽奇葩老板还是找爆款，我都奉陪到底！' };
     setMessages([initialMsg]);
     setCurrentSessionId(null);
     setShowHistory(false);
@@ -293,11 +293,11 @@ const AiAssistant: React.FC = () => {
           {/* Header */}
           <div className="px-6 py-4 border-b border-white/30 flex items-center justify-between bg-white/30 shrink-0">
              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white shadow-md">
+                <div className="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center text-white shadow-md">
                    <Bot size={24} />
                 </div>
                 <div>
-                   <h2 className="font-bold text-slate-800">Temu 买手助理</h2>
+                   <h2 className="font-bold text-slate-800">小番茄</h2>
                    <p className="text-xs text-slate-500">24小时在线 • 懂选品 • 懂运营</p>
                 </div>
              </div>
@@ -331,7 +331,7 @@ const AiAssistant: React.FC = () => {
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
              {messages.map((msg, idx) => (
                 <div key={idx} className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                   <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${msg.role === 'user' ? 'bg-slate-700 text-white' : 'bg-indigo-600 text-white'}`}>
+                   <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${msg.role === 'user' ? 'bg-slate-700 text-white' : 'bg-red-500 text-white'}`}>
                       {msg.role === 'user' ? <User size={16} /> : <Bot size={16} />}
                    </div>
                    
@@ -363,7 +363,7 @@ const AiAssistant: React.FC = () => {
              ))}
              {isLoading && (
                <div className="flex gap-4">
-                  <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-red-500 flex items-center justify-center shrink-0">
                      <Bot size={16} className="text-white" />
                   </div>
                   <div className="bg-white px-4 py-3 rounded-2xl rounded-tl-sm shadow-sm border border-white/50 flex items-center gap-2">
