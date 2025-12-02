@@ -20,7 +20,8 @@ import {
   ArrowUpDown,
   Clock,
   Calendar,
-  Filter
+  Filter,
+  CalendarRange
 } from 'lucide-react';
 
 const FASHION_QUOTES = [
@@ -90,6 +91,7 @@ const App: React.FC = () => {
   
   // Sorting State
   const [sortMode, setSortMode] = useState<'priority' | 'deadline' | 'created'>('priority');
+  const [isGroupedByDay, setIsGroupedByDay] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [quote, setQuote] = useState('');
@@ -201,6 +203,53 @@ const App: React.FC = () => {
     
     return true;
   });
+
+  // 分组逻辑：基于创建时间 (CreatedAt)
+  const groupedTodos = useMemo(() => {
+    if (!isGroupedByDay) return [];
+
+    const groups: { [key: string]: Todo[] } = {};
+
+    filteredTodos.forEach(todo => {
+        const d = new Date(todo.createdAt);
+        const now = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+        const todoTime = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+        
+        let key = '';
+        if (todoTime === todayStart) {
+            key = '今天';
+        } else if (todoTime === todayStart - 86400000) {
+            key = '昨天';
+        } else if (todoTime === todayStart - 86400000 * 2) {
+            key = '前天';
+        } else {
+            key = `${d.getMonth() + 1}月${d.getDate()}日`;
+        }
+        
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(todo);
+    });
+
+    const sortedGroups: { title: string, tasks: Todo[] }[] = [];
+    
+    if (groups['今天']) sortedGroups.push({ title: '今天', tasks: groups['今天'] });
+    if (groups['昨天']) sortedGroups.push({ title: '昨天', tasks: groups['昨天'] });
+    if (groups['前天']) sortedGroups.push({ title: '前天', tasks: groups['前天'] });
+    
+    const dateKeys = Object.keys(groups).filter(k => !['今天', '昨天', '前天'].includes(k));
+    
+    // Sort descending by creation date (Newest first)
+    dateKeys.sort((a, b) => {
+        const taskA = groups[a][0];
+        const taskB = groups[b][0];
+        return taskB.createdAt - taskA.createdAt;
+    });
+    
+    dateKeys.forEach(k => sortedGroups.push({ title: k, tasks: groups[k] }));
+    
+    return sortedGroups;
+  }, [filteredTodos, isGroupedByDay]);
 
   const activeCount = todos.filter(t => !t.isCompleted).length;
   const p0Count = todos.filter(t => !t.isCompleted && (t.priority === Priority.P0 || (t.priority as string) === 'HIGH')).length;
@@ -349,6 +398,19 @@ const App: React.FC = () => {
                         <Calendar size={12} />
                         创建时间
                     </button>
+
+                    <button 
+                        onClick={() => setIsGroupedByDay(!isGroupedByDay)}
+                        className={`ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                            isGroupedByDay 
+                            ? 'bg-slate-800 text-white shadow-sm' 
+                            : 'bg-transparent text-slate-500 hover:bg-white/50 hover:text-slate-700'
+                        }`}
+                        title="按创建日期分组"
+                    >
+                        <CalendarRange size={14} />
+                        <span className="hidden sm:inline">日视图</span>
+                    </button>
                 </div>
 
                 {/* Todo List (Scrollable) */}
@@ -359,19 +421,47 @@ const App: React.FC = () => {
                         <p className="text-sm font-medium opacity-50">暂无任务，享受当下</p>
                     </div>
                   ) : (
-                    <div className="space-y-3 pb-24 relative">
-                      {filteredTodos.map(todo => (
-                        <TodoItem 
-                          key={todo.id} 
-                          todo={todo} 
-                          onToggle={handleToggleTodo} 
-                          onDelete={handleDeleteTodo}
-                          onUpdate={handleUpdateTodo}
-                          focusedTodoId={focusedTodoId}
-                          setFocusedTodoId={setFocusedTodoId}
-                        />
-                      ))}
-                    </div>
+                    <>
+                    {!isGroupedByDay ? (
+                        <div className="space-y-3 pb-24 relative">
+                          {filteredTodos.map(todo => (
+                            <TodoItem 
+                              key={todo.id} 
+                              todo={todo} 
+                              onToggle={handleToggleTodo} 
+                              onDelete={handleDeleteTodo}
+                              onUpdate={handleUpdateTodo}
+                              focusedTodoId={focusedTodoId}
+                              setFocusedTodoId={setFocusedTodoId}
+                            />
+                          ))}
+                        </div>
+                    ) : (
+                        <div className="space-y-8 pb-24 relative">
+                          {groupedTodos.map((group) => (
+                             <div key={group.title}>
+                                <div className="flex items-center gap-2 mb-3 px-1">
+                                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">{group.title}</h3>
+                                    <span className="text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full font-mono">{group.tasks.length}</span>
+                                </div>
+                                <div className="space-y-3">
+                                    {group.tasks.map(todo => (
+                                        <TodoItem 
+                                          key={todo.id} 
+                                          todo={todo} 
+                                          onToggle={handleToggleTodo} 
+                                          onDelete={handleDeleteTodo}
+                                          onUpdate={handleUpdateTodo}
+                                          focusedTodoId={focusedTodoId}
+                                          setFocusedTodoId={setFocusedTodoId}
+                                        />
+                                    ))}
+                                </div>
+                             </div>
+                          ))}
+                        </div>
+                    )}
+                    </>
                   )}
                 </div>
 
