@@ -66,7 +66,7 @@ const TaskInput: React.FC<TaskInputProps> = ({ onAddTodos }) => {
     setIsLoading(true);
 
     try {
-      // Manual simple entry optimization
+      // Manual simple entry optimization: only for short text without digits (which might be ShopIDs)
       const isSimpleText = !selectedImage && text.length < 20 && !text.match(/\d{5,}/);
 
       if (isSimpleText) {
@@ -82,38 +82,63 @@ const TaskInput: React.FC<TaskInputProps> = ({ onAddTodos }) => {
       } else {
         const aiResponse = await analyzeImageAndText(text, selectedImage || undefined);
         
-        const newTodos: Todo[] = aiResponse.tasks.map(task => {
-          let deadline = task.estimatedMinutes ? Date.now() + (task.estimatedMinutes * 60 * 1000) : undefined;
-          
-          // AI 智能规则：如果 actionTime 提及"下班前"或"23:00"，自动设置截止时间为今天23:00
-          if (task.actionTime && (task.actionTime.includes('下班前') || task.actionTime.includes('23:00'))) {
-             const now = new Date();
-             now.setHours(23, 0, 0, 0);
-             deadline = now.getTime();
-          }
+        // Fallback: If AI returns no tasks but we had meaningful input, create a raw task
+        if (!aiResponse.tasks || aiResponse.tasks.length === 0) {
+            console.warn("AI returned no tasks. Creating fallback task.");
+            onAddTodos([{
+                id: generateId(),
+                title: text ? text.split('\n')[0].substring(0, 30) : "未命名图片任务",
+                description: text || "AI未能识别具体任务，请手动补充信息。",
+                priority: Priority.P2,
+                status: 'todo',
+                createdAt: Date.now()
+            }]);
+        } else {
+            const newTodos: Todo[] = aiResponse.tasks.map(task => {
+            let deadline = task.estimatedMinutes ? Date.now() + (task.estimatedMinutes * 60 * 1000) : undefined;
+            
+            // AI 智能规则：如果 actionTime 提及"下班前"或"23:00"，自动设置截止时间为今天23:00
+            if (task.actionTime && (task.actionTime.includes('下班前') || task.actionTime.includes('23:00'))) {
+                const now = new Date();
+                now.setHours(23, 0, 0, 0);
+                deadline = now.getTime();
+            }
 
-          return {
-            id: generateId(),
-            title: task.title,
-            description: task.description,
-            priority: (task.priority as Priority) || Priority.P2,
-            status: deadline ? 'in_progress' : 'todo',
-            isCompleted: false,
-            createdAt: Date.now(),
-            deadline: deadline,
-            shopId: task.shopId,
-            quantity: task.quantity,
-            actionTime: task.actionTime
-          };
-        });
+            return {
+                id: generateId(),
+                title: task.title,
+                description: task.description,
+                priority: (task.priority as Priority) || Priority.P2,
+                status: deadline ? 'in_progress' : 'todo',
+                isCompleted: false,
+                createdAt: Date.now(),
+                deadline: deadline,
+                shopId: task.shopId,
+                quantity: task.quantity,
+                actionTime: task.actionTime
+            };
+            });
 
-        onAddTodos(newTodos);
+            onAddTodos(newTodos);
+        }
+        
         setText('');
         clearImage();
       }
     } catch (error) {
       console.error(error);
-      alert("AI识别遇到问题，请重试");
+      alert("AI识别遇到问题，已转为普通文本任务。");
+      // Error Fallback
+      onAddTodos([{
+        id: generateId(),
+        title: text ? text.substring(0, 30) : "新任务",
+        description: text || "任务识别失败，请手动编辑",
+        priority: Priority.P2,
+        status: 'todo',
+        createdAt: Date.now()
+      }]);
+      setText('');
+      clearImage();
     } finally {
       setIsLoading(false);
     }
