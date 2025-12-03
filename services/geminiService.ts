@@ -469,29 +469,60 @@ export const generateWorkSummary = async (
   rangeLabel: string
 ): Promise<WorkSummary> => {
   try {
-    const taskSummary = tasks.map(t => ({
-      title: t.title,
-      status: t.status,
-      priority: t.priority
-    })).slice(0, 100); // Limit context size
+    // 1. 数据预处理 - 严格统计
+    const shopIds = new Set<string>();
+    const p0Pending: string[] = [];
+    const priorityStats: Record<string, { total: number; done: number }> = {
+      P0: { total: 0, done: 0 },
+      P1: { total: 0, done: 0 },
+      P2: { total: 0, done: 0 },
+      P3: { total: 0, done: 0 },
+      P4: { total: 0, done: 0 },
+    };
 
+    const taskSummary = tasks.map(t => {
+      // 收集店铺ID
+      if (t.shopId) shopIds.add(t.shopId);
+      
+      // 收集 P0 延期
+      const p = (t.priority || 'P2') as string;
+      if ((p === 'P0' || p === 'HIGH') && t.status !== 'done') {
+        p0Pending.push(t.title);
+      }
+
+      // 统计各优先级
+      if (!priorityStats[p]) priorityStats[p] = { total: 0, done: 0 };
+      priorityStats[p].total++;
+      if (t.status === 'done') priorityStats[p].done++;
+
+      return {
+        title: t.title,
+        status: t.status,
+        priority: t.priority
+      };
+    }).slice(0, 100);
+
+    const uniqueMerchantCount = shopIds.size;
+
+    // 2. 构建精准 Prompt
     const promptText = `
-    我是买手，请帮我基于以下数据生成一份【工作总结】，涵盖时间范围：${rangeLabel}。
+    我是买手，请帮我生成一份【工作复盘报告】，不要说空话，围绕数据来分析。
+    时间范围：${rangeLabel}。
     
-    【硬性统计数据】(请直接引用，不要重新计算)：
-    - 任务总数: ${stats.total}
-    - 已完成: ${stats.completed}
-    - 延期/风险: ${stats.overdue}
-    - 完成率: ${((stats.completed / (stats.total || 1)) * 100).toFixed(0)}%
+    【核心数据】(请在生成时引用)：
+    1. 任务进度：总数 ${stats.total}，已完成 ${stats.completed}，完成率 ${((stats.completed / (stats.total || 1)) * 100).toFixed(0)}%。
+    2. 优先级明细：
+       - P0 (紧急): 共 ${priorityStats['P0'].total} 完成 ${priorityStats['P0'].done}
+       - P1 (重要): 共 ${priorityStats['P1'].total} 完成 ${priorityStats['P1'].done}
+       - P2 (日常): 共 ${priorityStats['P2'].total} 完成 ${priorityStats['P2'].done}
+    3. 商家覆盖：本周期共对接了 ${uniqueMerchantCount} 个不同的商家ID。
+    4. 风险事项：目前还有 ${p0Pending.length} 个 P0 级事项未完成（例如：${p0Pending.slice(0, 3).join('; ')}...）。
 
-    【任务明细样本】(仅供分析工作内容，无需罗列):
-    ${JSON.stringify(taskSummary)}
+    【生成要求】：
+    1. themes (工作主线): 归纳 2-3 个核心方向。描述要具体（例如“发定向款 xx 个”，“跟进 xx 个商家”），不要写“推进工作”这种虚词。70%基于上传的任务内容，30%基于共性分析。
+    2. suggestions (建议): 针对数据给出大白话建议。例如“P0 完成率低，是不是时间都被琐事占了？”或“对接商家数够多了，下周重点抓转化”。不要写官话。
 
-    请生成以下结构的 JSON 报告：
-    1. themes: 归纳 2-4 条主要工作主线 (title)，每条主线列出 2-3 个关键典型动作 (actions，简短概括)。
-    2. suggestions: 根据本月动作密度、延期情况，给出 2-4 条下月可执行建议 (suggestions)。
-
-    注意：风格要专业、干练，适合买手向上级汇报。
+    请生成 JSON：
     `;
 
     const payload = {
@@ -551,25 +582,35 @@ export const generateWorkSummary = async (
  */
 export const generateDailyReport = async (tasks: Todo[], dateLabel: string): Promise<string> => {
   try {
+    // 简单预统计，辅助 AI
+    const total = tasks.length;
+    const done = tasks.filter(t => t.status === 'done').length;
+    const p0 = tasks.filter(t => t.priority === 'P0' || (t.priority as string) === 'HIGH');
+    const p0Done = p0.filter(t => t.status === 'done').length;
+
     const simplifiedTasks = tasks.map(t => ({
       title: t.title,
-      status: t.status, // 'done', 'todo', 'in_progress'
-      priority: t.priority // P0-P4
+      status: t.status, 
+      priority: t.priority
     }));
 
     const promptText = `
     角色：你是「买手小番茄」的智能助理。
-    任务：基于以下【${dateLabel}】的全部任务数据，生成一段简短精炼的【今日总结】。
+    任务：基于以下【${dateLabel}】的任务数据，写一段【今日总结】。
     
-    数据：
+    数据概览：共 ${total} 个任务，完成 ${done} 个。P0 级任务 ${p0.length} 个（完成 ${p0Done} 个）。
+    任务列表：
     ${JSON.stringify(simplifiedTasks)}
     
     要求：
-    1. 不要是冷冰冰的数据罗列，要像个贴心助理一样说话。
-    2. 内容涵盖：总共多少个任务，完成了多少。重点提一下完成了哪些重要(P0/P1)事项。
-    3. 如果有未完成或延期的，简单提醒一下。
-    4. 字数控制在 100-150 字以内，分两小段即可。
-    5. 不要返回 JSON，直接返回纯文本内容。
+    1. **拒绝流水账**。不要罗列“任务1做了..任务2做了..”。
+    2. **结构清晰**：
+       - 第一句：直接报数（总数/完成数/P0情况）。
+       - 第二句：概括主要在忙什么（例如“主要在发定向和催审版”）。
+       - 第三句：如果有未完成的 P0，点名提醒；如果没有，夸一句“节奏不错”。
+    3. 风格：干练、专业、带一点点助理的温度，大白话。
+    4. 字数：100字左右。
+    5. 直接返回纯文本。
     `;
 
     const payload = {

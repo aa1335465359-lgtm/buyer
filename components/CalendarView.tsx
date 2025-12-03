@@ -317,7 +317,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                        <div className="flex items-center justify-between bg-slate-50/80 backdrop-blur-sm rounded-xl px-4 py-3 transition-all group">
                            <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
                                <Sparkles size={14} className="text-indigo-400" />
-                               <span>✨ 今日总结（点击生成）</span>
+                               <span>今日总结（点击生成）</span>
                            </div>
                            <button 
                              onClick={handleGenerateDailyReport}
