@@ -112,16 +112,25 @@ const AiAssistant: React.FC = () => {
         // Compress and generate previews using shared service logic
         const newPreviewsData = await Promise.all(filesToProcess.map(async (file) => {
             try {
-                const { mime_type, data } = await fileToGenerativePart(file);
-                return `data:${mime_type};base64,${data}`;
+                const result = await fileToGenerativePart(file);
+                if (result && result.mime_type && result.data) {
+                    return `data:${result.mime_type};base64,${result.data}`;
+                }
+                return null;
             } catch (e) {
                 console.error("Failed to process image", e);
                 return null;
             }
         }));
 
-        const validPreviews = newPreviewsData.filter((p): p is string => p !== null);
-        setImagePreviews(prev => [...prev, ...validPreviews]);
+        const validPreviews = newPreviewsData.filter((p): p is string => typeof p === 'string' && p.length > 0);
+        
+        if (validPreviews.length > 0) {
+            setImagePreviews(prev => [...prev, ...validPreviews]);
+        }
+    } catch (error) {
+        console.error("Critical error during image processing", error);
+        alert("图片处理出错，请重试");
     } finally {
         setIsProcessingImages(false);
     }
@@ -209,16 +218,27 @@ const AiAssistant: React.FC = () => {
          // Support multiple images
          if (msg.images && msg.images.length > 0) {
              msg.images.forEach(imgStr => {
-                 const base64Data = imgStr.split(',')[1];
-                 // Use snake_case for API compatibility
-                 parts.push({ inline_data: { mime_type: 'image/jpeg', data: base64Data } });
+                 try {
+                     const base64Data = imgStr.split(',')[1];
+                     if (base64Data) {
+                         // Use snake_case for API compatibility
+                         parts.push({ inline_data: { mime_type: 'image/jpeg', data: base64Data } });
+                     }
+                 } catch (e) {
+                     console.error("Skipping malformed image history", e);
+                 }
              });
          }
          // Fallback support for old single image format
          else if (msg.image) {
-             const base64Data = msg.image.split(',')[1];
-             // Use snake_case for API compatibility
-             parts.push({ inline_data: { mime_type: 'image/jpeg', data: base64Data } });
+             try {
+                 const base64Data = msg.image.split(',')[1];
+                 if (base64Data) {
+                    parts.push({ inline_data: { mime_type: 'image/jpeg', data: base64Data } });
+                 }
+             } catch (e) {
+                 console.error("Skipping malformed legacy image", e);
+             }
          }
 
          if (msg.text) {
