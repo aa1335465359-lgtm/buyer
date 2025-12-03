@@ -154,8 +154,10 @@ const CalendarView: React.FC<CalendarViewProps> = ({
       const completed = rangeTasks.filter(t => t.status === 'done').length;
       // Simple overdue check: not done and deadline < now
       const overdue = rangeTasks.filter(t => t.status !== 'done' && t.deadline && t.deadline < Date.now()).length;
+      
+      const completionRate = total > 0 ? `${Math.round((completed / total) * 100)}%` : '0%';
 
-      const result = await generateWorkSummary(rangeTasks, { total, completed, overdue }, label);
+      const result = await generateWorkSummary(rangeTasks, { total, completed, completionRate, overdue }, label);
       setSummaryData(result);
 
     } catch (error) {
@@ -226,6 +228,13 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                      style={{ width: `${progressPercent}%` }}
                    />
               </div>
+           )}
+           
+           {/* Completed Count (Small Number) */}
+           {completed > 0 && (
+             <div className="absolute bottom-3 right-3 text-[10px] font-bold text-slate-400">
+               {completed}
+             </div>
            )}
         </div>
       );
@@ -434,21 +443,29 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                            <Target size={20} className="text-indigo-600" />
                            主要工作方向
                         </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                           {summaryData.themes.map((theme, idx) => (
-                              <div key={idx} className="bg-white/60 border border-slate-200 rounded-xl p-5 hover:border-indigo-200 transition-colors">
-                                 <h4 className="font-bold text-slate-800 mb-3">{theme.title}</h4>
-                                 <ul className="space-y-2">
-                                    {theme.actions.map((action, i) => (
-                                       <li key={i} className="flex items-start gap-2 text-sm text-slate-600">
-                                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-1.5 shrink-0"></span>
-                                          {action}
-                                       </li>
-                                    ))}
-                                 </ul>
-                              </div>
-                           ))}
-                        </div>
+                        {/* SAFEGUARD: Check if themes is an array before mapping */}
+                        {Array.isArray(summaryData.themes) && summaryData.themes.length > 0 ? (
+                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {summaryData.themes.map((theme, idx) => (
+                                 <div key={idx} className="bg-white/60 border border-slate-200 rounded-xl p-5 hover:border-indigo-200 transition-colors">
+                                    <h4 className="font-bold text-slate-800 mb-3">{theme.title}</h4>
+                                    <ul className="space-y-2">
+                                       {/* SAFEGUARD: Check if actions is an array */}
+                                       {Array.isArray(theme.actions) && theme.actions.map((action, i) => (
+                                          <li key={i} className="flex items-start gap-2 text-sm text-slate-600">
+                                             <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-1.5 shrink-0"></span>
+                                             {action}
+                                          </li>
+                                       ))}
+                                    </ul>
+                                 </div>
+                              ))}
+                           </div>
+                        ) : (
+                           <div className="text-center py-6 bg-slate-50/50 rounded-xl border border-dashed border-slate-200 text-slate-400 text-sm">
+                             ai卡了，重试一下吧
+                           </div>
+                        )}
                      </div>
 
                      {/* 3. Suggestions */}
@@ -457,18 +474,25 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                            <Lightbulb size={20} className="text-amber-500" />
                            下阶段建议
                         </h3>
-                        <div className="bg-amber-50/50 border border-amber-100 rounded-xl p-6">
-                           <div className="space-y-3">
-                              {summaryData.suggestions.map((sug, idx) => (
-                                 <div key={idx} className="flex gap-3">
-                                    <span className="w-6 h-6 rounded-full bg-amber-200 text-amber-700 flex items-center justify-center text-xs font-bold shrink-0">
-                                       {idx + 1}
-                                    </span>
-                                    <p className="text-sm text-slate-800 leading-relaxed pt-0.5 font-medium">{sug}</p>
-                                 </div>
-                              ))}
+                        {/* SAFEGUARD: Check if suggestions is an array */}
+                        {Array.isArray(summaryData.suggestions) && summaryData.suggestions.length > 0 ? (
+                            <div className="bg-amber-50/50 border border-amber-100 rounded-xl p-6">
+                               <div className="space-y-3">
+                                  {summaryData.suggestions.map((sug, idx) => (
+                                     <div key={idx} className="flex gap-3">
+                                        <span className="w-6 h-6 rounded-full bg-amber-200 text-amber-700 flex items-center justify-center text-xs font-bold shrink-0">
+                                           {idx + 1}
+                                        </span>
+                                        <p className="text-sm text-slate-800 leading-relaxed pt-0.5 font-medium">{sug}</p>
+                                     </div>
+                                  ))}
+                               </div>
+                            </div>
+                        ) : (
+                           <div className="text-center py-6 bg-amber-50/30 rounded-xl border border-dashed border-amber-100 text-amber-400 text-sm">
+                             ai卡了，重试一下吧
                            </div>
-                        </div>
+                        )}
                      </div>
 
                      <div className="text-center pt-8 pb-4">

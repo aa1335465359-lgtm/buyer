@@ -1,7 +1,7 @@
-import { AITaskResponse, WorkSummary, Todo } from "../types";
+import { AITaskResponse, WorkSummary, Todo, Priority } from "../types";
 import { SALES_SCRIPTS, ScriptItem } from "../data/scriptLibrary";
 
-// --- REST API Types (Strict Snake Case for Google JSON API) ---
+// --- REST API Types ---
 interface GeminiPart {
   text?: string;
   inline_data?: {
@@ -15,30 +15,16 @@ interface GeminiContent {
   parts: GeminiPart[];
 }
 
-const SchemaType = {
-  STRING: "STRING",
-  NUMBER: "NUMBER",
-  INTEGER: "INTEGER",
-  BOOLEAN: "BOOLEAN",
-  ARRAY: "ARRAY",
-  OBJECT: "OBJECT",
-};
-
 // Helper: Convert file to base64 for REST API
-export const fileToGenerativePart = async (
-  file: File
-): Promise<GeminiPart> => {
+export const fileToGenerativePart = async (file: File): Promise<{ mime_type: string; data: string }> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onloadend = () => {
       const base64String = reader.result as string;
-      // Remove data url prefix (e.g. "data:image/jpeg;base64,")
-      const base64Data = base64String.split(",")[1];
+      const base64Data = base64String.split(',')[1];
       resolve({
-        inline_data: {
-          data: base64Data,
-          mime_type: file.type,
-        },
+        mime_type: file.type,
+        data: base64Data,
       });
     };
     reader.onerror = reject;
@@ -46,584 +32,284 @@ export const fileToGenerativePart = async (
   });
 };
 
-// --- CORE API CALLER ---
-// 统一调用后端代理 /api/gemini
-const callGeminiApi = async (payload: any) => {
-  try {
-    console.log(
-      "[Gemini Service] Sending request to /api/gemini with model:",
-      payload.model
-    );
+// Generic helper to call the API proxy
+async function callGeminiApi(
+  systemPrompt: string, 
+  userPrompt: string, 
+  image?: File | File[], // Support single file or array
+  responseMimeType: string = 'text/plain'
+): Promise<string> {
+  
+  const contents: GeminiContent[] = [];
+  const parts: GeminiPart[] = [];
 
-    const response = await fetch("/api/gemini", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      const apiMsg = data.error?.message || JSON.stringify(data.error);
-      throw new Error(apiMsg || "Gemini API Request Failed");
-    }
-
-    return data;
-  } catch (error) {
-    console.error("Gemini Proxy Error:", error);
-    throw error;
-  }
-};
-
-/**
- * 1. 任务分析模块 (Task Input)
- */
-export const analyzeImageAndText = async (
-  text: string,
-  imageFile?: File
-): Promise<AITaskResponse> => {
-  try {
-    const parts: GeminiPart[] = [];
-
-    if (imageFile) {
-      parts.push(await fileToGenerativePart(imageFile));
-    }
-
-    if (text) {
-      parts.push({ text });
-    }
-
-    if (parts.length === 0) {
-      throw new Error("No input provided");
-    }
-
-    // System Prompt：带“商家资料卡片合并”规则 + 优先级分级修正 + 结构化标题
-    const systemPrompt = `
-【角色：
-你是「Temu 大码女装买手的待办拆解助手」。你的目标是：
-把我输入的自然语言，拆成**尽量少但必要的**、结构清晰、可执行的待办事项列表。
-
-一、输出格式（必须遵守）
-
-一律输出为 JSON 对象，不要输出任何解释或多余文字。
-
-二、结构化标题规则（核心）
-所有任务的 title 字段必须严格遵守“三段式结构化”格式，禁止使用长句子：
-格式：【动作 · 核心对象/类目 · 数量/关键信息】
-示例：
-- "发定向 · 卫衣/T恤 · 20款"
-- "跟进 · 录款进度 · 催一下"
-- "发定向 · 634418... · 10款"
-- "开白 · 三张图权限 · 申请"
-- "复盘 · 爆款数据 · 周一"
-
-三、「商家资料卡片」处理规则
-
-当输入整体形态类似下面这种一整组带编号的信息时：
-1.店铺：...
-2.擅长品类：...
-...
-视为一张「商家资料卡片」，必须遵守：
-
-1）**只能生成 1 条任务**
-2）字段生成逻辑：
-- type: "发定向"
-- title: 严格按结构化格式，例如 "发定向 · T恤/卫衣 · 20款" (提取品类和数量)
-- description: 整合所有信息，例如 "A类新商，无大码经验，首月计划上20款，需跟进起量。"
-- merchant_grade: 提取 S/A/B 分级
-- priority: S=高, A=中高(P1), B=中(P2)
-
-四、普通自然语言输入的判断逻辑
-
-1）判断 type：
-   - 录款/定向/选款/推款 → type = "发定向"
-   - 跟进/进度/催/问/复盘 → type = "跟进"
-   - 其他 → type = "其他"
-
-2）任务合并：
-   - 同一个商家的动作尽量合并为 1 条。
-
-五、优先级(Priority) 映射
-S级商家 = 高 (P0)
-A级商家 = 中高 (P1)
-B级商家 = 中 (P2)
-默认 = 中 (P2)
-`.trim();
-
-    const payload = {
-      model: "gemini-2.5-flash",
-      contents: [{ role: "user", parts }],
-      system_instruction: {
-        parts: [{ text: systemPrompt }],
-      },
-      generation_config: {
-        response_mime_type: "application/json",
-        response_schema: {
-          type: SchemaType.OBJECT,
-          properties: {
-            tasks: {
-              type: SchemaType.ARRAY,
-              items: {
-                type: SchemaType.OBJECT,
-                properties: {
-                  type: { type: SchemaType.STRING },
-                  merchant_id: { type: SchemaType.STRING },
-                  title: { type: SchemaType.STRING },
-                  description: { type: SchemaType.STRING },
-                  merchant_type: { type: SchemaType.STRING },
-                  merchant_grade: { type: SchemaType.STRING },
-                  targeting_goal: { type: SchemaType.STRING },
-                  style_focus: { type: SchemaType.STRING },
-                  spu_ids: {
-                    type: SchemaType.ARRAY,
-                    items: { type: SchemaType.STRING },
-                  },
-                  targeting_count: { type: SchemaType.INTEGER },
-                  follow_topic: { type: SchemaType.STRING },
-                  follow_detail: { type: SchemaType.STRING },
-                  follow_time: { type: SchemaType.STRING },
-                  priority: { type: SchemaType.STRING },
-                  channel: { type: SchemaType.STRING },
-                  raw_text: { type: SchemaType.STRING },
-                },
-                required: ["title", "priority", "type"],
-              },
-            },
-          },
-        },
-      },
-    };
-
-    const result = await callGeminiApi(payload);
-    const responseText = result.candidates?.[0]?.content?.parts?.[0]?.text;
-
-    if (!responseText) return { tasks: [] };
-
-    const rawData = JSON.parse(responseText);
-    const rawTasks = rawData.tasks || [];
-
-    const mappedTasks = rawTasks.map((item: any) => {
-      // 优先级映射逻辑更新
-      let p = "P2"; // Default B级/Normal
-
-      // 1. 优先使用 Merchant Grade 判断
-      const grade = (item.merchant_grade || "").toUpperCase();
-      if (grade.includes("S")) {
-        p = "P0"; // S -> P0
-      } else if (grade.includes("A")) {
-        p = "P1"; // A -> P1
-      } else if (grade.includes("B")) {
-        p = "P2"; // B -> P2
-      } else {
-        // 2. 兜底使用 Priority 字段
-        if (item.priority === "高") p = "P0";
-        else if (item.priority === "中") p = "P2";
-        else if (item.priority === "低") p = "P4";
+  // Handle images
+  if (image) {
+      const files = Array.isArray(image) ? image : [image];
+      for (const img of files) {
+          const imgData = await fileToGenerativePart(img);
+          parts.push({ inline_data: imgData });
       }
-
-      let desc = item.description || "";
-      if (item.type === "发定向") {
-        const focus = item.style_focus ? `风格:${item.style_focus}` : "";
-        const goal = item.targeting_goal ? `目标:${item.targeting_goal}` : "";
-        const mType = item.merchant_type ? `(${item.merchant_type})` : "";
-        // 既然title已经结构化了，description可以更偏向具体内容
-        if (!desc) {
-            desc = [mType, focus, goal].filter(Boolean).join(" ");
-        }
-      } else if (item.type === "跟进") {
-        desc = item.follow_detail || desc;
-      }
-
-      return {
-        title: item.title,
-        description: desc,
-        priority: p,
-        shopId: item.merchant_id,
-        quantity: item.targeting_count
-          ? String(item.targeting_count)
-          : undefined,
-        actionTime: item.follow_time,
-        estimatedMinutes: 30,
-      };
-    });
-
-    return { tasks: mappedTasks } as AITaskResponse;
-  } catch (error) {
-    console.error("Gemini Analysis Error:", error);
-    throw error;
   }
-};
 
-/**
- * 2. 智能改图模块 (Image Editor)
- */
+  // Handle text
+  if (userPrompt) {
+      parts.push({ text: userPrompt });
+  }
 
-// 把 File 转 dataURL
-const fileToDataUrl = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
+  contents.push({ role: 'user', parts });
+
+  const payload = {
+    model: 'gemini-2.0-flash', // Can be overriden by backend proxy logic if needed
+    system_instruction: {
+      parts: [{ text: systemPrompt }]
+    },
+    contents,
+    generation_config: {
+      response_mime_type: responseMimeType
+    }
+  };
+
+  const response = await fetch('/api/gemini', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
   });
-};
 
-export const editImage = async (
-  originalImage: File,
-  prompt: string
-): Promise<string> => {
-  try {
-    const imageDataUrl = await fileToDataUrl(originalImage);
-
-    const response = await fetch("/api/doubaoImage", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        prompt,
-        image: imageDataUrl, // 👈 关键：把图传出去
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData?.error || `Doubao image API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data?.url;
-  } catch (e) {
-    console.error("Doubao image edit error", e);
-    throw e;
+  if (!response.ok) {
+    throw new Error(`API Error: ${response.statusText}`);
   }
+
+  const data = await response.json();
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  
+  if (!text) {
+     throw new Error("No content generated");
+  }
+
+  return text;
+}
+
+// 1. Image & Text Analysis for Task Input
+export const analyzeImageAndText = async (text: string, image?: File): Promise<AITaskResponse> => {
+  const systemPrompt = `
+  你是一个大码女装买手助理。
+  你的任务是：从用户的文字或图片（截图）中提取待办任务。
+  
+  请识别以下信息：
+  1. 任务标题 (title): 简练概括
+  2. 描述 (description): 详细信息
+  3. 优先级 (priority): P0(紧急/高管关注), P1(重要), P2(日常), P3(稍缓), P4(待定)。默认P2。
+  4. 预估耗时 (estimatedMinutes): 数字，单位分钟。
+  5. 店铺ID (shopId): 如果有，提取类似 '123456' 或 'Shop_ABC' 的ID。
+  6. 款式数量 (quantity): 如果提到“5款”、“10个”等，提取数字。
+  7. 截止时间/时间点 (actionTime): 如果提到“下班前”、“今晚”、“明天”，请原样提取文字描述。
+
+  输出必须是标准 JSON 格式：
+  {
+    "tasks": [
+      { "title": "...", "description": "...", "priority": "P2", "estimatedMinutes": 30, "shopId": "...", "quantity": "...", "actionTime": "..." }
+    ]
+  }
+  `;
+
+  const responseText = await callGeminiApi(systemPrompt, text, image, 'application/json');
+  return JSON.parse(responseText);
 };
 
-/**
- * 3. 话术推荐模块 (Script Matcher)
- */
-export const matchScript = async (
-  input: string,
-  image?: File
-): Promise<{
-  analysis: string;
-  recommendations: ScriptItem[];
-}> => {
+// 2. Script Matcher
+export const matchScript = async (input: string, image?: File): Promise<{ analysis: string; recommendations: ScriptItem[] }> => {
+  const context = SALES_SCRIPTS.map(s => `[${s.category}-${s.scenario}]: ${s.content}`).join('\n');
+  
+  const systemPrompt = `
+  你是一个资深大码女装买手。请分析商家发来的话（文字或截图），判断商家的真实意图（是推脱、抗拒、还是有兴趣但有顾虑）。
+  然后从下方的【话术库】中，挑选最合适的 3 条回复建议。
+
+  【话术库】：
+  ${context}
+
+  输出 JSON 格式：
+  {
+    "analysis": "分析商家的心理...",
+    "recommendations": [
+       { "category": "...", "scenario": "...", "content": "..." }
+    ]
+  }
+  `;
+
+  const responseText = await callGeminiApi(systemPrompt, input, image, 'application/json');
+  return JSON.parse(responseText);
+};
+
+// 3. Image Editor (Direct Prompting)
+export const editImage = async (image: File, prompt: string): Promise<string> => {
   try {
-    const parts: GeminiPart[] = [];
-    if (image) {
-      parts.push(await fileToGenerativePart(image));
-    }
-    // 强制在 Prompt 中约定 JSON 结构，因为代理层可能忽略 Schema 配置
-    parts.push({
-      text: `商家说: "${input}"。请分析商家的潜台词、情绪和核心抗拒点，并从下面的话术库中选择最合适的3条回复。
+      const base64Data = await fileToGenerativePart(image);
+      const response = await fetch('/api/doubaoImage', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+              prompt: prompt,
+              image: base64Data.data // Send pure base64
+          })
+      });
       
-      重要原则：每一个输出内容必须由“80%原版话术库内容 + 20%根据商家实际情况的微调”组成。不要完全照搬，也不要完全重写，要保留话术库的核心逻辑和语气，但结合当前具体语境。
-
-话术库数据:
-${JSON.stringify(SALES_SCRIPTS)}
-
-请严格返回以下 JSON 格式，不要包含 Markdown 格式标记（如 \`\`\`json）：
-{
-  "analysis": "这里写分析...",
-  "recommendations": [
-    { "category": "分类", "scenario": "场景", "content": "话术内容" }
-  ]
-}`,
-    });
-
-    const payload = {
-      model: "gemini-2.5-flash",
-      contents: [{ role: "user", parts }],
-      system_instruction: {
-        parts: [
-          {
-            text: `你是一个资深的大码女装买手专家。分析商家意图并推荐话术。输出严格的 JSON。`,
-          },
-        ],
-      },
-      generation_config: {
-        response_mime_type: "application/json",
-        response_schema: {
-          type: SchemaType.OBJECT,
-          properties: {
-            analysis: { type: SchemaType.STRING },
-            recommendations: {
-              type: SchemaType.ARRAY,
-              items: {
-                type: SchemaType.OBJECT,
-                properties: {
-                  category: { type: SchemaType.STRING },
-                  scenario: { type: SchemaType.STRING },
-                  content: { type: SchemaType.STRING },
-                },
-              },
-            },
-          },
-        },
-      },
-    };
-
-    const result = await callGeminiApi(payload);
-    let text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-    
-    if (!text) return { analysis: "无法获取回复，请重试。", recommendations: [] };
-    
-    try {
-      // 移除可能存在的 Markdown 代码块标记
-      text = text.replace(/```json/g, "").replace(/```/g, "").trim();
-      const parsed = JSON.parse(text);
-      return {
-        analysis: parsed.analysis || "无分析内容",
-        recommendations: Array.isArray(parsed.recommendations) ? parsed.recommendations : []
-      };
-    } catch (e) {
-      console.error("Script Match Parse Error", e);
-      return { analysis: "数据解析失败，请检查网络或重试。", recommendations: [] };
-    }
-
+      if (!response.ok) throw new Error('Image gen failed');
+      const data = await response.json();
+      return data.url;
   } catch (e) {
-    console.error("Script Match Error", e);
-    return { analysis: "请求出错，请稍后重试。", recommendations: [] };
+      console.error(e);
+      throw e;
   }
 };
 
-/**
- * 4. Temu 助理聊天模块 (Chat Assistant)
- */
-export const chatWithBuyerAI = async (
-  history: { role: string; parts: any[] }[],
-  message: string,
-  images?: File[]
-): Promise<string> => {
-  try {
-    const restHistory: GeminiContent[] = history.map((msg) => ({
-      role: msg.role === "model" ? "model" : "user",
-      parts: msg.parts.map((p: any) => {
-        if (p.inlineData) {
-          return {
-            inline_data: {
-              mime_type: p.inlineData.mimeType,
-              data: p.inlineData.data,
-            },
-          };
-        }
-        if (p.inline_data) {
-          return p;
-        }
-        return { text: p.text || "" };
-      }),
-    }));
-
-    const newParts: GeminiPart[] = [];
+// 4. Chat Assistant
+export const chatWithBuyerAI = async (history: any[], lastUserMsg: string, images?: File[]): Promise<string> => {
+    // Note: 'history' here is passed for context maintenance, but for this stateless implementation 
+    // we might just concatenate it or rely on the caller to format it.
+    // For simplicity in this specific file structure, we will treat 'history' as the 'contents' array if compatible,
+    // or just construct a new prompt with history context stringified.
     
-    // Handle multiple images
-    if (images && images.length > 0) {
-      for (const img of images) {
-        newParts.push(await fileToGenerativePart(img));
-      }
-    }
+    // Proper way: construct contents array from history + new message
+    // But since callGeminiApi is a simple wrapper, let's just use the last message + system prompt context
+    // In a real app, you'd pass the full conversation history to 'contents'.
     
-    newParts.push({ text: message || " " });
-
-    const contents: GeminiContent[] = [
-      ...restHistory,
-      { role: "user", parts: newParts },
-    ];
-
-    const payload = {
-      model: "gemini-2.5-flash",
-      contents,
-      tools: [{ google_search: {} }],
-      system_instruction: {
-        parts: [
-          {
-            text: `你现在是小番茄，一个性格松弛、嘴巴有点毒但业务能力极强的Temu大码女装买手搭子。你的日常不是算账，而是选品、找定向、催商家发货、跟商家斗智斗勇。说话风格：接地气、带点黑色幽默、没事爱吐槽两句商家，但给出的建议要专业且一针见血。别整那些虚头巴脑的公式，直接告诉我这个款能不能爆，那个商家该不该怼。如果我发图给你，你就用专业的眼光毒舌点评一下版型和卖点。`,
-          },
-        ],
-      },
-    };
-
-    const result = await callGeminiApi(payload);
-
-    const candidate = result.candidates?.[0];
-    if (candidate?.content?.parts?.[0]?.text) {
-      return candidate.content.parts[0].text;
-    }
-
-    return "AI 暂时没有回复";
-  } catch (error) {
-    console.error("Chat Error", error);
-    return "AI 助理暂时开小差了，请稍后再试。";
-  }
-};
-
-/**
- * 5. 智能周报总结模块 (Work Summary)
- */
-export const generateWorkSummary = async (
-  tasks: Todo[],
-  stats: { total: number; completed: number; overdue: number },
-  rangeLabel: string
-): Promise<WorkSummary> => {
-  try {
-    // 1. 数据预处理 - 严格统计
-    const shopIds = new Set<string>();
-    const p0Pending: string[] = [];
-    const priorityStats: Record<string, { total: number; done: number }> = {
-      P0: { total: 0, done: 0 },
-      P1: { total: 0, done: 0 },
-      P2: { total: 0, done: 0 },
-      P3: { total: 0, done: 0 },
-      P4: { total: 0, done: 0 },
-    };
-
-    const taskSummary = tasks.map(t => {
-      // 收集店铺ID
-      if (t.shopId) shopIds.add(t.shopId);
-      
-      // 收集 P0 延期
-      const p = (t.priority || 'P2') as string;
-      if ((p === 'P0' || p === 'HIGH') && t.status !== 'done') {
-        p0Pending.push(t.title);
-      }
-
-      // 统计各优先级
-      if (!priorityStats[p]) priorityStats[p] = { total: 0, done: 0 };
-      priorityStats[p].total++;
-      if (t.status === 'done') priorityStats[p].done++;
-
-      return {
-        title: t.title,
-        status: t.status,
-        priority: t.priority
-      };
-    }).slice(0, 100);
-
-    const uniqueMerchantCount = shopIds.size;
-
-    // 2. 构建精准 Prompt
-    const promptText = `
-    我是买手，请帮我生成一份【工作复盘报告】，不要说空话，围绕数据来分析。
-    时间范围：${rangeLabel}。
+    // We will do a direct fetch here to support history properly
+    const contents = [...history]; // history should already be in { role, parts } format
     
-    【核心数据】(请在生成时引用)：
-    1. 任务进度：总数 ${stats.total}，已完成 ${stats.completed}，完成率 ${((stats.completed / (stats.total || 1)) * 100).toFixed(0)}%。
-    2. 优先级明细：
-       - P0 (紧急): 共 ${priorityStats['P0'].total} 完成 ${priorityStats['P0'].done}
-       - P1 (重要): 共 ${priorityStats['P1'].total} 完成 ${priorityStats['P1'].done}
-       - P2 (日常): 共 ${priorityStats['P2'].total} 完成 ${priorityStats['P2'].done}
-    3. 商家覆盖：本周期共对接了 ${uniqueMerchantCount} 个不同的商家ID。
-    4. 风险事项：目前还有 ${p0Pending.length} 个 P0 级事项未完成（例如：${p0Pending.slice(0, 3).join('; ')}...）。
-
-    【生成要求】：
-    1. themes (工作主线): 归纳 2-3 个核心方向。描述要具体（例如“发定向款 xx 个”，“跟进 xx 个商家”），不要写“推进工作”这种虚词。70%基于上传的任务内容，30%基于共性分析。
-    2. suggestions (建议): 针对数据给出大白话建议。例如“P0 完成率低，是不是时间都被琐事占了？”或“对接商家数够多了，下周重点抓转化”。不要写官话。
-
-    请生成 JSON：
+    /* 
+       However, to keep it simple and consistent with the types used in AiAssistant.tsx:
+       The frontend passes standard Google format history. We can just send that to our /api/gemini endpoint.
+    */
+    
+    const systemPrompt = `
+    你是一个毒舌但专业的大码女装买手助理“小番茄”。
+    性格：有些阴阳怪气，喜欢吐槽商家和老板，自称“本番茄”或“本宫”，但干活非常利索专业。
+    专业领域：Temu大码女装、选品、审版、核价、跟单。
+    说话风格：稍微带点网络梗，比如“已老实”、“求放过”、“牛马”。
+    
+    请根据上下文回答用户问题。如果是选品问题，给出专业建议；如果是吐槽，就陪用户一起发疯。
     `;
 
     const payload = {
-      model: "gemini-2.5-flash",
-      contents: [{ role: "user", parts: [{ text: promptText }] }],
-      generation_config: {
-        response_mime_type: "application/json",
-        response_schema: {
-          type: SchemaType.OBJECT,
-          properties: {
-            themes: {
-              type: SchemaType.ARRAY,
-              items: {
-                type: SchemaType.OBJECT,
-                properties: {
-                  title: { type: SchemaType.STRING },
-                  actions: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } }
-                }
-              }
-            },
-            suggestions: {
-              type: SchemaType.ARRAY,
-              items: { type: SchemaType.STRING }
-            }
-          }
-        }
-      }
+        model: 'gemini-2.0-flash',
+        system_instruction: { parts: [{ text: systemPrompt }] },
+        contents: contents
     };
 
-    const result = await callGeminiApi(payload);
-    const responseText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+    const response = await fetch('/api/gemini', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    });
     
-    if (!responseText) throw new Error("Empty response from AI");
-    
-    const parsed = JSON.parse(responseText);
+    const data = await response.json();
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || "本番茄累了，歇会儿...";
+};
 
-    return {
-      rangeLabel,
-      stats: {
-        total: stats.total,
-        completed: stats.completed,
-        completionRate: `${((stats.completed / (stats.total || 1)) * 100).toFixed(0)}%`,
-        overdue: stats.overdue
-      },
-      themes: parsed.themes || [],
-      suggestions: parsed.suggestions || []
-    };
+// 5. Work Summary (Phase Review) - ROBUST IMPLEMENTATION
+export const generateWorkSummary = async (tasks: Todo[], stats: any, label: string): Promise<WorkSummary> => {
+  // Safe defaults
+  const emptySummary: WorkSummary = {
+    rangeLabel: label,
+    stats: stats,
+    themes: [],
+    suggestions: []
+  };
 
+  if (!tasks || tasks.length === 0) {
+    return emptySummary;
+  }
+
+  // Pre-calculate strict stats for the prompt to reduce AI hallucination
+  const p0Tasks = tasks.filter(t => t.priority === Priority.P0 || (t.priority as string) === 'HIGH');
+  const p0Unfinished = p0Tasks.filter(t => t.status !== 'done');
+  const uniqueShops = new Set(tasks.map(t => t.shopId).filter(Boolean));
+  
+  const tasksSummary = tasks.map(t => 
+    `- [${t.status === 'done' ? '已完成' : '未完成'}] ${t.priority} ${t.title} (店铺:${t.shopId || '无'})`
+  ).join('\n').slice(0, 3000); // Limit length
+
+  const systemPrompt = `
+  你是一个大码女装买手团队的数据分析师。
+  请根据以下任务清单，对【${label}】的工作进行简要复盘。
+
+  【核心数据】（请务必准确引用）：
+  - 总对接商家数：${uniqueShops.size} 家
+  - 重点 P0 任务数：${p0Tasks.length} 个（其中 ${p0Unfinished.length} 个未完成）
+
+  请生成 JSON 格式：
+  {
+    "themes": [
+      { "title": "分类标题(如：爆款跟进)", "actions": ["具体做了什么1", "具体做了什么2"] }
+    ],
+    "suggestions": [
+      "基于数据的建议1 (大白话)",
+      "基于数据的建议2 (大白话)"
+    ]
+  }
+
+  要求：
+  1. "themes": 总结 3 个主要工作方向。
+  2. "suggestions": 提 3 条建议，大白话，不要讲空话。针对未完成的 P0 任务提出警示。
+  3. 严格 JSON，不要 markdown。
+  `;
+
+  try {
+      const responseText = await callGeminiApi(systemPrompt, `任务清单：\n${tasksSummary}`, undefined, 'application/json');
+      
+      // Sanitize: Remove markdown code blocks if present
+      const cleanJson = responseText.replace(/```json\n?|\n?```/g, '').trim();
+      
+      const parsed = JSON.parse(cleanJson);
+      
+      return {
+          rangeLabel: label,
+          stats: stats,
+          // Robust check: Ensure themes is an array
+          themes: Array.isArray(parsed.themes) ? parsed.themes : [],
+          // Robust check: Ensure suggestions is an array
+          suggestions: Array.isArray(parsed.suggestions) ? parsed.suggestions : []
+      };
   } catch (error) {
-    console.error("Work Summary Error", error);
-    throw error;
+      console.error("Generate Summary Failed:", error);
+      // Return safe object with empty arrays so UI doesn't crash
+      return emptySummary;
   }
 };
 
-/**
- * 6. 生成单日概览报告 (Daily Report)
- */
+// 6. Daily Report
 export const generateDailyReport = async (tasks: Todo[], dateLabel: string): Promise<string> => {
-  try {
-    // 简单预统计，辅助 AI
-    const total = tasks.length;
-    const done = tasks.filter(t => t.status === 'done').length;
-    const p0 = tasks.filter(t => t.priority === 'P0' || (t.priority as string) === 'HIGH');
-    const p0Done = p0.filter(t => t.status === 'done').length;
+    if (!tasks || tasks.length === 0) return "今天暂无任务记录。";
 
-    const simplifiedTasks = tasks.map(t => ({
-      title: t.title,
-      status: t.status, 
-      priority: t.priority
-    }));
-
-    const promptText = `
-    角色：你是「买手小番茄」的智能助理。
-    任务：基于以下【${dateLabel}】的任务数据，写一段【今日总结】。
+    const completed = tasks.filter(t => t.status === 'done');
+    const p0 = tasks.filter(t => t.priority === Priority.P0 || (t.priority as string) === 'HIGH');
     
-    数据概览：共 ${total} 个任务，完成 ${done} 个。P0 级任务 ${p0.length} 个（完成 ${p0Done} 个）。
-    任务列表：
-    ${JSON.stringify(simplifiedTasks)}
+    const taskDetails = tasks.map(t => `${t.status === 'done' ? '[完成]' : '[未完]'} ${t.priority} ${t.title}`).join('; ');
+
+    const systemPrompt = `
+    你是一个大码买手助理。请根据今天的任务列表，写一段简短的【今日总结】。
     
     要求：
-    1. **拒绝流水账**。不要罗列“任务1做了..任务2做了..”。
-    2. **结构清晰**：
-       - 第一句：直接报数（总数/完成数/P0情况）。
-       - 第二句：概括主要在忙什么（例如“主要在发定向和催审版”）。
-       - 第三句：如果有未完成的 P0，点名提醒；如果没有，夸一句“节奏不错”。
-    3. 风格：干练、专业、带一点点助理的温度，大白话。
-    4. 字数：100字左右。
-    5. 直接返回纯文本。
+    1. 语气：干练、简洁、像Mac的系统提示一样优雅。
+    2. 内容：一句话概括完成了多少（重点提 P0/P1）。一句话提示还剩什么没做。
+    3. 总字数控制在 60 字以内。
+    4. 不要分段，不要列表，只要一段话。
+    
+    数据：
+    日期：${dateLabel}
+    总任务：${tasks.length}
+    已完成：${completed.length}
+    P0任务：${p0.length}
+    
+    任务详情：
+    ${taskDetails}
     `;
 
-    const payload = {
-      model: "gemini-2.5-flash",
-      contents: [{ role: "user", parts: [{ text: promptText }] }],
-    };
-
-    const result = await callGeminiApi(payload);
-    const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-    
-    return text || "AI 暂时无法生成今日总结。";
-  } catch (error) {
-    console.error("Daily Report Error", error);
-    return "生成总结失败，请稍后重试。";
-  }
+    try {
+        const text = await callGeminiApi(systemPrompt, "生成总结", undefined, 'text/plain');
+        return text.trim();
+    } catch (e) {
+        return "今日数据暂无法分析。";
+    }
 };
