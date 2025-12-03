@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Loader2, Image as ImageIcon, X, History, Plus, MessageSquare, Trash2 } from 'lucide-react';
 import { chatWithBuyerAI, fileToGenerativePart } from '../services/geminiService';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface Message {
   role: 'user' | 'model';
@@ -458,12 +460,27 @@ const AiAssistant: React.FC = () => {
                       )}
                       
                       {msg.text && (
-                          <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm whitespace-pre-wrap ${
+                          <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm overflow-hidden ${
                               msg.role === 'user' 
                                 ? 'bg-slate-800 text-white rounded-tr-sm' 
                                 : 'bg-white text-slate-800 rounded-tl-sm border border-white/50'
                           }`}>
-                             {msg.text}
+                            <ReactMarkdown 
+                              remarkPlugins={[remarkGfm]}
+                              components={{
+                                  ul: ({node, ...props}) => <ul className="list-disc list-inside my-1" {...props} />,
+                                  ol: ({node, ...props}) => <ol className="list-decimal list-inside my-1" {...props} />,
+                                  a: ({node, ...props}) => <a className="text-blue-500 underline" target="_blank" {...props} />,
+                                  table: ({node, ...props}) => <div className="overflow-x-auto my-2 rounded-lg border border-slate-200"><table className="w-full text-left text-xs border-collapse" {...props} /></div>,
+                                  th: ({node, ...props}) => <th className={`p-2 font-semibold border-b ${msg.role === 'user' ? 'border-slate-600 bg-slate-700' : 'border-slate-100 bg-slate-50'}`} {...props} />,
+                                  td: ({node, ...props}) => <td className={`p-2 border-b last:border-0 ${msg.role === 'user' ? 'border-slate-700' : 'border-slate-50'}`} {...props} />,
+                                  p: ({node, ...props}) => <p className="mb-1 last:mb-0" {...props} />,
+                                  code: ({node, ...props}) => <code className={`px-1 py-0.5 rounded font-mono text-xs ${msg.role === 'user' ? 'bg-slate-700' : 'bg-slate-100 text-pink-500'}`} {...props} />,
+                                  pre: ({node, ...props}) => <pre className={`p-2 rounded-lg overflow-x-auto my-2 ${msg.role === 'user' ? 'bg-slate-900' : 'bg-slate-50'}`} {...props} />
+                              }}
+                            >
+                               {msg.text}
+                            </ReactMarkdown>
                           </div>
                       )}
                    </div>
@@ -539,7 +556,7 @@ const AiAssistant: React.FC = () => {
                 </div>
              </div>
              <p className="text-[10px] text-center text-slate-400 mt-2">
-                小番茄由 Gemini 2.0 Flash 驱动 • 内容仅供参考
+                小番茄由 阿巴阿巴偷妈头生成 • 内容仅供参考
              </p>
              
              {/* Hidden File Input */}
