@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Loader2, Image as ImageIcon, X, History, Plus, MessageSquare, Trash2 } from 'lucide-react';
-import { chatWithBuyerAI } from '../services/geminiService';
+import { chatWithBuyerAI, fileToGenerativePart } from '../services/geminiService';
 
 interface Message {
   role: 'user' | 'model';
   text: string;
   images?: string[]; // base64 strings
-  // Legacy support for single image if needed (though we'll migrate to array)
+  // Legacy support for single image if needed
   image?: string; 
 }
 
@@ -29,6 +29,7 @@ const AiAssistant: React.FC = () => {
   // Multi-image support
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [isProcessingImages, setIsProcessingImages] = useState(false);
   
   const [isLoading, setIsLoading] = useState(false);
   
@@ -88,26 +89,42 @@ const AiAssistant: React.FC = () => {
     }
   };
 
-  // Helper to read file to base64
-  const fileToDataUrl = (file: File): Promise<string> => {
-    return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target?.result as string);
-        reader.readAsDataURL(file);
-    });
-  };
-
   const handleImageSelect = async (files: FileList | File[]) => {
     const newFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
     if (newFiles.length === 0) return;
 
-    // Limit total images to 5
-    const combinedFiles = [...selectedImages, ...newFiles].slice(0, 5);
-    setSelectedImages(combinedFiles);
+    // Check limits
+    const currentCount = selectedImages.length;
+    if (currentCount >= 5) {
+        alert("最多只能上传 5 张图片");
+        return;
+    }
 
-    // Generate previews
-    const newPreviews = await Promise.all(combinedFiles.map(fileToDataUrl));
-    setImagePreviews(newPreviews);
+    const availableSlots = 5 - currentCount;
+    const filesToProcess = newFiles.slice(0, availableSlots);
+    if (filesToProcess.length === 0) return;
+
+    // Update File state
+    setSelectedImages(prev => [...prev, ...filesToProcess]);
+    setIsProcessingImages(true);
+
+    try {
+        // Compress and generate previews using shared service logic
+        const newPreviewsData = await Promise.all(filesToProcess.map(async (file) => {
+            try {
+                const { mime_type, data } = await fileToGenerativePart(file);
+                return `data:${mime_type};base64,${data}`;
+            } catch (e) {
+                console.error("Failed to process image", e);
+                return null;
+            }
+        }));
+
+        const validPreviews = newPreviewsData.filter((p): p is string => p !== null);
+        setImagePreviews(prev => [...prev, ...validPreviews]);
+    } finally {
+        setIsProcessingImages(false);
+    }
   };
 
   const handlePaste = (e: React.ClipboardEvent) => {
@@ -167,7 +184,7 @@ const AiAssistant: React.FC = () => {
   };
 
   const handleSend = async () => {
-    if ((!input.trim() && selectedImages.length === 0) || isLoading) return;
+    if ((!input.trim() && selectedImages.length === 0) || isLoading || isProcessingImages) return;
 
     const userMessage: Message = {
       role: 'user',
@@ -180,7 +197,7 @@ const AiAssistant: React.FC = () => {
     saveCurrentSession(newMessages);
 
     setInput('');
-    const currentImages = [...selectedImages];
+    const currentImages = [...selectedImages]; // Keep ref for service call if needed
     clearImages();
     setIsLoading(true);
 
@@ -213,6 +230,7 @@ const AiAssistant: React.FC = () => {
          };
       });
 
+      // Pass compressed history (images already embedded)
       const responseText = await chatWithBuyerAI(historyForApi, userMessage.text, currentImages);
       
       const finalMessages = [...newMessages, { role: 'model', text: responseText } as Message];
@@ -395,7 +413,7 @@ const AiAssistant: React.FC = () => {
                             </button>
                          </div>
                      ))}
-                     {selectedImages.length < 5 && (
+                     {selectedImages.length < 5 && !isProcessingImages && (
                          <button 
                             onClick={() => fileInputRef.current?.click()}
                             className="h-16 w-16 flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-md text-slate-400 hover:text-indigo-500 hover:border-indigo-300 transition-colors bg-white"
@@ -403,6 +421,12 @@ const AiAssistant: React.FC = () => {
                             <Plus size={16} />
                             <span className="text-[10px] mt-1">加图</span>
                          </button>
+                     )}
+                     {isProcessingImages && (
+                        <div className="h-16 w-16 flex flex-col items-center justify-center border border-slate-200 rounded-md bg-slate-50 text-slate-400">
+                           <Loader2 size={16} className="animate-spin" />
+                           <span className="text-[10px] mt-1">压缩中</span>
+                        </div>
                      )}
                   </div>
                 )}
@@ -412,6 +436,7 @@ const AiAssistant: React.FC = () => {
                      onClick={() => fileInputRef.current?.click()}
                      className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors shrink-0"
                      title="上传图片"
+                     disabled={isProcessingImages}
                    >
                       <ImageIcon size={20} />
                    </button>
@@ -434,10 +459,10 @@ const AiAssistant: React.FC = () => {
 
                    <button
                       onClick={handleSend}
-                      disabled={isLoading || (!input.trim() && selectedImages.length === 0)}
+                      disabled={isLoading || isProcessingImages || (!input.trim() && selectedImages.length === 0)}
                       className={`
                          p-2 rounded-xl transition-all shrink-0
-                         ${isLoading || (!input.trim() && selectedImages.length === 0)
+                         ${isLoading || isProcessingImages || (!input.trim() && selectedImages.length === 0)
                             ? 'bg-slate-100 text-slate-300 cursor-not-allowed'
                             : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-md active:scale-95'
                          }

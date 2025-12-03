@@ -21,14 +21,33 @@ export default async function handler(req, res) {
     }
 
     let body = req.body || {};
+    // Handle Vercel sometimes passing body as string
     if (typeof body === 'string') {
-      try { body = JSON.parse(body); } catch (e) {}
+      try { body = JSON.parse(body); } catch (e) {
+          console.error("Failed to parse body string", e);
+      }
     }
 
     const { prompt, size, image_base64 } = body;
     
     if (!prompt) {
       return res.status(400).json({ error: 'Missing prompt' });
+    }
+
+    // Construct upstream payload
+    // Explicitly check for image_base64 and add it if present
+    const payload = {
+      model: 'doubao-seedream-4-0-250828',
+      prompt,
+      size: size || '2K',
+      n: 1,
+      response_format: 'url',
+      stream: false,
+      watermark: true,
+    };
+
+    if (image_base64 && typeof image_base64 === 'string' && image_base64.length > 100) {
+        payload.image_base64 = image_base64;
     }
 
     const upstreamRes = await fetch(
@@ -39,16 +58,7 @@ export default async function handler(req, res) {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${apiKey}`,
         },
-        body: JSON.stringify({
-          model: 'doubao-seedream-4-0-250828',
-          prompt,
-          ...(image_base64 ? { image_base64 } : {}), // 👈 关键：使用 image_base64
-          size: size || '2K',
-          n: 1,
-          response_format: 'url',
-          stream: false,
-          watermark: true,
-        }),
+        body: JSON.stringify(payload),
       }
     );
 

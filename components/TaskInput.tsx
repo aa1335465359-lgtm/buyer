@@ -87,7 +87,7 @@ const TaskInput: React.FC<TaskInputProps> = ({ onAddTodos }) => {
             console.warn("AI returned no tasks. Creating fallback task.");
             onAddTodos([{
                 id: generateId(),
-                title: text ? text.split('\n')[0].substring(0, 30) : "未命名图片任务",
+                title: text ? `图片任务 ${new Date().getHours()}:${new Date().getMinutes().toString().padStart(2,'0')}` : "未命名图片任务",
                 description: text || "AI未能识别具体任务，请手动补充信息。",
                 priority: Priority.P2,
                 status: 'todo',
@@ -97,11 +97,21 @@ const TaskInput: React.FC<TaskInputProps> = ({ onAddTodos }) => {
             const newTodos: Todo[] = aiResponse.tasks.map(task => {
             let deadline = task.estimatedMinutes ? Date.now() + (task.estimatedMinutes * 60 * 1000) : undefined;
             
-            // AI 智能规则：如果 actionTime 提及"下班前"或"23:00"，自动设置截止时间为今天23:00
-            if (task.actionTime && (task.actionTime.includes('下班前') || task.actionTime.includes('23:00'))) {
+            // AI 智能规则解析 (ActionTime Mapping)
+            // 今天/下班前/23:00 -> 今天 23:00
+            // 明天 -> 明天 23:00
+            if (task.actionTime) {
+                const lower = task.actionTime.toLowerCase();
                 const now = new Date();
-                now.setHours(23, 0, 0, 0);
-                deadline = now.getTime();
+                
+                if (lower.includes('下班') || lower.includes('23:00') || lower.includes('今天')) {
+                    now.setHours(23, 0, 0, 0);
+                    deadline = now.getTime();
+                } else if (lower.includes('明天')) {
+                    now.setDate(now.getDate() + 1);
+                    now.setHours(23, 0, 0, 0);
+                    deadline = now.getTime();
+                }
             }
 
             return {

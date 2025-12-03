@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Todo, Priority, TodoStatus } from '../types';
-import { Copy, Check, Calendar, Clock, Edit3, X, Zap, Coffee, Moon, Sun, ChevronRight, MoreHorizontal, ArrowRight, PlayCircle, AlertCircle, Circle } from 'lucide-react';
+import { Copy, Check, Calendar, Clock, Edit3, X, Zap, Coffee, Moon, Sun, ChevronRight, MoreHorizontal, ArrowRight, PlayCircle, AlertCircle, Circle, Anchor } from 'lucide-react';
 
 interface TodoItemProps {
   todo: Todo;
@@ -186,7 +186,7 @@ const TodoItem: React.FC<TodoItemProps> = ({
     setIsEditingTitle(false);
   };
 
-  const handleQuickDate = (type: '30m' | '1h' | 'today' | 'tomorrow' | 'afterTomorrow' | 'eod') => {
+  const handleQuickDate = (type: '30m' | '1h' | 'today' | 'tomorrow' | 'afterTomorrow' | 'eod' | 'permanent') => {
       const now = new Date();
       let timestamp = 0;
 
@@ -198,25 +198,34 @@ const TodoItem: React.FC<TodoItemProps> = ({
           timestamp = now.getTime() + 60 * 60 * 1000;
           break;
         case 'eod':
+          // End of day -> 23:00
           now.setHours(23, 0, 0, 0);
           timestamp = now.getTime();
           break;
         case 'today':
-            now.setHours(23, 59, 59, 0);
+            // Today -> 23:00 (End of day logic)
+            now.setHours(23, 0, 0, 0);
             timestamp = now.getTime();
             break;
         case 'tomorrow':
+          // Tomorrow -> 23:00
           const tmr = new Date();
           tmr.setDate(tmr.getDate() + 1);
           tmr.setHours(23, 0, 0, 0);
           timestamp = tmr.getTime();
           break;
         case 'afterTomorrow':
+          // After Tomorrow -> 23:00
           const after = new Date();
           after.setDate(after.getDate() + 2);
           after.setHours(23, 0, 0, 0);
           timestamp = after.getTime();
           break;
+        case 'permanent':
+           // Clear deadline
+           onUpdate(todo.id, { deadline: undefined });
+           setShowDateMenu(false);
+           return;
       }
       
       // Auto-set status to in_progress if setting a deadline
@@ -579,13 +588,13 @@ const TodoItem: React.FC<TodoItemProps> = ({
                 <div className="text-[10px] font-bold text-slate-400 px-2 py-1 uppercase tracking-wider mb-0.5">快速设定</div>
                 
                 <button onClick={(e) => { e.stopPropagation(); handleQuickDate('today'); }} className="w-full text-left px-2 py-2 rounded-lg text-xs text-slate-700 hover:bg-slate-100/80 flex items-center gap-2 transition-colors">
-                    <Sun size={14} className="text-orange-500" /> 今天
+                    <Sun size={14} className="text-orange-500" /> 今天 (23:00)
                 </button>
                 <button onClick={(e) => { e.stopPropagation(); handleQuickDate('tomorrow'); }} className="w-full text-left px-2 py-2 rounded-lg text-xs text-slate-700 hover:bg-slate-100/80 flex items-center gap-2 transition-colors">
-                    <ArrowRight size={14} className="text-blue-500" /> 明天
+                    <ArrowRight size={14} className="text-blue-500" /> 明天 (23:00)
                 </button>
                 <button onClick={(e) => { e.stopPropagation(); handleQuickDate('afterTomorrow'); }} className="w-full text-left px-2 py-2 rounded-lg text-xs text-slate-700 hover:bg-slate-100/80 flex items-center gap-2 transition-colors">
-                    <Calendar size={14} className="text-purple-500" /> 后天
+                    <Calendar size={14} className="text-purple-500" /> 后天 (23:00)
                 </button>
                 
                 <div className="h-px bg-slate-100 my-1"></div>
@@ -596,37 +605,16 @@ const TodoItem: React.FC<TodoItemProps> = ({
                 <button onClick={(e) => { e.stopPropagation(); handleQuickDate('1h'); }} className="w-full text-left px-2 py-2 rounded-lg text-xs text-slate-700 hover:bg-slate-100/80 flex items-center gap-2 transition-colors">
                     <Coffee size={14} className="text-amber-600" /> 1 小时后
                 </button>
-                <button onClick={(e) => { e.stopPropagation(); handleQuickDate('eod'); }} className="w-full text-left px-2 py-2 rounded-lg text-xs text-slate-700 hover:bg-slate-100/80 flex items-center gap-2 transition-colors">
-                    <Moon size={14} className="text-indigo-500" /> 下班前 (23:00)
-                </button>
                 
                 <div className="h-px bg-slate-100 my-1"></div>
                 
-                <div className="relative">
-                    <button className="w-full text-left px-2 py-2 rounded-lg text-xs text-slate-700 hover:bg-slate-100/80 flex items-center justify-between transition-colors group/custom">
-                        <div className="flex items-center gap-2">
-                            <Edit3 size={14} className="text-slate-400 group-hover/custom:text-slate-600" /> 自定义...
-                        </div>
-                        <ChevronRight size={12} className="text-slate-300" />
-                        
-                        <input 
-                            type="datetime-local"
-                            onClick={(e) => e.stopPropagation()}
-                            onChange={(e) => {
-                                if (e.target.value) {
-                                    const d = new Date(e.target.value).getTime();
-                                    const updates: Partial<Todo> = { deadline: d };
-                                    if (todo.status === 'todo') {
-                                        updates.status = 'in_progress';
-                                    }
-                                    onUpdate(todo.id, updates);
-                                    setShowDateMenu(false);
-                                }
-                            }}
-                            className="absolute inset-0 opacity-0 cursor-pointer z-10"
-                        />
-                    </button>
-                </div>
+                {/* Permanent Task Option (Replaces Custom Date Picker) */}
+                <button onClick={(e) => { e.stopPropagation(); handleQuickDate('permanent'); }} className="w-full text-left px-2 py-2 rounded-lg text-xs text-slate-700 hover:bg-slate-100/80 flex items-center justify-between transition-colors group/custom">
+                    <div className="flex items-center gap-2">
+                        <Anchor size={14} className="text-slate-400 group-hover/custom:text-indigo-500" /> 常驻任务
+                    </div>
+                    <span className="text-[10px] text-slate-400">无截止</span>
+                </button>
             </div>
         )}
     </div>
