@@ -193,13 +193,15 @@ const AiAssistant: React.FC = () => {
          if (msg.images && msg.images.length > 0) {
              msg.images.forEach(imgStr => {
                  const base64Data = imgStr.split(',')[1];
-                 parts.push({ inlineData: { mimeType: 'image/jpeg', data: base64Data } });
+                 // Use snake_case for API compatibility
+                 parts.push({ inline_data: { mime_type: 'image/jpeg', data: base64Data } });
              });
          }
          // Fallback support for old single image format
          else if (msg.image) {
              const base64Data = msg.image.split(',')[1];
-             parts.push({ inlineData: { mimeType: 'image/jpeg', data: base64Data } });
+             // Use snake_case for API compatibility
+             parts.push({ inline_data: { mime_type: 'image/jpeg', data: base64Data } });
          }
 
          if (msg.text) {
