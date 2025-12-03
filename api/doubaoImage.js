@@ -25,7 +25,7 @@ export default async function handler(req, res) {
       try { body = JSON.parse(body); } catch (e) {}
     }
 
-    const { prompt, size, image } = body;
+    const { prompt, size, image_base64 } = body;
     
     if (!prompt) {
       return res.status(400).json({ error: 'Missing prompt' });
@@ -42,7 +42,7 @@ export default async function handler(req, res) {
         body: JSON.stringify({
           model: 'doubao-seedream-4-0-250828',
           prompt,
-          ...(image ? { image } : {}), // 👈 关键：如果有图片就加上
+          ...(image_base64 ? { image_base64 } : {}), // 👈 关键：使用 image_base64
           size: size || '2K',
           n: 1,
           response_format: 'url',

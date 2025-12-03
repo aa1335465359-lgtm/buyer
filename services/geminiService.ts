@@ -20,12 +20,60 @@ export const fileToGenerativePart = async (file: File): Promise<{ mime_type: str
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onloadend = () => {
-      const base64String = reader.result as string;
-      const base64Data = base64String.split(',')[1];
-      resolve({
-        mime_type: file.type,
-        data: base64Data,
-      });
+      // Create an image element to check dimensions
+      const img = new Image();
+      img.onload = () => {
+        const MAX_DIMENSION = 1536; // Reasonable limit for API
+        let width = img.width;
+        let height = img.height;
+
+        // Resize if needed
+        if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+          if (width > height) {
+            height = Math.round(height * (MAX_DIMENSION / width));
+            width = MAX_DIMENSION;
+          } else {
+            width = Math.round(width * (MAX_DIMENSION / height));
+            height = MAX_DIMENSION;
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+             ctx.drawImage(img, 0, 0, width, height);
+             // Compress to JPEG 0.8 to save space
+             const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+             const base64Data = dataUrl.split(',')[1];
+             resolve({
+               mime_type: 'image/jpeg',
+               data: base64Data
+             });
+             return;
+          }
+        }
+        
+        // Fallback or no resize needed
+        const base64String = reader.result as string;
+        const base64Data = base64String.split(',')[1];
+        resolve({
+          mime_type: file.type,
+          data: base64Data,
+        });
+      };
+      
+      img.onerror = () => {
+          // If not an image or load fails, try sending raw
+          const base64String = reader.result as string;
+          const base64Data = base64String.split(',')[1];
+          resolve({
+            mime_type: file.type,
+            data: base64Data,
+          });
+      };
+
+      img.src = reader.result as string;
     };
     reader.onerror = reject;
     reader.readAsDataURL(file);
@@ -105,7 +153,7 @@ export const analyzeImageAndText = async (text: string, image?: File): Promise<A
      优先级 4：普通跟进 (关键词：提醒、联系)
   3. 【标题去空格】：中文标题中禁止出现多余空格，只有数字/ID前后可以保留一个空格。
 
-  【识别规则：表格/数据截图】
+  【识别规则：图片/表格/数据截图】
   当图片中包含结构化字段（如：店铺ID、分级、品类、预计上新数、是否接定向）时，请按以下规则提取：
 
   一、优先级映射 (Priority)：
@@ -127,6 +175,9 @@ export const analyzeImageAndText = async (text: string, image?: File): Promise<A
 
   - 情况 D：新品清单/上新规划：
     → 标题格式：整理[shopId]新品清单
+  
+  - 情况 E (普通图片/无明确店铺ID)：
+    → 如果识别到图片但没有清晰的店铺ID，请根据图片内容生成一个概括性任务，例如“查看上传的表格数据”或“处理截图中的待办”。
 
   三、字段提取细节：
   - shopId：提取图片中的纯数字ID (如 6344...) 或店铺名称。这是最重要的信息。
@@ -197,7 +248,7 @@ export const editImage = async (image: File, prompt: string): Promise<string> =>
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
               prompt: prompt,
-              image: base64Data.data // Send pure base64
+              image_base64: base64Data.data // Send pure base64 as 'image_base64'
           })
       });
       
