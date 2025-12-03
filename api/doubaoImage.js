@@ -34,20 +34,22 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Missing prompt' });
     }
 
-    // Construct upstream payload
-    // Explicitly check for image_base64 and add it if present
+    // Construct upstream payload matching Doubao API spec
     const payload = {
       model: 'doubao-seedream-4-0-250828',
       prompt,
-      size: size || '2K',
-      n: 1,
+      // 如果没有传入 image_base64，则 size 生效；如果有 image，size 通常由原图决定，但传了也不报错
+      size: size || '2K', 
       response_format: 'url',
       stream: false,
       watermark: true,
+      sequential_image_generation: 'disabled' // 显式禁用连续生成，确保图生图逻辑正确
     };
 
+    // 核心修复：将 image_base64 转换为标准 Data URL 格式放入 image 字段
     if (image_base64 && typeof image_base64 === 'string' && image_base64.length > 100) {
-        payload.image_base64 = image_base64;
+        // 前端 fileToGenerativePart 保证了输出为 jpeg，这里统一加上 jpeg 前缀
+        payload.image = `data:image/jpeg;base64,${image_base64}`;
     }
 
     const upstreamRes = await fetch(
@@ -68,15 +70,22 @@ export default async function handler(req, res) {
       console.error(
         '[Doubao image upstream error]',
         upstreamRes.status,
-        data
+        JSON.stringify(data)
       );
-      return res.status(upstreamRes.status).json({
-        error: 'Doubao image upstream error',
+      // 将上游错误详情返回给前端，方便调试
+      return res.status(500).json({
+        error: 'Doubao upstream error',
+        upstreamStatus: upstreamRes.status,
         details: data,
       });
     }
 
-    const url = data?.data?.[0]?.url || '';
+    // 提取图片 URL
+    const url = data?.data?.[0]?.url;
+    
+    if (!url) {
+        return res.status(500).json({ error: 'No image URL in response', raw: data });
+    }
 
     return res.status(200).json({ url });
   } catch (err) {

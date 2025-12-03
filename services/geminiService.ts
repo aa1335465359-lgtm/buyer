@@ -16,113 +16,65 @@ interface GeminiContent {
 }
 
 // Helper: Convert file to base64 for REST API
+// Updated: Always normalize to JPEG via Canvas to ensure backend compatibility
 export const fileToGenerativePart = async (file: File): Promise<{ mime_type: string; data: string }> => {
   return new Promise((resolve, reject) => {
-    // Safety check for empty files
-    if (!file || file.size === 0) {
-      reject(new Error("File is empty"));
-      return;
-    }
-
     const reader = new FileReader();
     reader.onloadend = () => {
-      // Safety check: Ensure reader.result exists and is a string
-      if (!reader.result || typeof reader.result !== 'string') {
-        reject(new Error("Failed to read file"));
-        return;
-      }
-
-      const base64String = reader.result;
-      
-      // Try to create an image for compression
       const img = new Image();
       img.onload = () => {
-        try {
-          const MAX_DIMENSION = 1536; // Reasonable limit for API
-          let width = img.width;
-          let height = img.height;
+        const MAX_DIMENSION = 1536; // Reasonable limit for API
+        let width = img.width;
+        let height = img.height;
 
-          // If dimensions are invalid, fallback to raw
-          if (!width || !height || width <= 0 || height <= 0) {
-             const rawData = base64String.split(',')[1];
-             resolve({
-               mime_type: file.type || 'image/jpeg',
-               data: rawData || ''
-             });
-             return;
+        // Resize calculation
+        if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+          if (width > height) {
+            height = Math.round(height * (MAX_DIMENSION / width));
+            width = MAX_DIMENSION;
+          } else {
+            width = Math.round(width * (MAX_DIMENSION / height));
+            height = MAX_DIMENSION;
           }
+        }
 
-          // Resize if needed
-          if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
-            if (width > height) {
-              height = Math.round(height * (MAX_DIMENSION / width));
-              width = MAX_DIMENSION;
-            } else {
-              width = Math.round(width * (MAX_DIMENSION / height));
-              height = MAX_DIMENSION;
-            }
-
-            const canvas = document.createElement('canvas');
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            
-            if (ctx) {
-               ctx.drawImage(img, 0, 0, width, height);
-               // Compress to JPEG 0.8 to save space
-               const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-               const compressedData = dataUrl.split(',')[1];
-               if (compressedData) {
-                   resolve({
-                     mime_type: 'image/jpeg',
-                     data: compressedData
-                   });
-                   return;
-               }
-            }
-          }
-          
-          // Fallback or no resize needed
-          const rawData = base64String.split(',')[1];
-          resolve({
-            mime_type: file.type || 'image/jpeg',
-            data: rawData || ''
-          });
-
-        } catch (err) {
-          console.warn("Image compression failed, falling back to raw", err);
-          // Fallback to raw on any compression error
-          const rawData = base64String.split(',')[1];
-          resolve({
-            mime_type: file.type || 'image/jpeg',
-            data: rawData || ''
-          });
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+           // Fill white background (handles transparent PNGs converting to JPEG)
+           ctx.fillStyle = '#FFFFFF';
+           ctx.fillRect(0, 0, width, height);
+           ctx.drawImage(img, 0, 0, width, height);
+           
+           // Always export as JPEG 0.8
+           const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+           const base64Data = dataUrl.split(',')[1];
+           
+           resolve({
+             mime_type: 'image/jpeg',
+             data: base64Data
+           });
+        } else {
+           reject(new Error("Canvas context creation failed"));
         }
       };
       
       img.onerror = () => {
-          // If not an image or load fails, try sending raw
-          try {
-              const rawData = base64String.split(',')[1];
-              resolve({
-                mime_type: file.type || 'application/octet-stream',
-                data: rawData || '',
-              });
-          } catch (e) {
-              reject(new Error("Failed to process file data"));
-          }
+          // Fallback if image load fails
+          const base64String = reader.result as string;
+          const base64Data = base64String.split(',')[1];
+          resolve({
+            mime_type: file.type,
+            data: base64Data,
+          });
       };
 
-      img.src = base64String;
+      img.src = reader.result as string;
     };
-    
-    reader.onerror = () => reject(new Error("FileReader error"));
-    
-    try {
-        reader.readAsDataURL(file);
-    } catch (e) {
-        reject(e);
-    }
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
   });
 };
 
@@ -141,12 +93,8 @@ async function callGeminiApi(
   if (image) {
       const files = Array.isArray(image) ? image : [image];
       for (const img of files) {
-          try {
-             const imgData = await fileToGenerativePart(img);
-             parts.push({ inline_data: imgData });
-          } catch (e) {
-             console.error("Skipping invalid image in API call", e);
-          }
+          const imgData = await fileToGenerativePart(img);
+          parts.push({ inline_data: imgData });
       }
   }
 
@@ -192,7 +140,7 @@ async function callGeminiApi(
 export const analyzeImageAndText = async (text: string, image?: File): Promise<AITaskResponse> => {
   const systemPrompt = `
   你是一个大码女装买手助理。
-  你的任务是：分析用户发送的【图片内容】（如：Excel表格截图、聊天记录截图、后台数据截图、实物图片）或【文字描述】，从中提取关键信息，并生成【极其精简】的代办任务列表。
+  你的任务是：分析用户发送的【文字描述】或【图片内容】（如：Excel表格截图、聊天记录截图、后台数据截图），从中提取关键信息，并生成【极其精简】的代办任务列表。
 
   核心原则：
   1. 【一店一任务】：针对同一个 ShopID 或同一个商家，**只生成 1 个**最关键的任务。绝对不要因为包含“激活”又包含“定向”就拆成两条。
@@ -298,12 +246,16 @@ export const editImage = async (image: File, prompt: string): Promise<string> =>
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
               prompt: prompt,
-              image_base64: base64Data.data // Send pure base64 as 'image_base64'
+              image_base64: base64Data.data // Send pure base64 (Backend will add prefix)
           })
       });
       
-      if (!response.ok) throw new Error('Image gen failed');
       const data = await response.json();
+      
+      if (!response.ok) {
+          throw new Error(data.error || 'Image gen failed');
+      }
+      
       return data.url;
   } catch (e) {
       console.error(e);
@@ -330,13 +282,38 @@ export const chatWithBuyerAI = async (history: any[], lastUserMsg: string, image
        The frontend passes standard Google format history. We can just send that to our /api/gemini endpoint.
     */
     
+    // Updated System Prompt to avoid markdown rendering issues in frontend
     const systemPrompt = `
-    你是一个毒舌但专业的大码女装买手助理“小番茄”。
-    性格：有些阴阳怪气，喜欢吐槽商家和老板，自称“本番茄”或“本宫”，但干活非常利索专业。
-    专业领域：Temu大码女装、选品、审版、核价、跟单。
-    说话风格：稍微带点网络梗，比如“已老实”、“求放过”、“牛马”。
-    
-    请根据上下文回答用户问题。如果是选品问题，给出专业建议；如果是吐槽，就陪用户一起发疯。
+你的身份：
+- 你是「小番茄」，一名服务 TEMU 大码女装买手的智能助理。
+- 你熟悉选品、定向款、催录款话术、商家运营、数据拆解等场景。
+- 语气可以轻松一点、有点吐槽感，但要保持专业，不能太水。
+
+基础回复规则（很重要）：
+1. 默认不要使用任何 Markdown 列表符号（比如 \`*\`、\`-\`、\`•\`），除非用户明确说“请用列表”。
+2. 不要在每一句话前面加 \`*\` 或其它符号，直接正常分段写就行。
+3. 段落之间空一行即可，让聊天看起来干净、好读。
+4. 如果需要强调，可以用全角符号（比如：【重点】、（重要））或者加引号，不要用 \`**加粗**\`、\`*斜体*\` 这种 Markdown 语法。
+
+表格 / 列表输出规则：
+1. 如果需要做表格，请使用「纯文本表格」，保证在等宽字体下可以对齐，例如：
+
+店铺ID    录款数  分层
+123456   18     A
+987654   3      C
+
+2. 不要输出 Markdown 表格语法（不要用 \`| 字段 | 字段 |\` 这种），因为前端不会把它渲染成真正的表格。
+3. 一行只放一条记录，不要自动换行折叠，避免“歪七扭八”。
+4. 如果信息很多，不必强行做表格，可以先给一句总体结论，再用 1、2、3 编号说明。
+
+内容风格：
+1. 优先给结论，再给原因和拆解步骤。
+2. 结合电商和大码买手语境说话，可以适当用一点职场吐槽，但不要太长篇发疯文学。
+3. 数字场景（GMV、录款数、爆款率等）要尽量用清晰的结构：先说口头结论，再给简短数据对比。
+
+除非用户特别说明，否则：
+- 回答语言统一使用中文。
+- 不要主动输出代码块或 Markdown 语法。
     `;
 
     const payload = {

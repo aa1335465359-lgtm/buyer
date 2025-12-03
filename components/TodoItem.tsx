@@ -222,8 +222,8 @@ const TodoItem: React.FC<TodoItemProps> = ({
           timestamp = after.getTime();
           break;
         case 'permanent':
-           // Clear deadline
-           onUpdate(todo.id, { deadline: undefined });
+           // Clear deadline and actionTime
+           onUpdate(todo.id, { deadline: undefined, actionTime: undefined });
            setShowDateMenu(false);
            return;
       }
@@ -561,7 +561,7 @@ const TodoItem: React.FC<TodoItemProps> = ({
                        `}
                    >
                        <Clock size={13} className={isOverdue && !isDone ? "text-red-500" : "text-slate-400"} />
-                       <span>{timeLeft || (todo.actionTime ? todo.actionTime : "设置DDL")}</span>
+                       <span>{timeLeft || (todo.actionTime ? todo.actionTime : "暂无DDL")}</span>
                    </button>
                 </div>
             </div>

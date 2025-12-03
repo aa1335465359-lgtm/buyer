@@ -5,7 +5,7 @@ import { chatWithBuyerAI, fileToGenerativePart } from '../services/geminiService
 interface Message {
   role: 'user' | 'model';
   text: string;
-  images?: string[]; // base64 strings
+  images?: string[]; // base64 strings (or blob URLs temporarily)
   // Legacy support for single image if needed
   image?: string; 
 }
@@ -28,14 +28,16 @@ const AiAssistant: React.FC = () => {
   const [input, setInput] = useState('');
   // Multi-image support
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
-  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]); // Now stores Blob URLs
   const [isProcessingImages, setIsProcessingImages] = useState(false);
   
   const [isLoading, setIsLoading] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  
+  // Track active object URLs to revoke them on unmount
+  const activeObjectUrls = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     const savedSessions = localStorage.getItem('temu_chat_sessions');
@@ -54,6 +56,14 @@ const AiAssistant: React.FC = () => {
       localStorage.setItem('temu_chat_sessions', JSON.stringify(sessions));
     }
   }, [sessions]);
+
+  // Cleanup Object URLs on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      activeObjectUrls.current.forEach(url => URL.revokeObjectURL(url));
+      activeObjectUrls.current.clear();
+    };
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -89,51 +99,48 @@ const AiAssistant: React.FC = () => {
     }
   };
 
-  const handleImageSelect = async (files: FileList | File[]) => {
-    const newFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+  // Optimized Image Selection using URL.createObjectURL
+  const handleImageSelect = (files: FileList | File[]) => {
+    const MAX_SIZE = 5 * 1024 * 1024; // 5MB Limit
+    const newFiles: File[] = [];
+    const newPreviews: string[] = [];
+    let hasLargeFile = false;
+
+    Array.from(files).forEach(file => {
+        if (!file.type.startsWith('image/')) return;
+        
+        if (file.size > MAX_SIZE) {
+            hasLargeFile = true;
+            return;
+        }
+
+        newFiles.push(file);
+        const url = URL.createObjectURL(file);
+        newPreviews.push(url);
+        activeObjectUrls.current.add(url);
+    });
+
+    if (hasLargeFile) {
+        alert("图片太大啦（超过5MB），请压缩后再试～");
+    }
+
     if (newFiles.length === 0) return;
 
-    // Check limits
+    // Check limits (Max 5 images total)
     const currentCount = selectedImages.length;
-    if (currentCount >= 5) {
+    if (currentCount + newFiles.length > 5) {
         alert("最多只能上传 5 张图片");
+        // Cleanup generated URLs if we reject them
+        newPreviews.forEach(url => {
+            URL.revokeObjectURL(url);
+            activeObjectUrls.current.delete(url);
+        });
         return;
     }
 
-    const availableSlots = 5 - currentCount;
-    const filesToProcess = newFiles.slice(0, availableSlots);
-    if (filesToProcess.length === 0) return;
-
-    // Update File state
-    setSelectedImages(prev => [...prev, ...filesToProcess]);
-    setIsProcessingImages(true);
-
-    try {
-        // Compress and generate previews using shared service logic
-        const newPreviewsData = await Promise.all(filesToProcess.map(async (file) => {
-            try {
-                const result = await fileToGenerativePart(file);
-                if (result && result.mime_type && result.data) {
-                    return `data:${result.mime_type};base64,${result.data}`;
-                }
-                return null;
-            } catch (e) {
-                console.error("Failed to process image", e);
-                return null;
-            }
-        }));
-
-        const validPreviews = newPreviewsData.filter((p): p is string => typeof p === 'string' && p.length > 0);
-        
-        if (validPreviews.length > 0) {
-            setImagePreviews(prev => [...prev, ...validPreviews]);
-        }
-    } catch (error) {
-        console.error("Critical error during image processing", error);
-        alert("图片处理出错，请重试");
-    } finally {
-        setIsProcessingImages(false);
-    }
+    // Update State
+    setSelectedImages(prev => [...prev, ...newFiles]);
+    setImagePreviews(prev => [...prev, ...newPreviews]);
   };
 
   const handlePaste = (e: React.ClipboardEvent) => {
@@ -150,12 +157,23 @@ const AiAssistant: React.FC = () => {
   };
 
   const clearImages = () => {
+    // Revoke current preview URLs to free memory
+    imagePreviews.forEach(url => {
+        URL.revokeObjectURL(url);
+        activeObjectUrls.current.delete(url);
+    });
     setSelectedImages([]);
     setImagePreviews([]);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const removeImage = (index: number) => {
+    const urlToRemove = imagePreviews[index];
+    if (urlToRemove) {
+        URL.revokeObjectURL(urlToRemove);
+        activeObjectUrls.current.delete(urlToRemove);
+    }
+
     const newFiles = [...selectedImages];
     newFiles.splice(index, 1);
     setSelectedImages(newFiles);
@@ -195,49 +213,96 @@ const AiAssistant: React.FC = () => {
   const handleSend = async () => {
     if ((!input.trim() && selectedImages.length === 0) || isLoading || isProcessingImages) return;
 
-    const userMessage: Message = {
+    // 1. Capture current input data
+    const currentText = input;
+    const currentFiles = [...selectedImages];
+    const currentBlobUrls = [...imagePreviews];
+
+    // 2. Create optimistic message with Blob URLs (Immediate UI update)
+    // IMPORTANT: We use the Blob URLs for display initially so there is NO delay
+    const optimisticMessage: Message = {
       role: 'user',
-      text: input,
-      images: imagePreviews.length > 0 ? [...imagePreviews] : undefined
+      text: currentText,
+      images: currentBlobUrls.length > 0 ? currentBlobUrls : undefined
     };
 
-    const newMessages = [...messages, userMessage];
-    setMessages(newMessages);
-    saveCurrentSession(newMessages);
-
+    const msgsWithOptimistic = [...messages, optimisticMessage];
+    setMessages(msgsWithOptimistic);
+    
+    // 3. Reset Input State
+    // Note: We do NOT revoke blob URLs here yet, because they are currently being displayed
     setInput('');
-    const currentImages = [...selectedImages]; // Keep ref for service call if needed
-    clearImages();
+    setSelectedImages([]);
+    setImagePreviews([]); // Clear from preview area
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    
     setIsLoading(true);
+    setIsProcessingImages(true);
 
     try {
-      // Build history for the service.
-      const historyForApi = newMessages.map(msg => {
+      // 4. Process images to Base64 (async) for API and Persistence
+      // This moves the heavy lifting out of the render loop/input phase
+      let base64Images: string[] = [];
+      let historyParts: any[] = [];
+      
+      if (currentFiles.length > 0) {
+          // Convert files to Base64 in background
+          const processedParts = await Promise.all(
+              currentFiles.map(file => fileToGenerativePart(file))
+          );
+          
+          base64Images = processedParts.map(p => `data:${p.mime_type};base64,${p.data}`);
+          
+          // Prepare API parts
+          processedParts.forEach(p => {
+              historyParts.push({ inline_data: { mime_type: p.mime_type, data: p.data } });
+          });
+      }
+
+      if (currentText) {
+          historyParts.push({ text: currentText });
+      }
+
+      // 5. Create Finalized User Message (with Base64 for persistence)
+      const finalizedUserMessage: Message = {
+          role: 'user',
+          text: currentText,
+          images: base64Images.length > 0 ? base64Images : undefined
+      };
+
+      // 6. Update Messages State: Replace optimistic (Blob) with finalized (Base64)
+      // This ensures that if we save to localStorage, we have the persistent data
+      const msgsWithFinalizedUser = [...messages, finalizedUserMessage];
+      setMessages(msgsWithFinalizedUser);
+      saveCurrentSession(msgsWithFinalizedUser);
+
+      // 7. Revoke the temporary Blob URLs to free memory
+      // Now safe to revoke as we have replaced the blobs with base64 strings in the state
+      currentBlobUrls.forEach(url => {
+          URL.revokeObjectURL(url);
+          activeObjectUrls.current.delete(url);
+      });
+
+      // 8. Construct History for API
+      // We need to map the previous messages to API format
+      const historyForApi = msgsWithFinalizedUser.map(msg => {
          const parts = [];
          
-         // Support multiple images
          if (msg.images && msg.images.length > 0) {
              msg.images.forEach(imgStr => {
-                 try {
-                     const base64Data = imgStr.split(',')[1];
-                     if (base64Data) {
-                         // Use snake_case for API compatibility
-                         parts.push({ inline_data: { mime_type: 'image/jpeg', data: base64Data } });
-                     }
-                 } catch (e) {
-                     console.error("Skipping malformed image history", e);
+                 // Simple check if it's base64 (contains comma)
+                 const commaIndex = imgStr.indexOf(',');
+                 if (commaIndex > -1) {
+                    const base64Data = imgStr.substring(commaIndex + 1);
+                    parts.push({ inline_data: { mime_type: 'image/jpeg', data: base64Data } });
                  }
              });
          }
-         // Fallback support for old single image format
          else if (msg.image) {
-             try {
-                 const base64Data = msg.image.split(',')[1];
-                 if (base64Data) {
-                    parts.push({ inline_data: { mime_type: 'image/jpeg', data: base64Data } });
-                 }
-             } catch (e) {
-                 console.error("Skipping malformed legacy image", e);
+             const commaIndex = msg.image.indexOf(',');
+             if (commaIndex > -1) {
+                const base64Data = msg.image.substring(commaIndex + 1);
+                parts.push({ inline_data: { mime_type: 'image/jpeg', data: base64Data } });
              }
          }
 
@@ -250,19 +315,22 @@ const AiAssistant: React.FC = () => {
          };
       });
 
-      // Pass compressed history (images already embedded)
-      const responseText = await chatWithBuyerAI(historyForApi, userMessage.text, currentImages);
+      // 9. Call API
+      // We pass empty files array because we've already embedded them in historyForApi
+      // Using chatWithBuyerAI which handles the history array
+      const responseText = await chatWithBuyerAI(historyForApi, currentText, []);
       
-      const finalMessages = [...newMessages, { role: 'model', text: responseText } as Message];
+      const finalMessages = [...msgsWithFinalizedUser, { role: 'model', text: responseText } as Message];
       setMessages(finalMessages);
       saveCurrentSession(finalMessages);
 
     } catch (error) {
       console.error(error);
-      const errorMessages = [...newMessages, { role: 'model', text: '抱歉，助理稍微开了个小差，请重试一下。' } as Message];
+      const errorMessages = [...msgsWithOptimistic, { role: 'model', text: '抱歉，助理稍微开了个小差，请重试一下。' } as Message];
       setMessages(errorMessages);
     } finally {
       setIsLoading(false);
+      setIsProcessingImages(false);
     }
   };
 
@@ -424,75 +492,65 @@ const AiAssistant: React.FC = () => {
                   <div className="px-4 pt-3 pb-2 flex gap-3 bg-slate-50 border-b border-slate-100 overflow-x-auto">
                      {imagePreviews.map((preview, idx) => (
                          <div key={idx} className="relative group shrink-0">
-                            <img src={preview} alt="Preview" className="h-16 w-16 object-cover rounded-md border border-slate-200" />
+                            <img src={preview} alt="Preview" className="h-16 w-16 object-cover rounded-md border border-slate-200 shadow-sm" />
                             <button 
-                              onClick={() => removeImage(idx)}
-                              className="absolute -top-1.5 -right-1.5 bg-slate-600 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-red-500"
+                               onClick={() => removeImage(idx)}
+                               className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-slate-800 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500 shadow-md"
                             >
-                               <X size={10} />
+                               <X size={12} />
                             </button>
                          </div>
                      ))}
-                     {selectedImages.length < 5 && !isProcessingImages && (
-                         <button 
-                            onClick={() => fileInputRef.current?.click()}
-                            className="h-16 w-16 flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-md text-slate-400 hover:text-indigo-500 hover:border-indigo-300 transition-colors bg-white"
-                         >
-                            <Plus size={16} />
-                            <span className="text-[10px] mt-1">加图</span>
-                         </button>
-                     )}
-                     {isProcessingImages && (
-                        <div className="h-16 w-16 flex flex-col items-center justify-center border border-slate-200 rounded-md bg-slate-50 text-slate-400">
-                           <Loader2 size={16} className="animate-spin" />
-                           <span className="text-[10px] mt-1">压缩中</span>
-                        </div>
-                     )}
                   </div>
                 )}
 
-                <div className="flex items-end gap-2 p-2">
-                   <button 
-                     onClick={() => fileInputRef.current?.click()}
-                     className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors shrink-0"
-                     title="上传图片"
-                     disabled={isProcessingImages}
-                   >
-                      <ImageIcon size={20} />
-                   </button>
-                   
-                   <textarea
-                      ref={textareaRef}
+                <div className="flex items-center pr-2">
+                    <button 
+                       onClick={() => fileInputRef.current?.click()}
+                       className="p-3 text-slate-400 hover:text-indigo-600 hover:bg-slate-50 transition-colors"
+                       title="上传图片"
+                    >
+                       <ImageIcon size={20} />
+                    </button>
+                    
+                    <input 
+                      type="text" 
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                       onPaste={handlePaste}
-                      onKeyDown={(e) => {
-                         if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault();
-                            handleSend();
-                         }
-                      }}
-                      placeholder={imagePreviews.length > 0 ? "描述图片内容..." : "输入消息，支持 Ctrl+V 粘贴截图..."}
-                      className="flex-1 max-h-32 min-h-[40px] py-2 bg-transparent border-none outline-none text-sm text-slate-800 placeholder:text-slate-400 resize-none"
-                      rows={1}
-                   />
-
-                   <button
-                      onClick={handleSend}
-                      disabled={isLoading || isProcessingImages || (!input.trim() && selectedImages.length === 0)}
-                      className={`
-                         p-2 rounded-xl transition-all shrink-0
-                         ${isLoading || isProcessingImages || (!input.trim() && selectedImages.length === 0)
-                            ? 'bg-slate-100 text-slate-300 cursor-not-allowed'
+                      placeholder={selectedImages.length > 0 ? "输入消息一起发送..." : "输入消息，或 Ctrl+V 粘贴截图..."}
+                      className="flex-1 py-3 px-2 outline-none text-slate-700 placeholder:text-slate-400 text-sm bg-transparent"
+                    />
+                    
+                    <button 
+                       onClick={handleSend}
+                       disabled={isLoading || (!input.trim() && selectedImages.length === 0)}
+                       className={`
+                         p-2 rounded-lg transition-all duration-200 flex items-center gap-2 px-4
+                         ${isLoading || (!input.trim() && selectedImages.length === 0) 
+                            ? 'bg-slate-100 text-slate-300' 
                             : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-md active:scale-95'
                          }
-                      `}
-                   >
-                      <Send size={18} />
-                   </button>
+                       `}
+                    >
+                       {isLoading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+                    </button>
                 </div>
              </div>
-             <input type="file" ref={fileInputRef} onChange={onFileInputChange} accept="image/*" multiple className="hidden" />
+             <p className="text-[10px] text-center text-slate-400 mt-2">
+                小番茄由 Gemini 2.0 Flash 驱动 • 内容仅供参考
+             </p>
+             
+             {/* Hidden File Input */}
+             <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={onFileInputChange} 
+                className="hidden" 
+                accept="image/*"
+                multiple
+             />
           </div>
        </div>
     </div>
