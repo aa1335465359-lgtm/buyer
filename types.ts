@@ -6,12 +6,15 @@ export enum Priority {
   P4 = 'P4'
 }
 
+export type TodoStatus = 'todo' | 'in_progress' | 'done';
+
 export interface Todo {
   id: string;
   title: string;
   description?: string;
   priority: Priority;
-  isCompleted: boolean;
+  status: TodoStatus; // Replaces isCompleted boolean logic
+  isCompleted?: boolean; // Deprecated, kept for backward compat during migration if needed
   createdAt: number;
   deadline?: number; // timestamp in ms
   notificationSent?: boolean;
@@ -32,4 +35,19 @@ export interface AITaskResponse {
     quantity?: string;
     actionTime?: string;
   }[];
+}
+
+export interface WorkSummary {
+  rangeLabel: string;
+  stats: {
+    total: number;
+    completed: number;
+    completionRate: string;
+    overdue: number;
+  };
+  themes: {
+    title: string;
+    actions: string[];
+  }[];
+  suggestions: string[];
 }

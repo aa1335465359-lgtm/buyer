@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Todo, Priority } from './types';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { Todo, Priority, TodoStatus } from './types';
 import TaskInput from './components/TaskInput';
 import TodoItem from './components/TodoItem';
 import ImageEditor from './components/ImageEditor';
 import ScriptMatcher from './components/ScriptMatcher';
 import AiAssistant from './components/AiAssistant';
+import CalendarView from './components/CalendarView';
 import { 
   Inbox, 
   CheckCircle2, 
@@ -21,11 +22,12 @@ import {
   Clock,
   Calendar,
   Filter,
-  CalendarRange
+  CalendarRange,
+  ChevronDown,
+  LayoutList
 } from 'lucide-react';
 
 const FASHION_QUOTES = [
-  // --- 发疯吐槽 / 牛马共情 (Sarcastic / Work Struggle) ---
   "“忙完这个 P0，就去买杯奶茶续命吧。”",
   "“今天的精致是装的，想下班是真的。”",
   "“只要我不看退货率，心情就是美好的。”",
@@ -47,8 +49,6 @@ const FASHION_QUOTES = [
   "“上班暂停，我想去楼下当一会儿流浪猫。”",
   "“每天起床第一句，先给自己打个气（然后继续当牛马）。”",
   "“已读乱回，读读读读读了也不回~”",
-
-  // --- 可爱治愈 / 软萌打工 (Cute / Healing) ---
   "“本高雅人士正在为您挑选下一季的爆款，请勿打扰~ ૮( 🌸UwU)ა”",
   "“今天也是努力搬砖的一天，为了罐罐！🐱”",
   "“虽然很累，但想到这一单能让胖MM穿得漂亮，突然觉得自己有点棒呢✨”",
@@ -60,8 +60,6 @@ const FASHION_QUOTES = [
   "“今天也要做一个情绪稳定的成年人... 除非商家说他不做了。🙃”",
   "“工作是老板的，但快乐是自己的，摸鱼半小时也是爱自己！💖”",
   "“加油小番茄！只要干不死，就往死里干！(开玩笑的，保命要紧)”",
-  
-  // --- 新增：无性别可爱治愈风 (Gender-neutral Cute) ---
   "“今日份的好运正在派送中，请查收~ 📦✨”",
   "“虽然是小番茄，也有大大的梦想呀！🍅💭”",
   "“把压力都变成动力... 或者变成好吃的零食！🍪”",
@@ -82,16 +80,25 @@ const FASHION_QUOTES = [
 const App: React.FC = () => {
   const [todos, setTodos] = useState<Todo[]>(() => {
     const saved = localStorage.getItem('buyer_todos');
-    return saved ? JSON.parse(saved) : [];
+    const parsed = saved ? JSON.parse(saved) : [];
+    
+    // Migration: ensure status exists
+    return parsed.map((t: any) => ({
+      ...t,
+      status: t.status || (t.isCompleted ? 'done' : 'todo')
+    }));
   });
   
   // Navigation State
   const [currentView, setCurrentView] = useState<'todos' | 'image-editor' | 'indie-chi' | 'script-matcher' | 'bot'>('todos');
   const [filter, setFilter] = useState<'all' | 'p0' | 'completed'>('all');
   
-  // Sorting State
+  // Sorting & View Mode State
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [sortMode, setSortMode] = useState<'priority' | 'deadline' | 'created'>('priority');
   const [isGroupedByDay, setIsGroupedByDay] = useState(false);
+  const [showSortMenu, setShowSortMenu] = useState(false);
+  const sortMenuRef = useRef<HTMLDivElement>(null);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [quote, setQuote] = useState('');
@@ -110,18 +117,46 @@ const App: React.FC = () => {
     localStorage.setItem('buyer_todos', JSON.stringify(todos));
   }, [todos]);
 
+  // Click outside for sort menu
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (sortMenuRef.current && !sortMenuRef.current.contains(event.target as Node)) {
+        setShowSortMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const handleAddTodos = (newTodos: Todo[]) => {
     setTodos(prev => [...newTodos, ...prev]);
   };
 
   const handleToggleTodo = (id: string) => {
-    setTodos(prev => prev.map(t => 
-      t.id === id ? { ...t, isCompleted: !t.isCompleted } : t
-    ));
+    // Legacy support: toggle between done and todo
+    setTodos(prev => prev.map(t => {
+      if (t.id !== id) return t;
+      // If done, go to todo. If not done, go to done.
+      const newStatus = t.status === 'done' ? 'todo' : 'done';
+      return { ...t, status: newStatus, isCompleted: newStatus === 'done' };
+    }));
     // If we complete the currently focused item, exit focus mode
     if (focusedTodoId === id) {
       setFocusedTodoId(null);
     }
+  };
+  
+  const handleUpdateTodo = (id: string, updates: Partial<Todo>) => {
+    setTodos(prev => prev.map(t => {
+       if (t.id !== id) return t;
+       
+       const updated = { ...t, ...updates };
+       // Sync legacy isCompleted if status changes
+       if (updates.status) {
+           updated.isCompleted = updates.status === 'done';
+       }
+       return updated;
+    }));
   };
 
   const handleDeleteTodo = (id: string) => {
@@ -131,17 +166,10 @@ const App: React.FC = () => {
     }
   };
 
-  const handleUpdateTodo = (id: string, updates: Partial<Todo>) => {
-    setTodos(prev => prev.map(t => 
-        t.id === id ? { ...t, ...updates } : t
-    ));
-  };
-
-  // Sorting Logic: P0 -> P4, then by Deadline
+  // Sorting Logic
   const sortedTodos = useMemo(() => {
     const priorityOrder = { [Priority.P0]: 0, [Priority.P1]: 1, [Priority.P2]: 2, [Priority.P3]: 3, [Priority.P4]: 4 };
     
-    // Fallback for old data string priorities like "HIGH"
     const getScore = (p: string) => {
         if (p === 'HIGH') return 0;
         if (p === 'MEDIUM') return 2;
@@ -150,8 +178,10 @@ const App: React.FC = () => {
     };
 
     return [...todos].sort((a, b) => {
-        // 1. Completion status (Active first)
-        if (a.isCompleted !== b.isCompleted) return a.isCompleted ? 1 : -1;
+        // 1. Completion status (Done last)
+        const aDone = a.status === 'done';
+        const bDone = b.status === 'done';
+        if (aDone !== bDone) return aDone ? 1 : -1;
         
         // 2. Sorting Mode
         if (sortMode === 'priority') {
@@ -166,7 +196,6 @@ const App: React.FC = () => {
         } else if (sortMode === 'deadline') {
             // Nearest deadline first
             if (a.deadline && b.deadline) return a.deadline - b.deadline;
-            // Items with deadline come first
             if (a.deadline && !b.deadline) return -1;
             if (!a.deadline && b.deadline) return 1;
             
@@ -175,11 +204,9 @@ const App: React.FC = () => {
             const scoreB = getScore(b.priority);
             if (scoreA !== scoreB) return scoreA - scoreB;
         } else if (sortMode === 'created') {
-            // Newest created first
             return b.createdAt - a.createdAt;
         }
 
-        // Ultimate Fallback: Creation Time
         return b.createdAt - a.createdAt;
     });
   }, [todos, sortMode]);
@@ -194,8 +221,10 @@ const App: React.FC = () => {
        if (!matches) return false;
     }
 
-    if (filter === 'completed') return todo.isCompleted;
-    if (todo.isCompleted) return false;
+    if (filter === 'completed') return todo.status === 'done';
+    
+    // For 'all' or 'p0', we exclude 'done'
+    if (todo.status === 'done') return false;
 
     if (filter === 'p0') {
         return todo.priority === Priority.P0 || (todo.priority as string) === 'HIGH';
@@ -204,7 +233,7 @@ const App: React.FC = () => {
     return true;
   });
 
-  // 分组逻辑：基于创建时间 (CreatedAt)
+  // Grouping Logic
   const groupedTodos = useMemo(() => {
     if (!isGroupedByDay) return [];
 
@@ -239,7 +268,6 @@ const App: React.FC = () => {
     
     const dateKeys = Object.keys(groups).filter(k => !['今天', '昨天', '前天'].includes(k));
     
-    // Sort descending by creation date (Newest first)
     dateKeys.sort((a, b) => {
         const taskA = groups[a][0];
         const taskB = groups[b][0];
@@ -251,8 +279,16 @@ const App: React.FC = () => {
     return sortedGroups;
   }, [filteredTodos, isGroupedByDay]);
 
-  const activeCount = todos.filter(t => !t.isCompleted).length;
-  const p0Count = todos.filter(t => !t.isCompleted && (t.priority === Priority.P0 || (t.priority as string) === 'HIGH')).length;
+  const activeCount = todos.filter(t => t.status !== 'done').length;
+  const p0Count = todos.filter(t => t.status !== 'done' && (t.priority === Priority.P0 || (t.priority as string) === 'HIGH')).length;
+
+  const getCurrentSortLabel = () => {
+    if (isGroupedByDay) return '日维度';
+    if (sortMode === 'priority') return '优先级';
+    if (sortMode === 'deadline') return '截止时间';
+    if (sortMode === 'created') return '创建时间';
+    return '优先级';
+  };
 
   return (
     <div className="h-screen w-full flex items-center justify-center p-4 sm:p-8">
@@ -263,7 +299,7 @@ const App: React.FC = () => {
         <div className="w-64 bg-mac-sidebar border-r border-mac-border flex flex-col pt-6 pb-4 hidden md:flex shrink-0">
           <div className="px-6 mb-8">
             <h1 className="text-sm font-bold tracking-wider text-slate-500 uppercase">Buyer Mate</h1>
-            <p className="text-[10px] text-slate-400 mt-1 font-mono">v2.4.0</p>
+            <p className="text-[10px] text-slate-400 mt-1 font-mono">v2.4.1</p>
           </div>
 
           <nav className="flex-1 px-4 space-y-1">
@@ -357,120 +393,155 @@ const App: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Sorting Toolbar */}
-                <div className="px-8 py-2 border-b border-mac-border/50 flex items-center gap-2 bg-white/20 backdrop-blur-sm shrink-0">
-                    <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider mr-2 flex items-center gap-1">
-                        <Filter size={10} /> 排序方式
-                    </span>
-                    
-                    <button 
-                        onClick={() => setSortMode('priority')}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                            sortMode === 'priority' 
-                            ? 'bg-slate-800 text-white shadow-sm' 
-                            : 'bg-transparent text-slate-500 hover:bg-white/50 hover:text-slate-700'
-                        }`}
-                    >
-                        <ArrowUpDown size={12} />
-                        优先级
-                    </button>
+                {/* Sorting & View Toggle Toolbar */}
+                <div className="px-8 py-2 border-b border-mac-border/50 flex items-center justify-between bg-white/20 backdrop-blur-sm shrink-0 z-20">
+                    {/* Left: Sort Menu (Only for List View) */}
+                    <div className="relative" ref={sortMenuRef}>
+                      {viewMode === 'list' && (
+                        <>
+                        <button 
+                            onClick={() => setShowSortMenu(!showSortMenu)}
+                            className="flex items-center gap-2 text-xs font-medium text-slate-700 bg-white/50 hover:bg-white px-3 py-1.5 rounded-lg border border-slate-200/50 hover:border-slate-300 transition-all shadow-sm group"
+                        >
+                            <span className="text-slate-500 group-hover:text-slate-600 transition-colors">排序:</span>
+                            <span className="font-semibold text-slate-800">{getCurrentSortLabel()}</span>
+                            <ChevronDown size={12} className={`text-slate-400 transition-transform duration-200 ${showSortMenu ? 'rotate-180' : ''}`} />
+                        </button>
 
-                    <button 
-                        onClick={() => setSortMode('deadline')}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                            sortMode === 'deadline' 
-                            ? 'bg-slate-800 text-white shadow-sm' 
-                            : 'bg-transparent text-slate-500 hover:bg-white/50 hover:text-slate-700'
-                        }`}
-                    >
-                        <Clock size={12} />
-                        截止时间
-                    </button>
+                        {showSortMenu && (
+                            <div className="absolute top-full left-0 mt-1 w-36 bg-white/95 backdrop-blur-xl border border-slate-200/60 rounded-xl shadow-xl p-1 animate-in fade-in zoom-in-95 duration-100 ring-1 ring-black/5 z-50">
+                                <button 
+                                    onClick={() => { setSortMode('priority'); setIsGroupedByDay(false); setShowSortMenu(false); }}
+                                    className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium flex items-center gap-2 transition-colors ${!isGroupedByDay && sortMode === 'priority' ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50'}`}
+                                >
+                                    <ArrowUpDown size={13} className={!isGroupedByDay && sortMode === 'priority' ? 'text-slate-900' : 'text-slate-400'} />
+                                    优先级
+                                </button>
 
-                    <button 
-                        onClick={() => setSortMode('created')}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                            sortMode === 'created' 
-                            ? 'bg-slate-800 text-white shadow-sm' 
-                            : 'bg-transparent text-slate-500 hover:bg-white/50 hover:text-slate-700'
-                        }`}
-                    >
-                        <Calendar size={12} />
-                        创建时间
-                    </button>
+                                <button 
+                                    onClick={() => { setSortMode('deadline'); setIsGroupedByDay(false); setShowSortMenu(false); }}
+                                    className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium flex items-center gap-2 transition-colors ${!isGroupedByDay && sortMode === 'deadline' ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50'}`}
+                                >
+                                    <Clock size={13} className={!isGroupedByDay && sortMode === 'deadline' ? 'text-slate-900' : 'text-slate-400'} />
+                                    截止时间
+                                </button>
 
-                    <button 
-                        onClick={() => setIsGroupedByDay(!isGroupedByDay)}
-                        className={`ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                            isGroupedByDay 
-                            ? 'bg-slate-800 text-white shadow-sm' 
-                            : 'bg-transparent text-slate-500 hover:bg-white/50 hover:text-slate-700'
-                        }`}
-                        title="按创建日期分组"
-                    >
-                        <CalendarRange size={14} />
-                        <span className="hidden sm:inline">日视图</span>
-                    </button>
-                </div>
+                                <button 
+                                    onClick={() => { setSortMode('created'); setIsGroupedByDay(false); setShowSortMenu(false); }}
+                                    className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium flex items-center gap-2 transition-colors ${!isGroupedByDay && sortMode === 'created' ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50'}`}
+                                >
+                                    <Calendar size={13} className={!isGroupedByDay && sortMode === 'created' ? 'text-slate-900' : 'text-slate-400'} />
+                                    创建时间
+                                </button>
 
-                {/* Todo List (Scrollable) */}
-                <div className="flex-1 overflow-y-auto p-6 md:p-8 scroll-smooth">
-                  {filteredTodos.length === 0 ? (
-                    <div className="h-full flex flex-col items-center justify-center text-slate-400">
-                        <Layout className="w-16 h-16 mb-4 opacity-10" />
-                        <p className="text-sm font-medium opacity-50">暂无任务，享受当下</p>
+                                <div className="h-px bg-slate-100 my-1 mx-1"></div>
+
+                                <button 
+                                    onClick={() => { setIsGroupedByDay(true); setShowSortMenu(false); }}
+                                    className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium flex items-center gap-2 transition-colors ${isGroupedByDay ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50'}`}
+                                >
+                                    <CalendarRange size={13} className={isGroupedByDay ? 'text-slate-900' : 'text-slate-400'} />
+                                    日维度
+                                </button>
+                            </div>
+                        )}
+                        </>
+                      )}
                     </div>
-                  ) : (
-                    <>
-                    {!isGroupedByDay ? (
-                        <div className="space-y-3 pb-24 relative">
-                          {filteredTodos.map(todo => (
-                            <TodoItem 
-                              key={todo.id} 
-                              todo={todo} 
-                              onToggle={handleToggleTodo} 
-                              onDelete={handleDeleteTodo}
-                              onUpdate={handleUpdateTodo}
-                              focusedTodoId={focusedTodoId}
-                              setFocusedTodoId={setFocusedTodoId}
-                            />
-                          ))}
-                        </div>
-                    ) : (
-                        <div className="space-y-8 pb-24 relative">
-                          {groupedTodos.map((group) => (
-                             <div key={group.title}>
-                                <div className="flex items-center gap-2 mb-3 px-1">
-                                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">{group.title}</h3>
-                                    <span className="text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full font-mono">{group.tasks.length}</span>
-                                </div>
-                                <div className="space-y-3">
-                                    {group.tasks.map(todo => (
-                                        <TodoItem 
-                                          key={todo.id} 
-                                          todo={todo} 
-                                          onToggle={handleToggleTodo} 
-                                          onDelete={handleDeleteTodo}
-                                          onUpdate={handleUpdateTodo}
-                                          focusedTodoId={focusedTodoId}
-                                          setFocusedTodoId={setFocusedTodoId}
-                                        />
-                                    ))}
-                                </div>
-                             </div>
-                          ))}
-                        </div>
-                    )}
-                    </>
-                  )}
+                    
+                    {/* Right: View Switcher */}
+                    <div className="flex bg-slate-100/50 p-1 rounded-lg border border-slate-200/50 ml-auto">
+                        <button 
+                            onClick={() => setViewMode('list')} 
+                            className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
+                            title="列表视图"
+                        >
+                            <LayoutList size={16} />
+                        </button>
+                        <button 
+                            onClick={() => setViewMode('calendar')} 
+                            className={`p-1.5 rounded-md transition-all ${viewMode === 'calendar' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
+                            title="日历视图"
+                        >
+                            <Calendar size={16} />
+                        </button>
+                    </div>
                 </div>
 
-                {/* Bottom Input Area */}
-                <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-slate-50/90 via-slate-50/80 to-transparent pt-12 z-20">
-                  <div className="max-w-3xl mx-auto">
-                      <TaskInput onAddTodos={handleAddTodos} />
+                {/* Content Area */}
+                {viewMode === 'list' ? (
+                  // === LIST VIEW ===
+                  <>
+                    <div className="flex-1 overflow-y-auto p-6 md:p-8 scroll-smooth">
+                      {filteredTodos.length === 0 ? (
+                        <div className="h-full flex flex-col items-center justify-center text-slate-400">
+                            <Layout className="w-16 h-16 mb-4 opacity-10" />
+                            <p className="text-sm font-medium opacity-50">暂无任务，享受当下</p>
+                        </div>
+                      ) : (
+                        <>
+                        {!isGroupedByDay ? (
+                            <div className="space-y-3 pb-24 relative">
+                              {filteredTodos.map(todo => (
+                                <TodoItem 
+                                  key={todo.id} 
+                                  todo={todo} 
+                                  onToggle={handleToggleTodo} 
+                                  onDelete={handleDeleteTodo}
+                                  onUpdate={handleUpdateTodo}
+                                  focusedTodoId={focusedTodoId}
+                                  setFocusedTodoId={setFocusedTodoId}
+                                />
+                              ))}
+                            </div>
+                        ) : (
+                            <div className="space-y-8 pb-24 relative">
+                              {groupedTodos.map((group) => (
+                                <div key={group.title}>
+                                    <div className="flex items-center gap-2 mb-3 px-1">
+                                        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">{group.title}</h3>
+                                        <span className="text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full font-mono">{group.tasks.length}</span>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {group.tasks.map(todo => (
+                                            <TodoItem 
+                                              key={todo.id} 
+                                              todo={todo} 
+                                              onToggle={handleToggleTodo} 
+                                              onDelete={handleDeleteTodo}
+                                              onUpdate={handleUpdateTodo}
+                                              focusedTodoId={focusedTodoId}
+                                              setFocusedTodoId={setFocusedTodoId}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                              ))}
+                            </div>
+                        )}
+                        </>
+                      )}
+                    </div>
+                    {/* Bottom Input Area (Only in List View for now, or maybe always?) */}
+                    <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-slate-50/90 via-slate-50/80 to-transparent pt-12 z-20">
+                      <div className="max-w-3xl mx-auto">
+                          <TaskInput onAddTodos={handleAddTodos} />
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  // === CALENDAR VIEW ===
+                  <div className="flex-1 p-6 overflow-hidden">
+                      <CalendarView 
+                        todos={todos} // Pass FULL todos regardless of filter, so calendar shows everything
+                        onToggle={handleToggleTodo}
+                        onDelete={handleDeleteTodo}
+                        onUpdate={handleUpdateTodo}
+                        focusedTodoId={focusedTodoId}
+                        setFocusedTodoId={setFocusedTodoId}
+                      />
                   </div>
-                </div>
+                )}
             </div>
 
             {/* View 2: Image Editor */}

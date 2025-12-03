@@ -74,7 +74,8 @@ const TaskInput: React.FC<TaskInputProps> = ({ onAddTodos }) => {
           id: generateId(),
           title: text,
           priority: Priority.P2, // Default to Medium/Normal
-          isCompleted: false,
+          status: 'todo',
+          isCompleted: false, // Legacy compat
           createdAt: Date.now(),
         }]);
         setText('');
@@ -96,6 +97,7 @@ const TaskInput: React.FC<TaskInputProps> = ({ onAddTodos }) => {
             title: task.title,
             description: task.description,
             priority: (task.priority as Priority) || Priority.P2,
+            status: deadline ? 'in_progress' : 'todo',
             isCompleted: false,
             createdAt: Date.now(),
             deadline: deadline,

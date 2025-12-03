@@ -1,4 +1,4 @@
-import { AITaskResponse } from "../types";
+import { AITaskResponse, WorkSummary, Todo } from "../types";
 import { SALES_SCRIPTS, ScriptItem } from "../data/scriptLibrary";
 
 // --- REST API Types (Strict Snake Case for Google JSON API) ---
@@ -99,108 +99,57 @@ export const analyzeImageAndText = async (
       throw new Error("No input provided");
     }
 
-    // System Prompt：带“商家资料卡片合并”规则 + 优先级分级修正
+    // System Prompt：带“商家资料卡片合并”规则 + 优先级分级修正 + 结构化标题
     const systemPrompt = `
 【角色：
 你是「Temu 大码女装买手的待办拆解助手」。你的目标是：
-把我输入的自然语言，拆成**尽量少但必要的**、结构清晰、可执行的待办事项列表，而不是乱切很多条。
+把我输入的自然语言，拆成**尽量少但必要的**、结构清晰、可执行的待办事项列表。
 
 一、输出格式（必须遵守）
 
-一律输出为 JSON 对象，不要输出任何解释或多余文字：
+一律输出为 JSON 对象，不要输出任何解释或多余文字。
 
-{
-  "tasks": [
-    {
-      "type": "发定向 | 跟进 | 其他",
-      "merchant_id": "商家ID或店铺名",
-      "title": "一句话标题",
-      "description": "简短说明，要做什么",
-      "merchant_type": "新商 / 老商 / 低录款 / 已起量 / 不确定",
-      "merchant_grade": "S | A | B | 其他",
-      "targeting_goal": "仅当 type=发定向 时填写",
-      "style_focus": "仅当 type=发定向 时填写",
-      "spu_ids": ["仅当 type=发定向 时，解析到的SPU或商品ID"],
-      "targeting_count": 0,
-      "follow_topic": "仅当 type=跟进 时填写，如：录款进度 / 打版 / 成本 / 上新 / 效果复盘 等",
-      "follow_detail": "仅当 type=跟进 时填写，描述具体要聊什么",
-      "follow_time": "YYYY-MM-DD 或 相对时间（如：今天晚上 / 明天白天 / 本周内）",
-      "priority": "高 | 中 | 低",
-      "channel": "如：站内信 / TEMU Chat / 微信 / 电话，如未提到则留空",
-      "raw_text": "原始输入这句话，原样放这里"
-    }
-  ]
-}
+二、结构化标题规则（核心）
+所有任务的 title 字段必须严格遵守“三段式结构化”格式，禁止使用长句子：
+格式：【动作 · 核心对象/类目 · 数量/关键信息】
+示例：
+- "发定向 · 卫衣/T恤 · 20款"
+- "跟进 · 录款进度 · 催一下"
+- "发定向 · 634418... · 10款"
+- "开白 · 三张图权限 · 申请"
+- "复盘 · 爆款数据 · 周一"
 
-二、「商家资料卡片」的强制规则（你刚才那种）
+三、「商家资料卡片」处理规则
 
 当输入整体形态类似下面这种一整组带编号的信息时：
-
-1.店铺：634418227761818
-2.擅长品类：T恤/卫衣/裤子
-3.预计第一个月上多少款：20
-4.是否有大码经验：否
-5.是否做过全托跨境：否
-6.接定向还是自己的款：定向款
-7.商家分级：A
-[图片]
-
+1.店铺：...
+2.擅长品类：...
+...
 视为一张「商家资料卡片」，必须遵守：
 
-1）**只能生成 1 条任务，绝对不能拆成多条**  
-2）这 1 条任务的字段建议如下：
+1）**只能生成 1 条任务**
+2）字段生成逻辑：
+- type: "发定向"
+- title: 严格按结构化格式，例如 "发定向 · T恤/卫衣 · 20款" (提取品类和数量)
+- description: 整合所有信息，例如 "A类新商，无大码经验，首月计划上20款，需跟进起量。"
+- merchant_grade: 提取 S/A/B 分级
+- priority: S=高, A=中高(P1), B=中(P2)
 
-- type: 一律为 "发定向"
-- merchant_id: 从“店铺：”后面提取数字ID（如 634418227761818）
-- style_focus: 从“擅长品类”提取品类文本（如 "T恤/卫衣/裤子"）
-- targeting_count: 从“预计第一个月上多少款”提取数字（如 20，提取不到时可默认 10）
-- merchant_type: 
-    - 如果文本中有“老店”“老店激活”等 → "老商"
-    - 有“新商”“新店”“刚做大码”等 → "新商"
-    - 其他情况 → "不确定"
-- merchant_grade: 
-    - 如果出现“S商、S级、P0、重点商家”等 → "S"
-    - 如果出现“A商、A级”等 → "A"
-    - 如果出现“B商、B级”等 → "B"
-    - 没提则留空
-- priority:
-    - 商家分级为 S → "高"
-    - 商家分级为 A → "中高" (但 json enum 限制，可输出 "中") -> 实际上我会在代码里根据 merchant_grade 覆盖 priority
-    - 商家分级为 B → "中"
-- title: 按下面格式生成：
-    - 若有 style_focus 和 targeting_count：
-      "给{merchant_id}发{targeting_count}款{style_focus}定向"
-      例如："给634418227761818发20款T恤/卫衣/裤子定向"
-    - 若缺少其中一项，则尽量用「给{merchant_id}发一批大码定向」类似的标题。
-- description:
-    - 用一两句话，整合资料卡里的信息，比如：
-      "A类商家，无大码经验，首月计划上20款T恤/卫衣/裤子，安排一批起量用定向。"
+四、普通自然语言输入的判断逻辑
 
-3）即使资料卡里没有出现“发定向、催进度”等明显动作动词，**也要生成这一条发定向任务**，不要返回空数组。
-
-三、普通自然语言输入的判断逻辑
-
-当输入不是上述编号资料卡，而是自然语言描述时：
-
-1）先判断是否与商家相关：
-   若出现「店铺」「店铺ID」「商家」「老板」「录款」「定向」「大码」等字眼，则视为与商家相关。
-
-2）判断 type：
-   - 若提到「录款、定向、款式、SPU、发几条款、给他推几款、再补一批款」 → type = "发定向"
-   - 若提到「问一下、跟进、看看进度、催一下、回访、对一下、沟通一下、确认一下、复盘」 → type = "跟进"
+1）判断 type：
+   - 录款/定向/选款/推款 → type = "发定向"
+   - 跟进/进度/催/问/复盘 → type = "跟进"
    - 其他 → type = "其他"
 
-3）任务合并规则：
-   - 对同一个商家、同一语境，尽量只生成 1 条任务，把要做的事写在 description 或 follow_detail 里，不要拆成很多碎任务。
-   - 只有当文本中明确出现多个不同商家，且各自有独立动作时，才为多个商家分别生成任务。
+2）任务合并：
+   - 同一个商家的动作尽量合并为 1 条。
 
-四、优先级(Priority) 特别映射规则
+五、优先级(Priority) 映射
 S级商家 = 高 (P0)
-A级商家 = 中高 (P1) -> 注意json这里只接受 高/中/低，请尽量在merchant_grade中标注准确，由后端代码处理P1。
+A级商家 = 中高 (P1)
 B级商家 = 中 (P2)
-
-五、默认时间规则 (DDL)
-若任务 type="发定向" 且输入内容中未明确提及具体截止时间（如“明天前”、“周五前”等），则请将 follow_time 字段默认填写为 "今天下班前"。
+默认 = 中 (P2)
 `.trim();
 
     const payload = {
@@ -279,7 +228,10 @@ B级商家 = 中 (P2)
         const focus = item.style_focus ? `风格:${item.style_focus}` : "";
         const goal = item.targeting_goal ? `目标:${item.targeting_goal}` : "";
         const mType = item.merchant_type ? `(${item.merchant_type})` : "";
-        desc = [mType, focus, goal, desc].filter(Boolean).join(" ");
+        // 既然title已经结构化了，description可以更偏向具体内容
+        if (!desc) {
+            desc = [mType, focus, goal].filter(Boolean).join(" ");
+        }
       } else if (item.type === "跟进") {
         desc = item.follow_detail || desc;
       }
@@ -505,5 +457,132 @@ export const chatWithBuyerAI = async (
   } catch (error) {
     console.error("Chat Error", error);
     return "AI 助理暂时开小差了，请稍后再试。";
+  }
+};
+
+/**
+ * 5. 智能周报总结模块 (Work Summary)
+ */
+export const generateWorkSummary = async (
+  tasks: Todo[],
+  stats: { total: number; completed: number; overdue: number },
+  rangeLabel: string
+): Promise<WorkSummary> => {
+  try {
+    const taskSummary = tasks.map(t => ({
+      title: t.title,
+      status: t.status,
+      priority: t.priority
+    })).slice(0, 100); // Limit context size
+
+    const promptText = `
+    我是买手，请帮我基于以下数据生成一份【工作总结】，涵盖时间范围：${rangeLabel}。
+    
+    【硬性统计数据】(请直接引用，不要重新计算)：
+    - 任务总数: ${stats.total}
+    - 已完成: ${stats.completed}
+    - 延期/风险: ${stats.overdue}
+    - 完成率: ${((stats.completed / (stats.total || 1)) * 100).toFixed(0)}%
+
+    【任务明细样本】(仅供分析工作内容，无需罗列):
+    ${JSON.stringify(taskSummary)}
+
+    请生成以下结构的 JSON 报告：
+    1. themes: 归纳 2-4 条主要工作主线 (title)，每条主线列出 2-3 个关键典型动作 (actions，简短概括)。
+    2. suggestions: 根据本月动作密度、延期情况，给出 2-4 条下月可执行建议 (suggestions)。
+
+    注意：风格要专业、干练，适合买手向上级汇报。
+    `;
+
+    const payload = {
+      model: "gemini-2.5-flash",
+      contents: [{ role: "user", parts: [{ text: promptText }] }],
+      generation_config: {
+        response_mime_type: "application/json",
+        response_schema: {
+          type: SchemaType.OBJECT,
+          properties: {
+            themes: {
+              type: SchemaType.ARRAY,
+              items: {
+                type: SchemaType.OBJECT,
+                properties: {
+                  title: { type: SchemaType.STRING },
+                  actions: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } }
+                }
+              }
+            },
+            suggestions: {
+              type: SchemaType.ARRAY,
+              items: { type: SchemaType.STRING }
+            }
+          }
+        }
+      }
+    };
+
+    const result = await callGeminiApi(payload);
+    const responseText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+    
+    if (!responseText) throw new Error("Empty response from AI");
+    
+    const parsed = JSON.parse(responseText);
+
+    return {
+      rangeLabel,
+      stats: {
+        total: stats.total,
+        completed: stats.completed,
+        completionRate: `${((stats.completed / (stats.total || 1)) * 100).toFixed(0)}%`,
+        overdue: stats.overdue
+      },
+      themes: parsed.themes || [],
+      suggestions: parsed.suggestions || []
+    };
+
+  } catch (error) {
+    console.error("Work Summary Error", error);
+    throw error;
+  }
+};
+
+/**
+ * 6. 生成单日概览报告 (Daily Report)
+ */
+export const generateDailyReport = async (tasks: Todo[], dateLabel: string): Promise<string> => {
+  try {
+    const simplifiedTasks = tasks.map(t => ({
+      title: t.title,
+      status: t.status, // 'done', 'todo', 'in_progress'
+      priority: t.priority // P0-P4
+    }));
+
+    const promptText = `
+    角色：你是「买手小番茄」的智能助理。
+    任务：基于以下【${dateLabel}】的全部任务数据，生成一段简短精炼的【今日总结】。
+    
+    数据：
+    ${JSON.stringify(simplifiedTasks)}
+    
+    要求：
+    1. 不要是冷冰冰的数据罗列，要像个贴心助理一样说话。
+    2. 内容涵盖：总共多少个任务，完成了多少。重点提一下完成了哪些重要(P0/P1)事项。
+    3. 如果有未完成或延期的，简单提醒一下。
+    4. 字数控制在 100-150 字以内，分两小段即可。
+    5. 不要返回 JSON，直接返回纯文本内容。
+    `;
+
+    const payload = {
+      model: "gemini-2.5-flash",
+      contents: [{ role: "user", parts: [{ text: promptText }] }],
+    };
+
+    const result = await callGeminiApi(payload);
+    const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+    
+    return text || "AI 暂时无法生成今日总结。";
+  } catch (error) {
+    console.error("Daily Report Error", error);
+    return "生成总结失败，请稍后重试。";
   }
 };

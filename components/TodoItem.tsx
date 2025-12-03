@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Todo, Priority } from '../types';
-import { Copy, Check, Calendar, Clock, Edit3, X, Zap, Coffee, Moon, Sun, ChevronRight, MoreHorizontal, ArrowRight } from 'lucide-react';
+import { Todo, Priority, TodoStatus } from '../types';
+import { Copy, Check, Calendar, Clock, Edit3, X, Zap, Coffee, Moon, Sun, ChevronRight, MoreHorizontal, ArrowRight, PlayCircle, AlertCircle, Circle } from 'lucide-react';
 
 interface TodoItemProps {
   todo: Todo;
@@ -11,19 +11,19 @@ interface TodoItemProps {
   setFocusedTodoId: (id: string | null) => void;
 }
 
-// Normal Mode Colors
+// Updated Softer/Flatter Priority Colors (Opacity 20-40% feel)
 const PRIORITY_CONFIG = {
-  [Priority.P0]: { label: 'P0', color: 'bg-rose-500 text-white border-rose-600', desc: '紧急' },
-  [Priority.P1]: { label: 'P1', color: 'bg-orange-500 text-white border-orange-600', desc: '重要' },
-  [Priority.P2]: { label: 'P2', color: 'bg-blue-500 text-white border-blue-600', desc: '正常' },
-  [Priority.P3]: { label: 'P3', color: 'bg-emerald-500 text-white border-emerald-600', desc: '稍缓' },
-  [Priority.P4]: { label: 'P4', color: 'bg-slate-400 text-white border-slate-500', desc: '待定' },
+  [Priority.P0]: { label: 'P0', color: 'bg-rose-50 text-rose-600 border-rose-100', desc: '紧急' },
+  [Priority.P1]: { label: 'P1', color: 'bg-orange-50 text-orange-600 border-orange-100', desc: '重要' },
+  [Priority.P2]: { label: 'P2', color: 'bg-blue-50 text-blue-600 border-blue-100', desc: '正常' },
+  [Priority.P3]: { label: 'P3', color: 'bg-emerald-50 text-emerald-600 border-emerald-100', desc: '稍缓' },
+  [Priority.P4]: { label: 'P4', color: 'bg-slate-100 text-slate-500 border-slate-200', desc: '待定' },
 };
 
-// Focus Mode Colors
+// Focus Mode Colors (Unchanged mostly, just ensure compatibility)
 const FOCUS_THEME = {
   [Priority.P0]: {
-    bg: 'bg-[#2a0a0e]', // Deep Red
+    bg: 'bg-[#2a0a0e]', 
     bar: 'from-rose-600 to-red-500',
     shadow: 'shadow-[2px_0_20px_rgba(244,63,94,0.6)]',
     textTag: 'bg-red-950/60 border-rose-500/30',
@@ -31,7 +31,7 @@ const FOCUS_THEME = {
     timerIcon: 'text-rose-400'
   },
   [Priority.P1]: {
-    bg: 'bg-[#2a1205]', // Deep Orange
+    bg: 'bg-[#2a1205]', 
     bar: 'from-orange-500 to-amber-500',
     shadow: 'shadow-[2px_0_20px_rgba(249,115,22,0.6)]',
     textTag: 'bg-orange-950/60 border-orange-500/30',
@@ -39,7 +39,7 @@ const FOCUS_THEME = {
     timerIcon: 'text-orange-400'
   },
   [Priority.P2]: {
-    bg: 'bg-[#050a2a]', // Deep Blue
+    bg: 'bg-[#050a2a]', 
     bar: 'from-blue-500 to-indigo-500',
     shadow: 'shadow-[2px_0_20px_rgba(59,130,246,0.6)]',
     textTag: 'bg-blue-950/60 border-blue-500/30',
@@ -47,7 +47,7 @@ const FOCUS_THEME = {
     timerIcon: 'text-blue-400'
   },
   [Priority.P3]: {
-    bg: 'bg-[#052a14]', // Deep Green
+    bg: 'bg-[#052a14]', 
     bar: 'from-emerald-500 to-green-500',
     shadow: 'shadow-[2px_0_20px_rgba(16,185,129,0.6)]',
     textTag: 'bg-emerald-950/60 border-emerald-500/30',
@@ -55,7 +55,7 @@ const FOCUS_THEME = {
     timerIcon: 'text-emerald-400'
   },
   [Priority.P4]: {
-    bg: 'bg-[#1a1a1a]', // Deep Gray
+    bg: 'bg-[#1a1a1a]', 
     bar: 'from-slate-500 to-gray-400',
     shadow: 'shadow-[2px_0_20px_rgba(148,163,184,0.6)]',
     textTag: 'bg-slate-800/60 border-slate-500/30',
@@ -91,6 +91,8 @@ const TodoItem: React.FC<TodoItemProps> = ({
   const priorityMenuRef = useRef<HTMLDivElement>(null);
   const dateMenuRef = useRef<HTMLDivElement>(null);
 
+  const isDone = todo.status === 'done';
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (priorityMenuRef.current && !priorityMenuRef.current.contains(event.target as Node)) {
@@ -112,7 +114,7 @@ const TodoItem: React.FC<TodoItemProps> = ({
 
   // Standard Deadline Timer
   useEffect(() => {
-    if (!todo.deadline || todo.isCompleted) {
+    if (!todo.deadline || isDone) {
       setTimeLeft(null);
       setIsOverdue(false);
       return;
@@ -144,13 +146,12 @@ const TodoItem: React.FC<TodoItemProps> = ({
     updateTimer();
     const interval = setInterval(updateTimer, 60000);
     return () => clearInterval(interval);
-  }, [todo.deadline, todo.isCompleted]);
+  }, [todo.deadline, isDone]);
 
   // Focus Mode Timer (15 Minutes)
-  // Only runs if THIS component is the focused one.
   useEffect(() => {
     let interval: any;
-    if (isFocusMode && !todo.isCompleted) {
+    if (isFocusMode && !isDone) {
       if (focusTimeLeft > 0) {
         interval = setInterval(() => {
             setFocusTimeLeft(prev => {
@@ -166,7 +167,7 @@ const TodoItem: React.FC<TodoItemProps> = ({
       }
     }
     return () => clearInterval(interval);
-  }, [isFocusMode, focusTimeLeft, todo.isCompleted]);
+  }, [isFocusMode, focusTimeLeft, isDone]);
 
   const handleCopyId = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -218,21 +219,40 @@ const TodoItem: React.FC<TodoItemProps> = ({
           break;
       }
       
-      onUpdate(todo.id, { deadline: timestamp });
+      // Auto-set status to in_progress if setting a deadline
+      const updates: Partial<Todo> = { deadline: timestamp };
+      if (todo.status === 'todo') {
+          updates.status = 'in_progress';
+      }
+      onUpdate(todo.id, updates);
       setShowDateMenu(false);
   };
 
   const enterFocusMode = () => {
-      if (!todo.isCompleted && !isFocusMode) {
+      if (!isDone && !isFocusMode) {
         setFocusedTodoId(todo.id);
         // Reset timer state when entering
         setFocusTimeLeft(15 * 60);
         setFocusProgress(0);
+        // Auto set to in_progress if it was todo
+        if (todo.status === 'todo') {
+            onUpdate(todo.id, { status: 'in_progress' });
+        }
       }
   };
 
   const exitFocusMode = () => {
       setFocusedTodoId(null);
+  };
+
+  // Cycle Status: Todo -> InProgress -> Done -> Todo
+  const cycleStatus = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      let next: TodoStatus = 'todo';
+      if (todo.status === 'todo') next = 'in_progress';
+      else if (todo.status === 'in_progress') next = 'done';
+      else next = 'todo';
+      onUpdate(todo.id, { status: next });
   };
 
   // Safe fallback for priority
@@ -242,6 +262,27 @@ const TodoItem: React.FC<TodoItemProps> = ({
   
   // Calculate if any menu is open to boost z-index
   const isMenuOpen = showPriorityMenu || showDateMenu;
+
+  // Determine Status Appearance
+  const getStatusBadge = () => {
+    // 1. Done
+    if (todo.status === 'done') {
+        return { bg: 'bg-green-50', text: 'text-green-600', border: 'border-green-100', icon: Check, label: '已完成' };
+    }
+    // 2. Delayed (Risk)
+    if (isOverdue) {
+        return { bg: 'bg-red-50', text: 'text-red-600', border: 'border-red-100', icon: AlertCircle, label: '已延期' };
+    }
+    // 3. In Progress
+    if (todo.status === 'in_progress') {
+        return { bg: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-100', icon: PlayCircle, label: '进行中' };
+    }
+    // 4. Todo (Default)
+    return { bg: 'bg-slate-50', text: 'text-slate-500', border: 'border-slate-100', icon: Circle, label: '未开始' };
+  };
+
+  const statusStyle = getStatusBadge();
+  const StatusIcon = statusStyle.icon;
 
   return (
     <>
@@ -318,8 +359,8 @@ const TodoItem: React.FC<TodoItemProps> = ({
                 ? 'opacity-20 grayscale blur-[1px] scale-95 pointer-events-none bg-transparent border-transparent' 
                 : (isFocusMode 
                     ? 'h-20 shadow-2xl bg-transparent border-white/10 overflow-hidden z-20 scale-[1.02] ring-4 ring-white/30 my-4' 
-                    : (todo.isCompleted 
-                        ? 'opacity-50 grayscale-[0.5] bg-transparent border-transparent overflow-visible' 
+                    : (isDone 
+                        ? 'opacity-60 grayscale-[0.5] bg-slate-50/50 border-transparent overflow-visible' 
                         : 'bg-white/60 hover:bg-white/90 border-transparent hover:border-white shadow-sm hover:shadow-md backdrop-blur-sm overflow-visible'
                       )
                   )
@@ -415,11 +456,11 @@ const TodoItem: React.FC<TodoItemProps> = ({
                 {/* Priority / Checkbox */}
                 <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
                     <button 
-                        onClick={() => !todo.isCompleted && setShowPriorityMenu(!showPriorityMenu)}
+                        onClick={() => !isDone && setShowPriorityMenu(!showPriorityMenu)}
                         className={`
-                            flex flex-col items-center justify-center w-9 h-9 rounded-lg border text-[10px] font-bold shadow-sm transition-transform active:scale-95
+                            flex flex-col items-center justify-center w-8 h-8 rounded-lg border text-[10px] font-bold shadow-sm transition-transform active:scale-95
                             ${pConfig.color}
-                            ${todo.isCompleted ? 'cursor-default' : 'cursor-pointer'}
+                            ${isDone ? 'cursor-default opacity-50' : 'cursor-pointer hover:scale-105'}
                         `}
                     >
                         <span>{pConfig.label}</span>
@@ -441,7 +482,7 @@ const TodoItem: React.FC<TodoItemProps> = ({
                          </div>
                      ) : (
                         <div className="flex items-center gap-2">
-                             <span className={`text-[15px] font-bold truncate leading-tight text-slate-800 ${todo.isCompleted ? 'line-through text-slate-400' : ''}`}>
+                             <span className={`text-[15px] font-semibold truncate leading-tight text-slate-800 ${isDone ? 'line-through text-slate-400' : ''}`}>
                                  {todo.title}
                              </span>
                         </div>
@@ -449,14 +490,16 @@ const TodoItem: React.FC<TodoItemProps> = ({
 
                      {/* Badges Row */}
                      <div className="flex items-center gap-2 mt-1.5">
+                        
+                        {/* Status Switcher (3 States) */}
                         <div 
-                           onClick={(e) => { e.stopPropagation(); onToggle(todo.id); }}
+                           onClick={cycleStatus}
                            className={`
-                             flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold border cursor-pointer hover:opacity-80 transition-opacity select-none
-                             ${todo.isCompleted ? 'bg-slate-100 text-slate-500 border-slate-200' : 'bg-white text-slate-600 border-slate-200'}
+                             flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold border cursor-pointer hover:opacity-80 transition-all select-none
+                             ${statusStyle.bg} ${statusStyle.text} ${statusStyle.border}
                         `}>
-                            <div className={`w-2 h-2 rounded-full ${todo.isCompleted ? 'bg-slate-400' : 'bg-green-400'}`}></div>
-                            {todo.isCompleted ? '已完成' : '待办'}
+                            <StatusIcon size={10} strokeWidth={3} />
+                            {statusStyle.label}
                         </div>
 
                         {todo.shopId && (
@@ -470,7 +513,7 @@ const TodoItem: React.FC<TodoItemProps> = ({
                         )}
                         
                         {todo.quantity && (
-                             <span className="px-1.5 py-0.5 rounded-md text-[11px] font-medium border bg-emerald-50 text-emerald-600 border-emerald-100">
+                             <span className="px-1.5 py-0.5 rounded-md text-[11px] font-medium border bg-indigo-50 text-indigo-600 border-indigo-100">
                                 {todo.quantity}款
                              </span>
                         )}
@@ -502,13 +545,13 @@ const TodoItem: React.FC<TodoItemProps> = ({
                        onClick={(e) => { e.stopPropagation(); setShowDateMenu(!showDateMenu); }}
                        className={`
                            flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg transition-colors border shadow-sm relative z-10
-                           ${isOverdue && !todo.isCompleted 
+                           ${isOverdue && !isDone
                                 ? 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100' 
                                 : 'bg-white text-slate-500 border-slate-200 hover:border-blue-300 hover:text-blue-600'
                            }
                        `}
                    >
-                       <Clock size={13} className={isOverdue ? "text-red-500" : "text-slate-400"} />
+                       <Clock size={13} className={isOverdue && !isDone ? "text-red-500" : "text-slate-400"} />
                        <span>{timeLeft || (todo.actionTime ? todo.actionTime : "设置DDL")}</span>
                    </button>
                 </div>
@@ -572,7 +615,11 @@ const TodoItem: React.FC<TodoItemProps> = ({
                             onChange={(e) => {
                                 if (e.target.value) {
                                     const d = new Date(e.target.value).getTime();
-                                    onUpdate(todo.id, { deadline: d });
+                                    const updates: Partial<Todo> = { deadline: d };
+                                    if (todo.status === 'todo') {
+                                        updates.status = 'in_progress';
+                                    }
+                                    onUpdate(todo.id, updates);
                                     setShowDateMenu(false);
                                 }
                             }}
