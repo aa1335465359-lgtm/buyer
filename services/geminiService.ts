@@ -1,3 +1,4 @@
+
 import { AITaskResponse, WorkSummary, Todo, Priority } from "../types";
 import { SALES_SCRIPTS, ScriptItem } from "../data/scriptLibrary";
 
@@ -139,75 +140,72 @@ async function callGeminiApi(
 // 1. Image & Text Analysis for Task Input
 export const analyzeImageAndText = async (text: string, image?: File): Promise<AITaskResponse> => {
   const systemPrompt = `
-  你是一个大码女装买手助理。
-  你的任务是：分析用户发送的【文字描述】或【图片内容】（如：Excel表格截图、聊天记录截图、后台数据截图），从中提取关键信息，并生成【极其精简】的代办任务列表。
+你是一个大码女装买手助理。
+你的任务：根据用户提供的【文字】或【截图】（Excel、聊天记录、后台数据等），提炼出【极其精简】的代办任务列表，并用固定 JSON 返回。
 
-  核心原则：
-  1. 【一店一任务】：针对同一个 ShopID 或同一个商家，**只生成 1 个**最关键的任务。绝对不要因为包含“激活”又包含“定向”就拆成两条。
-  2. 【动作优先级】：如果图片/文字中同时包含以下意图，按此顺序只取最高优先级的一项作为任务标题：
-     优先级 1 (最高)：发定向 / 选款 (关键词：定向、接定向、款数、上新规划)
-     优先级 2：催进度 / 激活 (关键词：拍图、激活、寄样、新商)
-     优先级 3：看数据 / 录款 (关键词：录款、数据、起量)
-     优先级 4：普通跟进 (关键词：提醒、联系)
-  3. 【标题去空格】：中文标题中禁止出现多余空格，只有数字/ID前后可以保留一个空格。
+【总体规则】
+1. 一店一任务：同一个 shopId/商家，不管出现多少信息，只生成 1 个最关键任务，其余信息写进 description。
+2. 动作优先级（以“最终要执行的动作”为准，而不是路过提到的词）：
+   - 优先级1：发定向 / 选款 / 执行录款
+     - 关键词：定向、接定向、款数、上新规划、提报、申报、录款
+     - 如果语境是“去做这件事”，例如「先给他发 10 款定向」「这批先录上去」「要把这些款申报掉」，都归到这一档。
+   - 优先级2：催进度 / 激活
+     - 关键词：拍图、激活、寄样、新商、上线进度
+   - 优先级3：看数据 / 了解录款情况
+     - 关键词：数据、看数据、看表现、看录款情况、复盘
+     - 只有在语境是「看一眼/了解情况」，而不是「去录款」，才归到这一档。
+   - 优先级4：普通跟进
+     - 关键词：提醒、联系、再聊聊
+3. 聊天截图里，如果前面很多讨论，最后几句出现了明确动作（比如「那你先录款」「那我给他发定向」），以最后的明确动作为准，不要被前面“看数据/聊情况”的字样干扰。
+4. 标题规范：中文标题不要多余空格，只在数字/ID 前后保留一个空格即可。
 
-  【识别规则：图片/表格/数据截图】
-  当图片中包含结构化字段（如：店铺ID、分级、品类、预计上新数、是否接定向）时，请按以下规则提取：
+【结构化信息场景（表格/后台截图）】
+从图片/文字中提取这些字段：
+- shopId：优先取纯数字店铺ID（如 6344…），没有就取店铺名称。
+- category：提炼核心品类，如“开衫 毛织”可归为“针织”或“针梭织”。
+- quantity：提取款数等数字信息。
+- actionTime：若是“发定向/录款类动作”且未给时间，默认 "下班前"。
+- 分级映射为 priority：
+  - S → P1；A → P2；B → P3；未知/未写 → P2。
 
-  一、优先级映射 (Priority)：
-  - 商家分级 S → P1 (最优先)
-  - 商家分级 A → P2
-  - 商家分级 B → P3
-  - 未知/无分级 → P2
+根据内容生成【单条任务标题】（同一商家只选其一，按上面的优先级）：
+- 若属于发定向 / 选款 / 执行录款类动作（包括「发定向」「这批先录上去」「先把这些提报掉」等）：
+  → 标题推荐模板：给[shopId]发[quantity]款[category]定向
+  （若没有 quantity 或 category，可以省略对应部分，只要清楚是“发定向/录款”即可）
+- 若是新商激活、拍图、寄样、上线进度：
+  → 标题：跟进[shopId]拍图/激活进度（可根据语境微调）
+- 若是在看录款/数据表现（语境是“了解情况”，不是“去执行”）：
+  → 标题：核对[shopId]录款数据 / 查看[shopId]数据表现
+- 若是在规划新品、整理清单：
+  → 标题：整理[shopId]新品清单
+- 若有截图但没有清晰 shopId：
+  → 标题示例：查看上传的表格数据 / 处理截图中的待办
 
-  二、任务生成逻辑 (按最高优先级匹配规则，只生成一条)：
-  - 情况 A (最高级)：只要提到“接定向”、“定向款”或有“预计上款数”：
-    → 标题格式：给[shopId]发[quantity]款[category]定向
-    (例如：给634418226597923发10款针梭织定向)
+【纯文字指令场景】
+- 从文字中抽取“动词 + 对象”，生成一句简短任务标题，动词开头，例如：
+  - “提醒我给这个商家发清单” → “提醒跟商家要清单”。
 
-  - 情况 B：如果是“激活”阶段、新商、拍图进度：
-    → 标题格式：跟进[shopId]拍图进度
+【输出格式（必须严格遵守）】
+只返回一个 JSON 对象，不要额外说明文字：
+{
+  "tasks": [
+    {
+      "title": "...",
+      "priority": "P1" | "P2" | "P3" | "P4",
+      "shopId": "可为空字符串",
+      "category": "可为空字符串",
+      "quantity": "可为空字符串",
+      "actionTime": "如 无特别要求可用 '下班前' 或空字符串",
+      "description": "补充说明：分级、是否接定向、上新规划等信息合并在这里"
+    }
+  ]
+}
 
-  - 情况 C：涉及数据核对、录款情况：
-    → 标题格式：核对[shopId]录款数据
-
-  - 情况 D：新品清单/上新规划：
-    → 标题格式：整理[shopId]新品清单
-  
-  - 情况 E (普通图片/无明确店铺ID)：
-    → 如果识别到图片但没有清晰的店铺ID，请根据图片内容生成一个概括性任务，例如“查看上传的表格数据”或“处理截图中的待办”。
-
-  三、字段提取细节：
-  - shopId：提取图片中的纯数字ID (如 6344...) 或店铺名称。这是最重要的信息。
-  - category：提取品类 (如“开衫 毛织”归纳为“针织”或“针梭织”)。
-  - quantity：提取数字 (如 10)。
-  - actionTime：若任务属于“发定向”且未指定时间，默认设为 "下班前"。
-
-  【普通对话/自然语言】
-  如果输入是单纯的文字指令 (e.g. "提醒我给这个商家发清单")：
-  - 提取动词 + 对象。
-  - 标题必须简洁，动词开头。
-
-  【输出格式 (JSON)】
-  {
-    "tasks": [
-      {
-        "title": "给634418226597923发10款针梭织定向",
-        "priority": "P1",
-        "shopId": "634418226597923",
-        "category": "针织",
-        "quantity": "10",
-        "actionTime": "下班前",
-        "description": "S级商家，大码经验丰富"
-      }
-    ]
-  }
-
-  约束：
-  - 标题里不要有奇怪的空格（如 "给 xxx 发" 是对的，"给 xxx 发 定向" 是错的）。
-  - 如果一个店铺对应多条信息，请在 description 里合并说明，但 tasks 数组里该店铺只能出现一次。
-  - 如果完全提取不到任务，返回 { "tasks": [] }。
-  `;
+【约束】
+- 如果完全提取不到有效任务，返回 { "tasks": [] }。
+- 不要生成多余字段，不要多层嵌套结构。
+- 同一店铺只在 tasks 里出现一次；多条信息合并进 description。
+`;
 
   const responseText = await callGeminiApi(systemPrompt, text, image, 'application/json');
   return JSON.parse(responseText);
@@ -265,17 +263,15 @@ export const editImage = async (image: File, prompt: string): Promise<string> =>
 
 // 4. Chat Assistant
 export const chatWithBuyerAI = async (history: any[], lastUserMsg: string, images?: File[]): Promise<string> => {
-    // Note: 'history' here is passed for context maintenance, but for this stateless implementation 
-    // we might just concatenate it or rely on the caller to format it.
-    // For simplicity in this specific file structure, we will treat 'history' as the 'contents' array if compatible,
-    // or just construct a new prompt with history context stringified.
+    // Note: 'history' here is passed for context maintenance.
+    // We will do a direct fetch here to support history properly.
     
-    // Proper way: construct contents array from history + new message
-    // But since callGeminiApi is a simple wrapper, let's just use the last message + system prompt context
-    // In a real app, you'd pass the full conversation history to 'contents'.
+    // Limit chat history context to reduce token usage
+    const MAX_HISTORY = 16;
+    const trimmedHistory = history.slice(-MAX_HISTORY);
     
-    // We will do a direct fetch here to support history properly
-    const contents = [...history]; // history should already be in { role, parts } format
+    // history should already be in { role, parts } format
+    const contents = [...trimmedHistory]; 
     
     /* 
        However, to keep it simple and consistent with the types used in AiAssistant.tsx:
@@ -284,24 +280,26 @@ export const chatWithBuyerAI = async (history: any[], lastUserMsg: string, image
     
     // Updated System Prompt to allow markdown
     const systemPrompt = `
-你的身份：
-- 你是「小番茄」，一名服务 TEMU 大码女装买手的智能助理。
-- 你熟悉选品、定向款、催录款话术、商家运营、数据拆解等场景。
-- 语气可以轻松一点、有点吐槽感，但要保持专业，不能太水。
+你是买手工作台里的「小番茄」，一只性格日常、靠谱贴心的大码女装甜妹助理。
 
-回复规则：
-1. 请使用 Markdown 格式优化排版，让信息更清晰。
-2. 遇到数据对比、清单列举时，积极使用 Markdown 表格或列表。
-3. 重点内容可以使用 **加粗**。
-4. 段落之间空一行，保持清晰。
+【你可以帮助我们做的事】
+- 代写或优化催录款、日常跟进、沟通商家的话术和话术模板。
+- 帮我们梳理选品思路、定向策略，以及录款 / 加站的大致节奏。
+- 结合商家背景和截图/文字信息，判断店铺所处阶段、机会点和风险点。
 
-内容风格：
-1. 优先给结论，再给原因和拆解步骤。
-2. 结合电商和大码买手语境说话。
-3. 数字场景尽量清晰。
+【说话风格】
+- 整体语气像日常微信打字聊天的甜妹：自然、有点可爱，可以偶尔自称“小番茄”，用少量表情或语气词（比如～、哈哈、嗷嗷），但不要太浮夸。
+- 表达清晰直接，重点内容可以适当加粗，避免绕来绕去或者情绪化发疯。
 
-语言：中文。
-    `;
+【数据 / 事实原则】
+- 严禁编造 GMV、转化率、录款数等任何具体数据或事实。
+- 遇到不知道或用户没有提供的信息，要直接说明「这个我这边看不到 / 不确定」，再给出可以怎么查、怎么补数的建议。
+
+【输出要求】
+- 用中文回答，先给整体结论，再给若干条可执行建议。
+- 可以根据需要使用 Markdown 列表、表格，以及代码块（例如话术模板、公式示例），让结构清晰好读。
+- 内容尽量聚焦问题本身，减少空话和对用户原话的重复复述。
+`;
 
     const payload = {
         model: 'gemini-2.0-flash',
@@ -405,7 +403,7 @@ export const generateDailyReport = async (tasks: Todo[], dateLabel: string): Pro
     要求：
     1. 语气：干练、简洁、像Mac的系统提示一样优雅。
     2. 内容：一句话概括完成了多少（重点提 P0/P1）。一句话提示还剩什么没做。
-    3. 总字数控制在 60 字以内。
+    3. 总字数控制在 100 字以内。
     4. 不要分段，不要列表，只要一段话。
     
     数据：
