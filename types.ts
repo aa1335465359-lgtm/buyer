@@ -1,3 +1,4 @@
+
 export enum Priority {
   P0 = 'P0',
   P1 = 'P1',
@@ -16,6 +17,7 @@ export interface Todo {
   status: TodoStatus; // Replaces isCompleted boolean logic
   isCompleted?: boolean; // Deprecated, kept for backward compat during migration if needed
   createdAt: number;
+  completedAt?: number; // Timestamp when status became 'done'
   deadline?: number; // timestamp in ms
   notificationSent?: boolean;
   

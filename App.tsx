@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Todo, Priority, TodoStatus } from './types';
 import TaskInput from './components/TaskInput';
@@ -138,7 +139,12 @@ const App: React.FC = () => {
       if (t.id !== id) return t;
       // If done, go to todo. If not done, go to done.
       const newStatus = t.status === 'done' ? 'todo' : 'done';
-      return { ...t, status: newStatus, isCompleted: newStatus === 'done' };
+      return { 
+        ...t, 
+        status: newStatus, 
+        isCompleted: newStatus === 'done',
+        completedAt: newStatus === 'done' ? Date.now() : undefined
+      };
     }));
     // If we complete the currently focused item, exit focus mode
     if (focusedTodoId === id) {
@@ -154,6 +160,17 @@ const App: React.FC = () => {
        // Sync legacy isCompleted if status changes
        if (updates.status) {
            updated.isCompleted = updates.status === 'done';
+           // Handle completedAt logic
+           if (updates.status === 'done') {
+               // Only set completedAt if not already set (preserve original completion time if just updating text)
+               // However, if we are explicitly setting status to done, we usually want to set it.
+               if (!t.completedAt) {
+                   updated.completedAt = Date.now();
+               }
+           } else {
+               // If moving out of done, clear completedAt
+               updated.completedAt = undefined;
+           }
        }
        return updated;
     }));
@@ -299,7 +316,7 @@ const App: React.FC = () => {
         <div className="w-64 bg-mac-sidebar border-r border-mac-border flex flex-col pt-6 pb-4 hidden md:flex shrink-0">
           <div className="px-6 mb-8">
             <h1 className="text-sm font-bold tracking-wider text-slate-500 uppercase">Buyer Mate</h1>
-            <p className="text-[10px] text-slate-400 mt-1 font-mono">v2.4.1</p>
+            <p className="text-[10px] text-slate-400 mt-1 font-mono">v2.4.2</p>
           </div>
 
           <nav className="flex-1 px-4 space-y-1">

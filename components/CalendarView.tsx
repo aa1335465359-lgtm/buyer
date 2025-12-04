@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Todo, WorkSummary } from '../types';
 import TodoItem from './TodoItem';
@@ -78,7 +79,12 @@ const CalendarView: React.FC<CalendarViewProps> = ({
 
   // --- Task Mapping ---
   const getTaskDate = (todo: Todo): Date => {
-    // If deadline exists, use it. Otherwise create date.
+    // If completed, prioritize completedAt
+    if (todo.status === 'done' && todo.completedAt) {
+        return new Date(todo.completedAt);
+    }
+    // For active tasks or legacy completed tasks without timestamp
+    // Prioritize deadline if exists, otherwise creation date
     if (todo.deadline) return new Date(todo.deadline);
     return new Date(todo.createdAt);
   };
@@ -143,10 +149,15 @@ const CalendarView: React.FC<CalendarViewProps> = ({
         label = `近 ${days} 天`;
       }
 
-      // Filter tasks in range
+      // Filter tasks in range matching the calendar logic
       const rangeTasks = todos.filter(t => {
-        const tDate = t.deadline || t.createdAt;
-        return tDate >= startTime && tDate <= Date.now();
+        let tTime;
+        if (t.status === 'done' && t.completedAt) {
+            tTime = t.completedAt;
+        } else {
+            tTime = t.deadline || t.createdAt;
+        }
+        return tTime >= startTime && tTime <= Date.now();
       });
 
       // Calculate stats
