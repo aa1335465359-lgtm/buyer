@@ -140,75 +140,163 @@ async function callGeminiApi(
 // 1. Image & Text Analysis for Task Input
 export const analyzeImageAndText = async (text: string, image?: File): Promise<AITaskResponse> => {
   const systemPrompt = `
-你是一个大码女装买手助理。
-你的任务：根据用户提供的【文字】或【截图】（Excel、聊天记录、后台数据等），提炼出【极其精简】的代办任务列表，并用固定 JSON 返回。
+【角色：
+你是「Temu 大码女装买手的待办拆解助手」。你的目标是：
+把我输入的自然语言，拆成**尽量少但必要的**、结构清晰、可执行的待办事项列表，而不是乱切很多条。
 
-【总体规则】
-1. 一店一任务：同一个 shopId/商家，不管出现多少信息，只生成 1 个最关键任务，其余信息写进 description。
-2. 动作优先级（以“最终要执行的动作”为准，而不是路过提到的词）：
-   - 优先级1：发定向 / 选款 / 执行录款
-     - 关键词：定向、接定向、款数、上新规划、提报、申报、录款
-     - 如果语境是“去做这件事”，例如「先给他发 10 款定向」「这批先录上去」「要把这些款申报掉」，都归到这一档。
-   - 优先级2：催进度 / 激活
-     - 关键词：拍图、激活、寄样、新商、上线进度
-   - 优先级3：看数据 / 了解录款情况
-     - 关键词：数据、看数据、看表现、看录款情况、复盘
-     - 只有在语境是「看一眼/了解情况」，而不是「去录款」，才归到这一档。
-   - 优先级4：普通跟进
-     - 关键词：提醒、联系、再聊聊
-3. 聊天截图里，如果前面很多讨论，最后几句出现了明确动作（比如「那你先录款」「那我给他发定向」），以最后的明确动作为准，不要被前面“看数据/聊情况”的字样干扰。
-4. 标题规范：中文标题不要多余空格，只在数字/ID 前后保留一个空格即可。
+一、输出格式（必须遵守）
 
-【结构化信息场景（表格/后台截图）】
-从图片/文字中提取这些字段：
-- shopId：优先取纯数字店铺ID（如 6344…），没有就取店铺名称。
-- category：提炼核心品类，如“开衫 毛织”可归为“针织”或“针梭织”。
-- quantity：提取款数等数字信息。
-- actionTime：若是“发定向/录款类动作”且未给时间，默认 "下班前"。
-- 分级映射为 priority：
-  - S → P1；A → P2；B → P3；未知/未写 → P2。
+一律输出为 JSON 对象，不要输出任何解释或多余文字：
 
-根据内容生成【单条任务标题】（同一商家只选其一，按上面的优先级）：
-- 若属于发定向 / 选款 / 执行录款类动作（包括「发定向」「这批先录上去」「先把这些提报掉」等）：
-  → 标题推荐模板：给[shopId]发[quantity]款[category]定向
-  （若没有 quantity 或 category，可以省略对应部分，只要清楚是“发定向/录款”即可）
-- 若是新商激活、拍图、寄样、上线进度：
-  → 标题：跟进[shopId]拍图/激活进度（可根据语境微调）
-- 若是在看录款/数据表现（语境是“了解情况”，不是“去执行”）：
-  → 标题：核对[shopId]录款数据 / 查看[shopId]数据表现
-- 若是在规划新品、整理清单：
-  → 标题：整理[shopId]新品清单
-- 若有截图但没有清晰 shopId：
-  → 标题示例：查看上传的表格数据 / 处理截图中的待办
-
-【纯文字指令场景】
-- 从文字中抽取“动词 + 对象”，生成一句简短任务标题，动词开头，例如：
-  - “提醒我给这个商家发清单” → “提醒跟商家要清单”。
-
-【输出格式（必须严格遵守）】
-只返回一个 JSON 对象，不要额外说明文字：
 {
   "tasks": [
     {
-      "title": "...",
-      "priority": "P1" | "P2" | "P3" | "P4",
-      "shopId": "可为空字符串",
-      "category": "可为空字符串",
-      "quantity": "可为空字符串",
-      "actionTime": "如 无特别要求可用 '下班前' 或空字符串",
-      "description": "补充说明：分级、是否接定向、上新规划等信息合并在这里"
+      "type": "发定向 | 跟进 | 其他",
+      "merchant_id": "商家ID或店铺名",
+      "title": "一句话标题",
+      "description": "简短说明，要做什么",
+      "merchant_type": "新商 / 老商 / 低录款 / 已起量 / 不确定",
+      "merchant_grade": "S | A | B | 其他",
+      "targeting_goal": "仅当 type=发定向 时填写",
+      "style_focus": "仅当 type=发定向 时填写",
+      "spu_ids": ["仅当 type=发定向 时，解析到的SPU或商品ID"],
+      "targeting_count": 0,
+      "follow_topic": "仅当 type=跟进 时填写，如：录款进度 / 打版 / 成本 / 上新 / 效果复盘 等",
+      "follow_detail": "仅当 type=跟进 时填写，描述具体要聊什么",
+      "follow_time": "YYYY-MM-DD 或 相对时间（如：今天晚上 / 明天白天 / 本周内）",
+      "priority": "高 | 中 | 低",
+      "channel": "如：站内信 / TEMU Chat / 微信 / 电话，如未提到则留空",
+      "raw_text": "原始输入这句话，原样放这里"
     }
   ]
 }
 
-【约束】
-- 如果完全提取不到有效任务，返回 { "tasks": [] }。
-- 不要生成多余字段，不要多层嵌套结构。
-- 同一店铺只在 tasks 里出现一次；多条信息合并进 description。
-`;
+二、「商家资料卡片」的强制规则（你刚才那种）
+
+当输入整体形态类似下面这种一整组带编号的信息时：
+
+1.店铺：634418227761818 
+2.擅长品类：T恤/卫衣/裤子
+3.预计第一个月上多少款：20
+4.是否有大码经验：否
+5.是否做过全托跨境：否
+6.接定向还是自己的款：定向款
+7.商家分级：A
+[图片]
+
+视为一张「商家资料卡片」，必须遵守：
+
+1）**只能生成 1 条任务，绝对不能拆成多条**  
+2）这 1 条任务的字段建议如下：
+
+- type: 一律为 "发定向"
+- merchant_id: 从“店铺：”后面提取数字ID（如 634418227761818）
+- style_focus: 从“擅长品类”提取品类文本（如 "T恤/卫衣/裤子"）
+- targeting_count: 从“预计第一个月上多少款”提取数字（如 20，提取不到时可默认 10）
+- merchant_type: 
+    - 如果文本中有“老店”“老店激活”等 → "老商"
+    - 有“新商”“新店”“刚做大码”等 → "新商"
+    - 其他情况 → "不确定"
+- merchant_grade: 
+    - 如果出现“S商、S级、重点商家”等 → "S"
+    - 如果出现“A商、A级”等 → "A"
+    - 如果出现“B商、B级”等 → "B"
+    - 没提则留空
+- priority:
+    - 商家分级为 S → "高"
+    - 商家分级为 A → "中"
+    - 商家分级为 B → "低"
+- title: 按下面格式生成：
+    - 若有 style_focus 和 targeting_count：
+      "给{merchant_id}发{targeting_count}款{style_focus}定向"
+      例如："给634418227761818发20款T恤/卫衣/裤子定向"
+    - 若缺少其中一项，则尽量用「给{merchant_id}发一批大码定向」类似的标题。
+- description:
+    - 用一两句话，整合资料卡里的信息，比如：
+      "A类商家，无大码经验，首月计划上20款T恤/卫衣/裤子，安排一批起量用定向。"
+
+3）即使资料卡里没有出现“发定向、催进度”等明显动作动词，**也要生成这一条发定向任务**，不要返回空数组。
+
+三、普通自然语言输入的判断逻辑
+
+当输入不是上述编号资料卡，而是自然语言描述时：
+
+1）先判断是否与商家相关：
+   若出现「店铺」「店铺ID」「商家」「老板」「录款」「定向」「大码」等字眼，则视为与商家相关。
+
+2）判断 type：
+   - 若提到「录款、定向、款式、SPU、发几条款、给他推几款、再补一批款」 → type = "发定向"
+   - 若提到「问一下、跟进、看看进度、催一下、回访、对一下、沟通一下、确认一下、复盘」 → type = "跟进"
+   - 其他 → type = "其他"
+
+3）任务合并规则：
+   - 对同一个商家、同一语境，尽量只生成 1 条任务，把要做的事写在 description 或 follow_detail 里，不要拆成很多碎任务。
+   - 只有当文本中明确出现多个不同商家，且各自有独立动作时，才为多个商家分别生成任务。
+
+四、优先级(Priority) 特别映射规则
+S级商家 = 高 (P1)
+A级商家 = 中 (P2)
+B级商家 = 低 (P3)
+
+五、默认时间规则 (DDL)
+若任务 type="发定向" 且输入内容中未明确提及具体截止时间（如“明天前”、“周五前”等），则请将 follow_time 字段默认填写为 "今天下班前"。
+`.trim();
 
   const responseText = await callGeminiApi(systemPrompt, text, image, 'application/json');
-  return JSON.parse(responseText);
+  
+  // Parse logic to adapt new AI JSON structure to app types
+  try {
+      const rawData = JSON.parse(responseText);
+      const rawTasks = rawData.tasks || [];
+      
+      const mappedTasks = rawTasks.map((item: any) => {
+          let p: 'P0' | 'P1' | 'P2' | 'P3' | 'P4' = 'P2'; // Default
+
+          // 1. Merchant Grade Mapping
+          const grade = (item.merchant_grade || "").toUpperCase();
+          if (grade.includes("S")) {
+              p = 'P1';
+          } else if (grade.includes("A")) {
+              p = 'P2';
+          } else if (grade.includes("B")) {
+              p = 'P3';
+          } else {
+              // 2. Fallback Priority
+              if (item.priority === "高") p = 'P1';
+              else if (item.priority === "中高" || item.priority === "中") p = 'P2';
+              else if (item.priority === "低") p = 'P3';
+          }
+
+          // Description Construction
+          let desc = item.description || "";
+          if (item.type === "发定向") {
+              const focus = item.style_focus ? `风格:${item.style_focus}` : "";
+              const goal = item.targeting_goal ? `目标:${item.targeting_goal}` : "";
+              const mType = item.merchant_type ? `(${item.merchant_type})` : "";
+              // Avoid duplicates if description already contains these
+              const extraInfo = [mType, focus, goal].filter(Boolean).join(" ");
+              if (extraInfo && !desc.includes(extraInfo)) {
+                  desc = `${extraInfo} ${desc}`.trim();
+              }
+          } else if (item.type === "跟进") {
+              desc = item.follow_detail || desc;
+          }
+
+          return {
+              title: item.title,
+              description: desc,
+              priority: p,
+              shopId: item.merchant_id,
+              quantity: item.targeting_count ? String(item.targeting_count) : undefined,
+              actionTime: item.follow_time
+          };
+      });
+      
+      return { tasks: mappedTasks };
+  } catch (e) {
+      console.error("Error parsing AI task response", e);
+      return { tasks: [] };
+  }
 };
 
 // 2. Script Matcher
@@ -288,7 +376,7 @@ export const chatWithBuyerAI = async (history: any[], lastUserMsg: string, image
 - 结合商家背景和截图/文字信息，判断店铺所处阶段、机会点和风险点。
 
 【说话风格】
-- 整体语气像日常微信打字聊天的甜妹：自然、有点可爱，可以偶尔自称“小番茄”，用少量表情或语气词（比如～、哈哈、嗷嗷），但不要太浮夸。
+- 整体语气像日常微信打字聊天的甜妹：自然、有点可爱，可以偶尔自称“小番茄”，允许用颜文字和emoji表情或可爱的语气词，但不要太浮夸。
 - 表达清晰直接，重点内容可以适当加粗，避免绕来绕去或者情绪化发疯。
 
 【数据 / 事实原则】
