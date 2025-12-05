@@ -157,14 +157,14 @@ const App: React.FC = () => {
        if (t.id !== id) return t;
        
        const updated = { ...t, ...updates };
-       // Sync legacy isCompleted if status changes
-       if (updates.status) {
+       
+       // Handle completedAt logic based on status
+       if (updates.status !== undefined) {
            updated.isCompleted = updates.status === 'done';
-           // Handle completedAt logic
+           
            if (updates.status === 'done') {
-               // Only set completedAt if not already set (preserve original completion time if just updating text)
-               // However, if we are explicitly setting status to done, we usually want to set it.
-               if (!t.completedAt) {
+               // Only update completedAt if it doesn't exist, to preserve original completion time
+               if (!updated.completedAt) {
                    updated.completedAt = Date.now();
                }
            } else {

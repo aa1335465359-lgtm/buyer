@@ -77,15 +77,17 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     setDailySummary(null);
   }, [selectedDate]);
 
-  // --- Task Mapping ---
+  // --- Task Mapping Logic (Centralized) ---
   const getTaskDate = (todo: Todo): Date => {
-    // If completed, prioritize completedAt
+    // 1. If completed, prioritize completedAt
     if (todo.status === 'done' && todo.completedAt) {
         return new Date(todo.completedAt);
     }
-    // For active tasks or legacy completed tasks without timestamp
-    // Prioritize deadline if exists, otherwise creation date
-    if (todo.deadline) return new Date(todo.deadline);
+    // 2. If has deadline, use deadline
+    if (todo.deadline) {
+        return new Date(todo.deadline);
+    }
+    // 3. Fallback to createdAt
     return new Date(todo.createdAt);
   };
 
@@ -104,9 +106,20 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   const selectedTasks = tasksByDate[selectedDateKey] || [];
 
   const sortedSelectedTasks = [...selectedTasks].sort((a, b) => {
+     // Completed tasks sink to bottom
      if (a.status === 'done' && b.status !== 'done') return 1;
      if (a.status !== 'done' && b.status === 'done') return -1;
-     if (a.deadline && b.deadline) return a.deadline - b.deadline;
+     
+     // Sort by deadline if both active
+     if (a.status !== 'done' && b.status !== 'done') {
+        if (a.deadline && b.deadline) return a.deadline - b.deadline;
+     }
+
+     // Sort by completion time if both done
+     if (a.status === 'done' && b.status === 'done') {
+        return (b.completedAt || 0) - (a.completedAt || 0);
+     }
+     
      return 0;
   });
 
@@ -149,14 +162,10 @@ const CalendarView: React.FC<CalendarViewProps> = ({
         label = `近 ${days} 天`;
       }
 
-      // Filter tasks in range matching the calendar logic
+      // Filter tasks in range matching the calendar logic (Unified via getTaskDate)
       const rangeTasks = todos.filter(t => {
-        let tTime;
-        if (t.status === 'done' && t.completedAt) {
-            tTime = t.completedAt;
-        } else {
-            tTime = t.deadline || t.createdAt;
-        }
+        const tDate = getTaskDate(t);
+        const tTime = tDate.getTime();
         return tTime >= startTime && tTime <= Date.now();
       });
 
