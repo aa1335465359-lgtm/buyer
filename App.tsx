@@ -25,7 +25,8 @@ import {
   Filter,
   CalendarRange,
   ChevronDown,
-  LayoutList
+  LayoutList,
+  FileText
 } from 'lucide-react';
 
 const FASHION_QUOTES = [
@@ -91,7 +92,7 @@ const App: React.FC = () => {
   });
   
   // Navigation State
-  const [currentView, setCurrentView] = useState<'todos' | 'image-editor' | 'indie-chi' | 'script-matcher' | 'bot'>('todos');
+  const [currentView, setCurrentView] = useState<'todos' | 'image-editor' | 'indie-chi' | 'script-matcher' | 'bot' | 'tomato-pdf'>('todos');
   const [filter, setFilter] = useState<'all' | 'p0' | 'completed'>('all');
   
   // Sorting & View Mode State
@@ -367,6 +368,12 @@ const App: React.FC = () => {
                   active={currentView === 'indie-chi'} 
                   onClick={() => setCurrentView('indie-chi')} 
                 />
+               <SidebarItem 
+                  icon={<FileText size={18} />} 
+                  label="番茄PDF" 
+                  active={currentView === 'tomato-pdf'} 
+                  onClick={() => setCurrentView('tomato-pdf')} 
+                />
             </div>
           </nav>
 
@@ -592,6 +599,25 @@ const App: React.FC = () => {
                     src="https://indie-chi.vercel.app/" 
                     className="flex-1 w-full border-none bg-white" 
                     title="Indie Chi"
+                />
+            </div>
+
+            {/* View 6: Tomato PDF */}
+            <div className={`h-full w-full flex flex-col bg-white ${currentView === 'tomato-pdf' ? 'flex' : 'hidden'}`}>
+                <div className="h-12 border-b border-slate-200 flex items-center justify-between px-6 bg-slate-50/50 shrink-0">
+                    <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
+                    <h2 className="font-semibold text-slate-700 text-sm">番茄PDF</h2>
+                    </div>
+                    <a href="https://share-pdf-beta.vercel.app/" target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-3 py-1.5 rounded-md transition-colors">
+                    <ExternalLink size={12} /> 在新窗口打开
+                    </a>
+                </div>
+                {/* Always render iframe but hide it to preserve state (if browser allows) */}
+                <iframe 
+                    src="https://share-pdf-beta.vercel.app/" 
+                    className="flex-1 w-full border-none bg-white" 
+                    title="Tomato PDF"
                 />
             </div>
 
