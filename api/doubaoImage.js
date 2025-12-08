@@ -1,3 +1,4 @@
+// api/doubaoImage.js
 
 export default async function handler(req, res) {
   // CORS
@@ -14,6 +15,7 @@ export default async function handler(req, res) {
   }
 
   try {
+    // 这里用的是你在 Vercel 里配的 GEMINI_API_KEY2，其实就是 Ark 的 key
     const apiKey = process.env.GEMINI_API_KEY2;
     if (!apiKey) {
       return res
@@ -22,41 +24,36 @@ export default async function handler(req, res) {
     }
 
     let body = req.body || {};
-    // Handle Vercel sometimes passing body as string
+    // Vercel 有时候会把 body 作为字符串传进来，这里兜一层
     if (typeof body === 'string') {
-      try { body = JSON.parse(body); } catch (e) {
-          console.error("Failed to parse body string", e);
+      try {
+        body = JSON.parse(body);
+      } catch (e) {
+        console.error('Failed to parse body string', e);
+        return res.status(400).json({ error: 'Invalid JSON body' });
       }
     }
 
     const { prompt, size, images_base64 } = body;
-    
+
     if (!prompt) {
       return res.status(400).json({ error: 'Missing prompt' });
     }
 
-    // Construct upstream payload matching Doubao API spec
+    // ===== 按官方示例构造 payload =====
     const payload = {
-      model: 'doubao-seedream-4-5-251128', // Updated model version
+      model: 'doubao-seedream-4-5-251128',
       prompt,
-      size: size || '1024*1024', // Default square if not specified
-      response_format: 'url',
-      stream: false,
-      watermark: false, // Usually disabled for professional output
-      sequential_image_generation: 'disabled'
+      size: size || '2K',
+      watermark: false,
     };
 
-    // Handle Images (0, 1, or 2 images)
-    // The backend now expects 'images_base64' as an array of pure base64 strings
-    if (images_base64 && Array.isArray(images_base64) && images_base64.length > 0) {
-        // Construct Data URLs
-        const imageUrls = images_base64.map(b64 => `data:image/jpeg;base64,${b64}`);
-        
-        // Pass to standard multi-image field (image_urls)
-        // Note: Specific behavior depends on the 4.5 model capability, 
-        // but typically it accepts a list for reference/edit tasks.
-        payload.image_urls = imageUrls;
+    // 图生图：官方只支持一个 image 字符串，这里只取第一张
+    if (Array.isArray(images_base64) && images_base64.length > 0) {
+      // Ark 文档示例用的是 URL，这里用 data URL 形式传 base64
+      payload.image = `data:image/jpeg;base64,${images_base64[0]}`;
     }
+    // ===== payload 结束 =====
 
     const upstreamRes = await fetch(
       'https://ark.cn-beijing.volces.com/api/v3/images/generations',
@@ -70,7 +67,7 @@ export default async function handler(req, res) {
       }
     );
 
-    const data = await upstreamRes.json();
+    const data = await upstreamRes.json().catch(() => null);
 
     if (!upstreamRes.ok) {
       console.error(
@@ -78,24 +75,26 @@ export default async function handler(req, res) {
         upstreamRes.status,
         JSON.stringify(data)
       );
-      // 将上游错误详情返回给前端，方便调试
-      return res.status(500).json({
+      // 原样把上游错误透传给前端，方便在 Network 面板里排查
+      return res.status(upstreamRes.status).json({
         error: 'Doubao upstream error',
         upstreamStatus: upstreamRes.status,
         details: data,
       });
     }
 
-    // 提取图片 URL
     const url = data?.data?.[0]?.url;
-    
     if (!url) {
-        return res.status(500).json({ error: 'No image URL in response', raw: data });
+      return res
+        .status(500)
+        .json({ error: 'No image URL in response', raw: data });
     }
 
     return res.status(200).json({ url });
   } catch (err) {
     console.error('[Doubao image proxy internal error]', err);
-    return res.status(500).json({ error: err.message || 'Internal error' });
+    return res
+      .status(500)
+      .json({ error: err.message || 'Internal error in doubaoImage proxy' });
   }
 }
