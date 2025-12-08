@@ -1,10 +1,9 @@
 
-
 export default async function handler(req, res) {
   // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -36,27 +35,29 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Missing prompt' });
     }
 
-    // Construct upstream payload matching Doubao API spec
+    // 1. Construct Base Payload (Strictly matching curl for T2I)
     const payload = {
-      model: 'doubao-seedream-4-5-251128', // Updated model version
+      model: 'doubao-seedream-4-5-251128',
       prompt,
-      size: size || '2K', // Default square if not specified
+      sequential_image_generation: 'disabled',
       response_format: 'url',
+      size: size || '2K',
       stream: false,
-      watermark: false, // Usually disabled for professional output
-      sequential_image_generation: 'disabled'
+      watermark: true // Match curl
     };
 
-    // Handle Images (0, 1, or 2 images)
-    // Explicitly check for non-empty array before adding to payload to avoid upstream errors
+    // 2. Handle Reference Images (I2I)
+    // Only add the field if we actually have images.
+    // Ark API expects 'image_urls' for reference images, containing Data URLs.
     if (Array.isArray(images_base64) && images_base64.length > 0) {
-        // Construct Data URLs
-        const imageUrls = images_base64.map(b64 => `data:image/jpeg;base64,${b64}`);
-        
-        // Pass to standard multi-image field (image_urls)
-        payload.image_urls = imageUrls;
+        payload.image_urls = images_base64.map(b64 => {
+            // Frontend sends raw base64, usually needs prefix for "url" field
+            if (b64.startsWith('data:')) return b64;
+            return `data:image/jpeg;base64,${b64}`;
+        });
     }
 
+    // 3. Call Upstream
     const upstreamRes = await fetch(
       'https://ark.cn-beijing.volces.com/api/v3/images/generations',
       {
@@ -71,13 +72,13 @@ export default async function handler(req, res) {
 
     const data = await upstreamRes.json();
 
+    // 4. Handle Errors
     if (!upstreamRes.ok) {
       console.error(
         '[Doubao image upstream error]',
         upstreamRes.status,
         JSON.stringify(data)
       );
-      // 将上游错误详情返回给前端，方便调试
       return res.status(500).json({
         error: 'Doubao upstream error',
         upstreamStatus: upstreamRes.status,
@@ -85,7 +86,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // 提取图片 URL
+    // 5. Extract Result
     const url = data?.data?.[0]?.url;
     
     if (!url) {
