@@ -324,15 +324,22 @@ export const matchScript = async (input: string, image?: File): Promise<{ analys
 };
 
 // 3. Image Editor (Direct Prompting)
-export const editImage = async (image: File, prompt: string): Promise<string> => {
+// Updated: Supports multiple images for Reference/Edit tasks
+export const editImage = async (images: File[] | undefined, prompt: string): Promise<string> => {
   try {
-      const base64Data = await fileToGenerativePart(image);
+      let imagesBase64: string[] = [];
+
+      if (images && images.length > 0) {
+          const parts = await Promise.all(images.map(img => fileToGenerativePart(img)));
+          imagesBase64 = parts.map(p => p.data);
+      }
+
       const response = await fetch('/api/doubaoImage', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
               prompt: prompt,
-              image_base64: base64Data.data // Send pure base64 (Backend will add prefix)
+              images_base64: imagesBase64 // Send array of base64 strings
           })
       });
       

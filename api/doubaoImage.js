@@ -1,3 +1,4 @@
+
 export default async function handler(req, res) {
   // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -28,7 +29,7 @@ export default async function handler(req, res) {
       }
     }
 
-    const { prompt, size, image_base64 } = body;
+    const { prompt, size, images_base64 } = body;
     
     if (!prompt) {
       return res.status(400).json({ error: 'Missing prompt' });
@@ -36,20 +37,25 @@ export default async function handler(req, res) {
 
     // Construct upstream payload matching Doubao API spec
     const payload = {
-      model: 'doubao-seedream-4-0-250828',
+      model: 'doubao-seedream-4-5-251128', // Updated model version
       prompt,
-      // 如果没有传入 image_base64，则 size 生效；如果有 image，size 通常由原图决定，但传了也不报错
-      size: size || '2K', 
+      size: size || '1024*1024', // Default square if not specified
       response_format: 'url',
       stream: false,
-      watermark: true,
-      sequential_image_generation: 'disabled' // 显式禁用连续生成，确保图生图逻辑正确
+      watermark: false, // Usually disabled for professional output
+      sequential_image_generation: 'disabled'
     };
 
-    // 核心修复：将 image_base64 转换为标准 Data URL 格式放入 image 字段
-    if (image_base64 && typeof image_base64 === 'string' && image_base64.length > 100) {
-        // 前端 fileToGenerativePart 保证了输出为 jpeg，这里统一加上 jpeg 前缀
-        payload.image = `data:image/jpeg;base64,${image_base64}`;
+    // Handle Images (0, 1, or 2 images)
+    // The backend now expects 'images_base64' as an array of pure base64 strings
+    if (images_base64 && Array.isArray(images_base64) && images_base64.length > 0) {
+        // Construct Data URLs
+        const imageUrls = images_base64.map(b64 => `data:image/jpeg;base64,${b64}`);
+        
+        // Pass to standard multi-image field (image_urls)
+        // Note: Specific behavior depends on the 4.5 model capability, 
+        // but typically it accepts a list for reference/edit tasks.
+        payload.image_urls = imageUrls;
     }
 
     const upstreamRes = await fetch(
