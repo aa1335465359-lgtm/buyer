@@ -1,4 +1,5 @@
 
+
 export default async function handler(req, res) {
   // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -14,7 +15,8 @@ export default async function handler(req, res) {
   }
 
   try {
-    const apiKey = process.env.GEMINI_API_KEY2;
+    // Trim key to avoid header issues with accidental whitespace/newlines
+    const apiKey = (process.env.GEMINI_API_KEY2 || '').trim();
     if (!apiKey) {
       return res
         .status(500)
@@ -43,18 +45,21 @@ export default async function handler(req, res) {
       response_format: 'url',
       size: size || '2K',
       stream: false,
-      watermark: true // Match curl
+      watermark: true
     };
 
     // 2. Handle Reference Images (I2I)
-    // Only add the field if we actually have images.
-    // Ark API expects 'image_urls' for reference images, containing Data URLs.
+    // Check for non-empty array
     if (Array.isArray(images_base64) && images_base64.length > 0) {
-        payload.image_urls = images_base64.map(b64 => {
-            // Frontend sends raw base64, usually needs prefix for "url" field
+        const imageUrls = images_base64.map(b64 => {
+            // Ensure Data URL format
             if (b64.startsWith('data:')) return b64;
             return `data:image/jpeg;base64,${b64}`;
         });
+        
+        // Use 'image' field for compatibility with this specific endpoint/adapter
+        // (Reverting 'image_urls' to 'image' based on previous strict instruction)
+        payload.image = imageUrls;
     }
 
     // 3. Call Upstream
