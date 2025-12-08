@@ -48,14 +48,12 @@ export default async function handler(req, res) {
     };
 
     // Handle Images (0, 1, or 2 images)
-    // The backend now expects 'images_base64' as an array of pure base64 strings
-    if (images_base64 && Array.isArray(images_base64) && images_base64.length > 0) {
+    // Explicitly check for non-empty array before adding to payload to avoid upstream errors
+    if (Array.isArray(images_base64) && images_base64.length > 0) {
         // Construct Data URLs
         const imageUrls = images_base64.map(b64 => `data:image/jpeg;base64,${b64}`);
         
         // Pass to standard multi-image field (image_urls)
-        // Note: Specific behavior depends on the 4.5 model capability, 
-        // but typically it accepts a list for reference/edit tasks.
         payload.image_urls = imageUrls;
     }
 
