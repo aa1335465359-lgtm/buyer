@@ -1,5 +1,4 @@
 
-
 export default async function handler(req, res) {
   // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -31,13 +30,13 @@ export default async function handler(req, res) {
       }
     }
 
-    const { prompt, size, images_base64 } = body;
+    const { prompt, size, images_base64, watermark } = body;
     
     if (!prompt) {
       return res.status(400).json({ error: 'Missing prompt' });
     }
 
-    // 1. Construct Base Payload (Strictly matching curl for T2I)
+    // 1. Construct Base Payload (Strictly matching provided curl for T2I)
     const payload = {
       model: 'doubao-seedream-4-5-251128',
       prompt,
@@ -45,7 +44,8 @@ export default async function handler(req, res) {
       response_format: 'url',
       size: size || '2K',
       stream: false,
-      watermark: true
+      // Default watermark to false if not provided, allowing override from frontend if needed
+      watermark: typeof watermark === 'boolean' ? watermark : false
     };
 
     // 2. Handle Reference Images (I2I)
@@ -57,8 +57,8 @@ export default async function handler(req, res) {
             return `data:image/jpeg;base64,${b64}`;
         });
         
-        // Use 'image' field for compatibility with this specific endpoint/adapter
-        // (Reverting 'image_urls' to 'image' based on previous strict instruction)
+        // Use 'image' field (matches curl example and Turn 1 instruction)
+        // Sending as an array of strings
         payload.image = imageUrls;
     }
 
