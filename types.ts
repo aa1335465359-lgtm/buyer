@@ -25,6 +25,9 @@ export interface Todo {
   shopId?: string;      // 店铺ID
   quantity?: string;    // 多少个
   actionTime?: string;  // 什么时候 (text description)
+
+  // AI Processing State
+  aiStatus?: 'idle' | 'processing' | 'done' | 'error'; 
 }
 
 export interface AITaskResponse {

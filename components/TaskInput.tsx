@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Image as ImageIcon, ArrowUp, X, Loader2 } from 'lucide-react';
+import { Image as ImageIcon, X, Sparkles, Send } from 'lucide-react';
 import { analyzeImageAndText } from '../services/geminiService';
 import { Priority, Todo } from '../types';
 
@@ -7,14 +7,18 @@ const generateId = () => Date.now().toString(36) + Math.random().toString(36).su
 
 interface TaskInputProps {
   onAddTodos: (todos: Todo[]) => void;
+  onUpdateTodo?: (id: string, updates: Partial<Todo>) => void;
+  onDeleteTodo?: (id: string) => void;
 }
 
-const TaskInput: React.FC<TaskInputProps> = ({ onAddTodos }) => {
+const TaskInput: React.FC<TaskInputProps> = ({ onAddTodos, onUpdateTodo, onDeleteTodo }) => {
   const [text, setText] = useState('');
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  
+  // New Toggle State for "Smart Extraction"
+  const [isSmartMode, setIsSmartMode] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
@@ -46,6 +50,8 @@ const TaskInput: React.FC<TaskInputProps> = ({ onAddTodos }) => {
       setImagePreview(e.target?.result as string);
     };
     reader.readAsDataURL(file);
+    // Auto-enable smart mode if image is added
+    setIsSmartMode(true);
   };
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -58,99 +64,135 @@ const TaskInput: React.FC<TaskInputProps> = ({ onAddTodos }) => {
     setSelectedImage(null);
     setImagePreview(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
+    // Optional: could turn off smart mode, but user might still want text extraction
   };
 
   const handleSubmit = async () => {
     if (!text.trim() && !selectedImage) return;
 
-    setIsLoading(true);
+    const tempId = generateId();
+    // Determine mode: Smart extraction is triggered by explicit toggle OR presence of image
+    const needsAi = isSmartMode || !!selectedImage;
 
-    try {
-      // Manual simple entry optimization: only for short text without digits (which might be ShopIDs)
-      const isSimpleText = !selectedImage && text.length < 20 && !text.match(/\d{5,}/);
-
-      if (isSimpleText) {
-        onAddTodos([{
-          id: generateId(),
-          title: text,
-          priority: Priority.P2, // Default to Medium/Normal
-          status: 'todo',
-          isCompleted: false, // Legacy compat
-          createdAt: Date.now(),
-        }]);
+    // --- Fast Memo Mode (No AI) ---
+    if (!needsAi) {
+        const newTodo: Todo = {
+            id: tempId,
+            title: text,
+            priority: Priority.P2,
+            status: 'todo',
+            isCompleted: false,
+            createdAt: Date.now(),
+            aiStatus: 'idle'
+        };
+        onAddTodos([newTodo]);
         setText('');
-      } else {
-        const aiResponse = await analyzeImageAndText(text, selectedImage || undefined);
-        
-        // Fallback: If AI returns no tasks but we had meaningful input, create a raw task
-        if (!aiResponse.tasks || aiResponse.tasks.length === 0) {
-            console.warn("AI returned no tasks. Creating fallback task.");
-            onAddTodos([{
-                id: generateId(),
-                title: text ? `图片任务 ${new Date().getHours()}:${new Date().getMinutes().toString().padStart(2,'0')}` : "未命名图片任务",
-                description: text || "AI未能识别具体任务，请手动补充信息。",
-                priority: Priority.P2,
-                status: 'todo',
-                createdAt: Date.now()
-            }]);
-        } else {
-            const newTodos: Todo[] = aiResponse.tasks.map(task => {
-            let deadline = task.estimatedMinutes ? Date.now() + (task.estimatedMinutes * 60 * 1000) : undefined;
-            
-            // AI 智能规则解析 (ActionTime Mapping)
-            // 今天/下班前/23:00 -> 今天 23:00
-            // 明天 -> 明天 23:00
-            if (task.actionTime) {
-                const lower = task.actionTime.toLowerCase();
-                const now = new Date();
-                
-                if (lower.includes('下班') || lower.includes('23:00') || lower.includes('今天')) {
-                    now.setHours(23, 0, 0, 0);
-                    deadline = now.getTime();
-                } else if (lower.includes('明天')) {
-                    now.setDate(now.getDate() + 1);
-                    now.setHours(23, 0, 0, 0);
-                    deadline = now.getTime();
-                }
-            }
+        return; // Exit immediate mode
+    }
 
-            return {
-                id: generateId(),
-                title: task.title,
-                description: task.description,
-                priority: (task.priority as Priority) || Priority.P2,
-                status: deadline ? 'in_progress' : 'todo',
-                isCompleted: false,
-                createdAt: Date.now(),
-                deadline: deadline,
-                shopId: task.shopId,
-                quantity: task.quantity,
-                actionTime: task.actionTime
-            };
-            });
+    // --- Smart Extraction Mode (AI) ---
+    
+    // 1. Calculate approximate item count for container card
+    // Split by newlines, ignoring empty lines
+    const textSegments = text.trim().split(/\n+/).filter(line => line.trim().length > 0).length;
+    const imageCount = selectedImage ? 1 : 0;
+    const estimatedCount = Math.max(1, textSegments + imageCount);
 
-            onAddTodos(newTodos);
-        }
-        
-        setText('');
-        clearImage();
-      }
-    } catch (error) {
-      console.error(error);
-      alert("AI识别遇到问题，已转为普通文本任务。");
-      // Error Fallback
-      onAddTodos([{
-        id: generateId(),
-        title: text ? text.substring(0, 30) : "新任务",
-        description: text || "任务识别失败，请手动编辑",
+    // 2. Create Container Card
+    const containerTodo: Todo = {
+        id: tempId,
+        title: `待整理记录（${estimatedCount} 项）`,
+        description: '🍅 正在帮你拆分任务…',
         priority: Priority.P2,
         status: 'todo',
-        createdAt: Date.now()
-      }]);
-      setText('');
-      clearImage();
-    } finally {
-      setIsLoading(false);
+        isCompleted: false,
+        createdAt: Date.now(),
+        aiStatus: 'processing'
+    };
+
+    // 3. Optimistic Add of Container
+    onAddTodos([containerTodo]);
+    
+    // Capture values for async process
+    const payloadText = text;
+    const payloadImage = selectedImage;
+
+    // Clear UI Immediately
+    setText('');
+    clearImage();
+
+    // 4. Background AI Process
+    try {
+        const aiResponse = await analyzeImageAndText(payloadText, payloadImage || undefined);
+        
+        if (aiResponse.tasks && aiResponse.tasks.length > 0) {
+            // Map AI response to real Todo objects
+            const realTodos = aiResponse.tasks.map(task => {
+                let deadline = undefined;
+                
+                // Parse estimated minutes
+                if (task.estimatedMinutes) {
+                    deadline = Date.now() + (task.estimatedMinutes * 60 * 1000);
+                }
+                
+                // Parse Action Time logic
+                if (task.actionTime) {
+                    const lower = task.actionTime.toLowerCase();
+                    const now = new Date();
+                    if (lower.includes('下班') || lower.includes('23:00') || lower.includes('今天')) {
+                        now.setHours(23, 0, 0, 0);
+                        deadline = now.getTime();
+                    } else if (lower.includes('明天')) {
+                        now.setDate(now.getDate() + 1);
+                        now.setHours(23, 0, 0, 0);
+                        deadline = now.getTime();
+                    }
+                }
+
+                return {
+                    id: generateId(), // New unique ID for each split task
+                    title: task.title,
+                    description: task.description,
+                    priority: (task.priority as Priority) || Priority.P2,
+                    status: deadline ? 'in_progress' : 'todo',
+                    isCompleted: false,
+                    createdAt: Date.now(),
+                    deadline: deadline,
+                    shopId: task.shopId,
+                    quantity: task.quantity,
+                    actionTime: task.actionTime,
+                    aiStatus: 'done' // Mark as done for visual feedback
+                } as Todo;
+            });
+
+            // 5. Replace Container with Real Tasks
+            // First delete the container
+            if (onDeleteTodo) {
+                onDeleteTodo(tempId);
+            }
+            // Then insert the new tasks (App.tsx usually prepends, so they appear at top)
+            onAddTodos(realTodos);
+
+        } else {
+            // AI returned nothing - Update container to reflect failure/empty but keep it
+            if (onUpdateTodo) {
+                onUpdateTodo(tempId, { 
+                    aiStatus: 'done', 
+                    title: payloadText || '未识别到任务',
+                    description: 'AI 未提取到有效信息' 
+                });
+            }
+        }
+    } catch (error) {
+        console.error("Background AI Failed", error);
+        // Update container to error state
+        if (onUpdateTodo) {
+            onUpdateTodo(tempId, { 
+                aiStatus: 'error', 
+                title: payloadText || "任务识别失败",
+                description: "AI 提炼遇到问题，请手动编辑。" 
+            });
+        }
     }
   };
 
@@ -191,16 +233,32 @@ const TaskInput: React.FC<TaskInputProps> = ({ onAddTodos }) => {
               handleSubmit();
             }
           }}
-          placeholder="✨ 输入工作内容，或 Ctrl+V 粘贴截图/ID..."
+          placeholder={isSmartMode ? "✨ 智能提炼模式：粘贴文本或截图，AI 自动拆解..." : "普通备忘：回车快速添加..."}
           className="w-full bg-transparent border-none outline-none text-slate-700 placeholder:text-slate-400 resize-none max-h-32 py-2.5 px-2"
           rows={1}
           style={{ minHeight: '44px' }} 
         />
         
         <div className="flex items-center gap-2 shrink-0 pb-1.5 pr-1">
+           {/* Smart Mode Toggle */}
+           <button
+             onClick={() => setIsSmartMode(!isSmartMode)}
+             className={`
+                p-2 rounded-xl transition-all flex items-center gap-1.5 text-xs font-medium border
+                ${isSmartMode 
+                    ? 'bg-indigo-50 text-indigo-600 border-indigo-200' 
+                    : 'bg-transparent text-slate-400 border-transparent hover:bg-slate-50'
+                }
+             `}
+             title={isSmartMode ? "已开启智能提炼" : "点击开启智能提炼"}
+           >
+              <Sparkles size={16} className={isSmartMode ? "text-indigo-500" : "text-slate-400"} />
+              {isSmartMode && <span className="hidden sm:inline">智能提炼</span>}
+           </button>
+
            <button 
              onClick={() => fileInputRef.current?.click()}
-             className="p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 rounded-xl transition-colors"
+             className={`p-2 rounded-xl transition-colors ${selectedImage ? 'bg-indigo-50 text-indigo-600' : 'text-slate-400 hover:bg-slate-100'}`}
              title="上传图片"
            >
              <ImageIcon size={20} />
@@ -208,16 +266,16 @@ const TaskInput: React.FC<TaskInputProps> = ({ onAddTodos }) => {
            
            <button
             onClick={handleSubmit}
-            disabled={isLoading || (!text && !selectedImage)}
+            disabled={!text && !selectedImage}
             className={`
               h-9 px-4 rounded-xl transition-all flex items-center justify-center font-medium text-sm
-              ${isLoading || (!text && !selectedImage)
+              ${(!text && !selectedImage)
                 ? 'bg-slate-100 text-slate-300 cursor-not-allowed'
                 : 'bg-slate-900 text-white hover:bg-slate-800 hover:scale-105 shadow-md active:scale-95'
               }
             `}
            >
-            {isLoading ? <Loader2 size={18} className="animate-spin" /> : '添加'}
+            <Send size={18} />
            </button>
         </div>
       </div>

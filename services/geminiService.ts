@@ -140,106 +140,89 @@ async function callGeminiApi(
 // 1. Image & Text Analysis for Task Input
 export const analyzeImageAndText = async (text: string, image?: File): Promise<AITaskResponse> => {
   const systemPrompt = `
-【角色：
-你是「Temu 大码女装买手的待办拆解助手」。你的目标是：
-把我输入的自然语言，拆成**尽量少但必要的**、结构清晰、可执行的待办事项列表，而不是乱切很多条。
+【角色设定】
+你是「Temu 大码女装买手的待办拆解助手」。
+你的任务是将用户的自然语言或截图内容拆解为结构化的 JSON 任务列表。
 
-一、输出格式（必须遵守）
+【最高原则：一铺一单 (One Shop One Task)】
+检测到输入中包含几个不同的店铺ID（或明确指代几个不同的商家），JSON 数组中就必须包含几条独立的任务对象。
+禁止将多个店铺ID合并在同一条任务里。
+例如：输入“给6123和6456发定向”，必须拆成两条任务，一条 merchant_id 是 6123，一条是 6456。
 
-一律输出为 JSON 对象，不要输出任何解释或多余文字：
-
+【输出 JSON 结构（严禁包含Markdown或解释）】
 {
   "tasks": [
     {
       "type": "发定向 | 跟进 | 其他",
-      "merchant_id": "商家ID或店铺名",
-      "title": "一句话标题",
-      "description": "简短说明，要做什么",
-      "merchant_type": "新商 / 老商 / 低录款 / 已起量 / 不确定",
-      "merchant_grade": "S | A | B | 其他",
-      "targeting_goal": "仅当 type=发定向 时填写",
-      "style_focus": "仅当 type=发定向 时填写",
-      "spu_ids": ["仅当 type=发定向 时，解析到的SPU或商品ID"],
-      "targeting_count": 0,
-      "follow_topic": "仅当 type=跟进 时填写，如：录款进度 / 打版 / 成本 / 上新 / 效果复盘 等",
-      "follow_detail": "仅当 type=跟进 时填写，描述具体要聊什么",
-      "follow_time": "YYYY-MM-DD 或 相对时间（如：今天晚上 / 明天白天 / 本周内）",
-      "priority": "高 | 中 | 低",
-      "channel": "如：站内信 / TEMU Chat / 微信 / 电话，如未提到则留空",
-      "raw_text": "原始输入这句话，原样放这里"
+      "merchant_id": "商家ID (数字)",
+      "title": "标题",
+      "description": "任务说明",
+      "merchant_type": "新商/老商/不确定",
+      "merchant_grade": "S/A/B",
+      "style_focus": "品类/风格",
+      "targeting_count": 数字,
+      "priority": "高/中/低",
+      "follow_time": "YYYY-MM-DD 或 相对时间"
     }
   ]
 }
 
-二、「商家资料卡片」的强制规则（你刚才那种）
+【处理模式与规则】
 
-当输入整体形态类似下面这种一整组带编号的信息时：
+--- 模式 A：发定向 / 商家资料卡片 (STRICT MODE) ---
+触发条件：
+1. 输入符合「商家资料卡片」格式（带编号列表、店铺ID、品类、等级等）。
+2. 输入中明确包含「发定向、录款、推款、配款、再补一批」等动作。
 
-1.店铺：634418227761818 
-2.擅长品类：T恤/卫衣/裤子
-3.预计第一个月上多少款：20
-4.是否有大码经验：否
-5.是否做过全托跨境：否
-6.接定向还是自己的款：定向款
-7.商家分级：A
-[图片]
+在此模式下，你必须严格遵守以下规则：
+1. type 必须为 "发定向"。
+2. title 必须严格按此模板生成：
+   "给{merchant_id}发{targeting_count}款{style_focus}定向"
+   （例："给63441822776发20款T恤/卫衣定向"）
+   （若缺少数量或品类，可降级为："给{merchant_id}发一批大码定向"）
+3. description 需整合关键信息（如新老商、等级、经验），简练说明。
+4. targeting_count: 提取数字，若无默认 10。
+5. priority: S级=高, A级=中, B级=低。
+6. follow_time: 若用户未指定时间，默认为 "今天下班前"。
 
-视为一张「商家资料卡片」，必须遵守：
+--- 模式 B：跟进 / 日常沟通 (FLEXIBLE MODE) ---
+触发条件：
+1. 输入中包含「跟进、催一下、问问、回访、复盘、进度」等沟通类词汇。
+2. 不属于发定向的其他事务。
 
-1）**只能生成 1 条任务，绝对不能拆成多条**  
-2）这 1 条任务的字段建议如下：
+在此模式下，规则相对宽松：
+1. type 为 "跟进" 或 "其他"。
+2. title 简练概括意图即可（如："跟进{merchant_id}打版进度"）。
+3. description 允许灵活总结。
+   - 捕捉用户想表达的核心逻辑（要做什么、注意什么）。
+   - 不要强行提取 style_focus 或 targeting_count 等不相关字段。
+   - 语气自然，逻辑通顺即可。
 
-- type: 一律为 "发定向"
-- merchant_id: 从“店铺：”后面提取数字ID（如 634418227761818）
-- style_focus: 从“擅长品类”提取品类文本（如 "T恤/卫衣/裤子"）
-- targeting_count: 从“预计第一个月上多少款”提取数字（如 20，提取不到时可默认 10）
-- merchant_type: 
-    - 如果文本中有“老店”“老店激活”等 → "老商"
-    - 有“新商”“新店”“刚做大码”等 → "新商"
-    - 其他情况 → "不确定"
-- merchant_grade: 
-    - 如果出现“S商、S级、重点商家”等 → "S"
-    - 如果出现“A商、A级”等 → "A"
-    - 如果出现“B商、B级”等 → "B"
-    - 没提则留空
-- priority:
-    - 商家分级为 S → "高"
-    - 商家分级为 A → "中"
-    - 商家分级为 B → "低"
-- title: 按下面格式生成：
-    - 若有 style_focus 和 targeting_count：
-      "给{merchant_id}发{targeting_count}款{style_focus}定向"
-      例如："给634418227761818发20款T恤/卫衣/裤子定向"
-    - 若缺少其中一项，则尽量用「给{merchant_id}发一批大码定向」类似的标题。
-- description:
-    - 用一两句话，整合资料卡里的信息，比如：
-      "A类商家，无大码经验，首月计划上20款T恤/卫衣/裤子，安排一批起量用定向。"
-
-3）即使资料卡里没有出现“发定向、催进度”等明显动作动词，**也要生成这一条发定向任务**，不要返回空数组。
-
-三、普通自然语言输入的判断逻辑
-
-当输入不是上述编号资料卡，而是自然语言描述时：
-
-1）先判断是否与商家相关：
-   若出现「店铺」「店铺ID」「商家」「老板」「录款」「定向」「大码」等字眼，则视为与商家相关。
-
-2）判断 type：
-   - 若提到「录款、定向、款式、SPU、发几条款、给他推几款、再补一批款」 → type = "发定向"
-   - 若提到「问一下、跟进、看看进度、催一下、回访、对一下、沟通一下、确认一下、复盘」 → type = "跟进"
-   - 其他 → type = "其他"
-
-3）任务合并规则：
-   - 对同一个商家、同一语境，尽量只生成 1 条任务，把要做的事写在 description 或 follow_detail 里，不要拆成很多碎任务。
-   - 只有当文本中明确出现多个不同商家，且各自有独立动作时，才为多个商家分别生成任务。
-
-四、优先级(Priority) 特别映射规则
-S级商家 = 高 (P1)
-A级商家 = 中 (P2)
-B级商家 = 低 (P3)
-
-五、默认时间规则 (DDL)
-若任务 type="发定向" 且输入内容中未明确提及具体截止时间（如“明天前”、“周五前”等），则请将 follow_time 字段默认填写为 "今天下班前"。
+【示例】
+输入："612345这个店是A级，今天要发20个卫衣定向。还有998877这个店，催一下他寄样，太慢了。"
+输出：
+{
+  "tasks": [
+    {
+      "type": "发定向",
+      "merchant_id": "612345",
+      "title": "给612345发20款卫衣定向",
+      "description": "A级商家，安排20款卫衣定向。",
+      "style_focus": "卫衣",
+      "targeting_count": 20,
+      "priority": "中",
+      "merchant_grade": "A",
+      "follow_time": "今天下班前"
+    },
+    {
+      "type": "跟进",
+      "merchant_id": "998877",
+      "title": "催促998877寄样",
+      "description": "寄样进度太慢，需要催促一下。",
+      "priority": "中"
+    }
+  ]
+}
 `.trim();
 
   const responseText = await callGeminiApi(systemPrompt, text, image, 'application/json');
@@ -269,17 +252,17 @@ B级商家 = 低 (P3)
 
           // Description Construction
           let desc = item.description || "";
+          
+          // Only perform strict template augmentation for "发定向" if description is empty or very short
+          // The Prompt is now generating good descriptions, so we trust it more.
+          // Just adding metadata if missing.
           if (item.type === "发定向") {
-              const focus = item.style_focus ? `风格:${item.style_focus}` : "";
-              const goal = item.targeting_goal ? `目标:${item.targeting_goal}` : "";
-              const mType = item.merchant_type ? `(${item.merchant_type})` : "";
-              // Avoid duplicates if description already contains these
-              const extraInfo = [mType, focus, goal].filter(Boolean).join(" ");
-              if (extraInfo && !desc.includes(extraInfo)) {
-                  desc = `${extraInfo} ${desc}`.trim();
-              }
-          } else if (item.type === "跟进") {
-              desc = item.follow_detail || desc;
+               // Ensure description isn't just empty
+               if (!desc) {
+                   const focus = item.style_focus || "大码女装";
+                   const count = item.targeting_count || "若干";
+                   desc = `计划发 ${count} 款 ${focus} 定向。`;
+               }
           }
 
           return {
@@ -299,28 +282,113 @@ B级商家 = 低 (P3)
   }
 };
 
-// 2. Script Matcher
+// 2. Script Matcher (Optimized: 2-Step Process)
 export const matchScript = async (input: string, image?: File): Promise<{ analysis: string; recommendations: ScriptItem[] }> => {
-  const context = SALES_SCRIPTS.map(s => `[${s.category}-${s.scenario}]: ${s.content}`).join('\n');
+  // --- Step 1: Selection (Low Token Cost) ---
+  // Only send the "Index" (ID + Title/Scenario), not the full content.
+  const indexContext = SALES_SCRIPTS.map(s => `ID: ${s.id} | [${s.category}] ${s.scenario}`).join('\n');
   
-  const systemPrompt = `
-  你是一个资深大码女装买手。请分析商家发来的话（文字或截图），判断商家的真实意图（是推脱、抗拒、还是有兴趣但有顾虑）。
-  然后从下方的【话术库】中，挑选最合适的 3 条回复建议。
+  const selectionSystemPrompt = `
+  你是一个资深大码女装买手。请分析商家发来的话（文字或截图），判断商家的真实意图。
+  然后从下方的【话术索引】中，挑选最合适的 3 个话术 ID。
 
-  【话术库】：
-  ${context}
+  【话术索引】：
+  ${indexContext}
 
   输出 JSON 格式：
   {
+    "recommended_ids": ["id1", "id2", "id3"] 
+  }
+  `;
+
+  let selectedIds: string[] = [];
+  try {
+      // Step 1: Get IDs
+      const selectionText = await callGeminiApi(selectionSystemPrompt, input || "请分析图片内容", image, 'application/json');
+      const selectionJson = JSON.parse(selectionText);
+      selectedIds = selectionJson.recommended_ids || [];
+  } catch (e) {
+      console.error("Step 1 Selection Failed", e);
+      // Fallback strategies handled later
+  }
+
+  // Identify the full template objects
+  let selectedTemplates = SALES_SCRIPTS.filter(s => selectedIds.includes(s.id));
+  
+  // Fallback: If AI picked nothing, pick generic "Objection Handling" scripts
+  if (selectedTemplates.length === 0) {
+      selectedTemplates = SALES_SCRIPTS.filter(s => s.category.includes("回复异议")).slice(0, 3);
+  }
+
+  // --- Step 2: Adaptation (High Quality, Focused Context) ---
+  // Send the FULL CONTENT of the *selected* templates + User Input to AI.
+  // Ask AI to adapt the content specifically to the user's input.
+  
+  const templatesContext = selectedTemplates.map(s => `
+    【模版 ID: ${s.id}】
+    分类: ${s.category}
+    场景: ${s.scenario}
+    原始话术: ${s.content}
+  `).join('\n\n');
+
+  const adaptationSystemPrompt = `
+  你是一个大码女装买手助理。
+  
+  【任务目标】
+  1. 分析用户的输入（商家发来的话）。
+  2. 参考提供的 3 个【模版话术】。
+  3. **基于用户实际语境，对模版话术进行微调和润色**。
+     - 如果商家提到了具体细节（如"卫衣"、"太贵"、"人手不够"），请在回复中自然带入这些信息，不要生硬照搬模版。
+     - 保持买手"专业、干练、但也贴心"的人设。
+     - 必须返回 3 个结果，分别对应选中的 3 个模版。
+
+  【参考模版】：
+  ${templatesContext}
+
+  【输出 JSON 格式】
+  {
     "analysis": "分析商家的心理...",
     "recommendations": [
-       { "category": "...", "scenario": "...", "content": "..." }
+       { 
+         "id": "模版ID", 
+         "category": "原分类", 
+         "scenario": "原场景", 
+         "content": "修改后的回复内容..." 
+       }
     ]
   }
   `;
 
-  const responseText = await callGeminiApi(systemPrompt, input, image, 'application/json');
-  return JSON.parse(responseText);
+  try {
+      // Re-send image in Step 2 so AI can see specific text details for adaptation
+      const adaptationText = await callGeminiApi(adaptationSystemPrompt, input || "请根据图片内容生成回复", image, 'application/json');
+      const adaptationJson = JSON.parse(adaptationText);
+      
+      const adaptedRecs: ScriptItem[] = adaptationJson.recommendations || [];
+      
+      // Merge with original metadata just in case AI dropped some fields
+      const finalRecs = adaptedRecs.map(rec => {
+          const original = SALES_SCRIPTS.find(s => s.id === rec.id);
+          return {
+              id: rec.id,
+              category: original?.category || rec.category,
+              scenario: original?.scenario || rec.scenario,
+              content: rec.content // The AI adapted content
+          };
+      });
+
+      return {
+          analysis: adaptationJson.analysis || "AI 分析完成",
+          recommendations: finalRecs.length > 0 ? finalRecs : selectedTemplates
+      };
+  } catch (e) {
+      console.error("Step 2 Adaptation Failed", e);
+      // Fallback: Just return the static templates if Step 2 fails
+      return {
+          analysis: "网络抖动，显示原始模版",
+          recommendations: selectedTemplates
+      };
+  }
 };
 
 // 3. Image Editor (Direct Prompting)

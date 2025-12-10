@@ -317,7 +317,7 @@ const App: React.FC = () => {
         <div className="w-64 bg-mac-sidebar border-r border-mac-border flex flex-col pt-6 pb-4 hidden md:flex shrink-0">
           <div className="px-6 mb-8">
             <h1 className="text-sm font-bold tracking-wider text-slate-500 uppercase">Buyer Mate</h1>
-            <p className="text-[10px] text-slate-400 mt-1 font-mono">v2.4.2</p>
+            <p className="text-[10px] text-slate-400 mt-1 font-mono">v2.5.0</p>
           </div>
 
           <nav className="flex-1 px-4 space-y-1">
@@ -549,7 +549,11 @@ const App: React.FC = () => {
                     {/* Bottom Input Area (Only in List View for now, or maybe always?) */}
                     <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-slate-50/90 via-slate-50/80 to-transparent pt-12 z-20">
                       <div className="max-w-3xl mx-auto">
-                          <TaskInput onAddTodos={handleAddTodos} />
+                          <TaskInput 
+                            onAddTodos={handleAddTodos} 
+                            onUpdateTodo={handleUpdateTodo} 
+                            onDeleteTodo={handleDeleteTodo} // Passed down for removing container
+                          />
                       </div>
                     </div>
                   </>
@@ -590,13 +594,13 @@ const App: React.FC = () => {
                     <span className="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
                     <h2 className="font-semibold text-slate-700 text-sm">Indie Chi 选款</h2>
                     </div>
-                    <a href="https://fake-indie.vercel.app/" target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-3 py-1.5 rounded-md transition-colors">
+                    <a href="https://indie-chi.vercel.app/" target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-3 py-1.5 rounded-md transition-colors">
                     <ExternalLink size={12} /> 在新窗口打开
                     </a>
                 </div>
                 {/* Always render iframe but hide it to preserve state (if browser allows) */}
                 <iframe 
-                    src="https://fake-indie.vercel.app/" 
+                    src="https://indie-chi.vercel.app/" 
                     className="flex-1 w-full border-none bg-white" 
                     title="Indie Chi"
                 />

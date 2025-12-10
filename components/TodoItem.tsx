@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Todo, Priority, TodoStatus } from '../types';
-import { Copy, Check, Calendar, Clock, Edit3, X, Zap, Coffee, Moon, Sun, ChevronRight, MoreHorizontal, ArrowRight, PlayCircle, AlertCircle, Circle, Anchor } from 'lucide-react';
+import { Copy, Check, Calendar, Clock, Edit3, X, Zap, Coffee, Moon, Sun, ChevronRight, MoreHorizontal, ArrowRight, PlayCircle, AlertCircle, Circle, Anchor, Sparkles, Loader2 } from 'lucide-react';
 
 interface TodoItemProps {
   todo: Todo;
@@ -70,6 +71,7 @@ const TodoItem: React.FC<TodoItemProps> = ({
   const [timeLeft, setTimeLeft] = useState<string | null>(null);
   const [isOverdue, setIsOverdue] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isJustAdded, setIsJustAdded] = useState(false);
   
   // Edit State
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -92,6 +94,21 @@ const TodoItem: React.FC<TodoItemProps> = ({
   const dateMenuRef = useRef<HTMLDivElement>(null);
 
   const isDone = todo.status === 'done';
+  const isAiProcessing = todo.aiStatus === 'processing';
+
+  useEffect(() => {
+    // Check if task was created in last 10 seconds
+    if (Date.now() - todo.createdAt < 10000) {
+        setIsJustAdded(true);
+        const timer = setTimeout(() => setIsJustAdded(false), 10000);
+        return () => clearTimeout(timer);
+    }
+  }, [todo.createdAt]);
+
+  useEffect(() => {
+    // Sync title update if AI updates it in background
+    setEditTitleValue(todo.title);
+  }, [todo.title]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -293,6 +310,17 @@ const TodoItem: React.FC<TodoItemProps> = ({
   const statusStyle = getStatusBadge();
   const StatusIcon = statusStyle.icon;
 
+  if (isAiProcessing) {
+      return (
+        <div className="relative rounded-xl border border-indigo-100 bg-white/80 backdrop-blur-md p-3.5 flex items-center justify-center min-h-[56px] shadow-sm transition-all my-1">
+             <div className="flex items-center gap-2.5 text-indigo-600/80 font-medium text-sm">
+                <span className="text-lg animate-bounce">🍅</span>
+                <span className="animate-pulse tracking-wide">小番茄正在看你发了什么...</span>
+            </div>
+        </div>
+      );
+  }
+
   return (
     <>
     <style>{`
@@ -301,6 +329,16 @@ const TodoItem: React.FC<TodoItemProps> = ({
             to { background-position: -800px 0; }
         }
         
+        @keyframes breathe {
+            0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); border-color: rgba(165, 180, 252, 0.2); }
+            50% { box-shadow: 0 0 15px rgba(99, 102, 241, 0.25); border-color: rgba(99, 102, 241, 0.6); background-color: rgba(238, 242, 255, 0.4); }
+            100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); border-color: rgba(165, 180, 252, 0.2); }
+        }
+        .card-just-added {
+            animation: breathe 3s infinite ease-in-out;
+            z-index: 5;
+        }
+
         .bubbles-layer-1 {
             background-image: 
                 radial-gradient(circle at 10% 20%, rgba(255,255,255,0.15) 35px, transparent 36px),
@@ -375,6 +413,7 @@ const TodoItem: React.FC<TodoItemProps> = ({
                   )
             }
             ${!isFocusMode && isMenuOpen ? 'z-50' : ''}
+            ${isJustAdded ? 'card-just-added' : ''}
         `}
     >
         {isFocusMode ? (
@@ -526,6 +565,8 @@ const TodoItem: React.FC<TodoItemProps> = ({
                                 {todo.quantity}款
                              </span>
                         )}
+
+                        {/* Just Added Indicator was here, now removed in favor of card effect */}
                      </div>
                 </div>
 
