@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Image as ImageIcon, X, Sparkles, Send } from 'lucide-react';
 import { analyzeImageAndText } from '../services/geminiService';
@@ -166,7 +165,11 @@ const TaskInput: React.FC<TaskInputProps> = ({ onAddTodos, onUpdateTodo, onDelet
         />
         <div className="flex items-center gap-1.5 shrink-0 pb-1.5 pr-1">
            <button
-             onClick={() => setIsSmartMode(!isSmartMode)}
+             onClick={() => {
+                setIsSmartMode(!isSmartMode);
+                // Return focus to textarea so pressing Enter triggers submit, not button toggle
+                textAreaRef.current?.focus(); 
+             }}
              className={`p-2 rounded-theme transition-all flex items-center justify-center border-none ${isSmartMode ? 'bg-theme-accent-bg text-theme-accent' : 'bg-transparent text-theme-subtext hover:bg-theme-input'}`}
              title={isSmartMode ? "AI 智能识别已开启" : "开启 AI 智能识别"}
            >

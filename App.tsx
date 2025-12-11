@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Todo, Priority } from './types';
 import TaskInput from './components/TaskInput';
@@ -69,10 +68,13 @@ const App: React.FC = () => {
   const [todos, setTodos] = useState<Todo[]>(() => {
     const saved = localStorage.getItem('buyer_todos');
     const parsed = saved ? JSON.parse(saved) : [];
-    return parsed.map((t: any) => ({
-      ...t,
-      status: t.status || (t.isCompleted ? 'done' : 'todo')
-    }));
+    // Filter out 'processing' status tasks so they don't persist on refresh
+    return parsed
+      .filter((t: any) => t.aiStatus !== 'processing')
+      .map((t: any) => ({
+        ...t,
+        status: t.status || (t.isCompleted ? 'done' : 'todo')
+      }));
   });
   
   const [theme, setTheme] = useState(() => {
@@ -506,7 +508,7 @@ const App: React.FC = () => {
 
             {/* 4. AI ASSISTANT (Keep Alive) */}
             <div className={`h-full w-full ${currentView === 'bot' ? '' : 'view-hidden'}`}>
-                <AiAssistant />
+                <AiAssistant theme={theme} />
             </div>
             
             {/* 5. INDIE CHI (Iframe Keep Alive) */}
