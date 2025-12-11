@@ -149,16 +149,25 @@ const App: React.FC = () => {
   };
 
   const handleDeleteTodo = (id: string) => {
+    // 1. Attempt to find task for Undo feature
+    // Note: When deleting a temporary "Processing" placeholder from an async callback (TaskInput), 
+    // 'todos' here might be stale (not yet containing the placeholder). 
+    // In that case, 'todoToDelete' is undefined, which is actually correct/desired 
+    // because we don't want to offer Undo for a processing placeholder.
     const todoToDelete = todos.find(t => t.id === id);
+    
     if (todoToDelete) {
         setLastDeleted(todoToDelete);
-        setTodos(prev => prev.filter(t => t.id !== id));
-        if (focusedTodoId === id) setFocusedTodoId(null);
-        
         setShowUndo(true);
         if (undoTimeoutRef.current) clearTimeout(undoTimeoutRef.current);
         undoTimeoutRef.current = setTimeout(() => setShowUndo(false), 8000); // 8 seconds to undo
     }
+
+    // 2. ALWAYS perform deletion using functional update
+    // This ensures that even if 'todos' in the closure is stale, we correctly remove the item from the latest state.
+    setTodos(prev => prev.filter(t => t.id !== id));
+    
+    if (focusedTodoId === id) setFocusedTodoId(null);
   };
 
   const handleUndoDelete = () => {
