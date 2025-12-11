@@ -594,13 +594,13 @@ const App: React.FC = () => {
                     <span className="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
                     <h2 className="font-semibold text-slate-700 text-sm">Indie Chi 选款</h2>
                     </div>
-                    <a href="https://indie-chi.vercel.app/" target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-3 py-1.5 rounded-md transition-colors">
+                    <a href="https://fake-indie.vercel.app/" target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-3 py-1.5 rounded-md transition-colors">
                     <ExternalLink size={12} /> 在新窗口打开
                     </a>
                 </div>
                 {/* Always render iframe but hide it to preserve state (if browser allows) */}
                 <iframe 
-                    src="https://indie-chi.vercel.app/" 
+                    src="https://fake-indie.vercel.app/" 
                     className="flex-1 w-full border-none bg-white" 
                     title="Indie Chi"
                 />
