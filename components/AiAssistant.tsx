@@ -75,7 +75,7 @@ const AiAssistant: React.FC = () => {
   }
 
   return (
-    <div className="flex h-full relative overflow-hidden bg-theme-panel/30">
+    <div className="flex h-full w-full relative overflow-hidden bg-theme-panel/30">
        {/* Sidebar Overlay */}
        <div className={`absolute top-0 right-0 h-full w-72 bg-theme-panel shadow-theme z-20 transition-transform duration-300 border-l border-theme-border ${showHistory ? 'translate-x-0' : 'translate-x-full'}`}>
           <div className="p-4 border-b border-theme-border flex items-center justify-between bg-theme-input">
@@ -93,7 +93,7 @@ const AiAssistant: React.FC = () => {
        </div>
 
        {/* Main Chat */}
-       <div className="flex-1 flex flex-col h-full backdrop-blur-md min-w-0">
+       <div className="flex-1 flex flex-col h-full min-h-0 min-w-0 backdrop-blur-md">
           <div className="px-6 py-4 border-b border-theme-border flex items-center justify-between bg-theme-panel/50 shrink-0">
              <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center text-white shadow-md"><Bot size={24} /></div>
@@ -121,7 +121,7 @@ const AiAssistant: React.FC = () => {
              <div ref={messagesEndRef} />
           </div>
 
-          <div className="p-4 bg-theme-panel/60 border-t border-theme-border backdrop-blur-md shrink-0">
+          <div className="p-4 bg-theme-panel/60 border-t border-theme-border backdrop-blur-md shrink-0 w-full">
              <div className="relative bg-theme-input border border-theme-border rounded-theme shadow-sm flex items-center pr-2 overflow-hidden">
                 <button onClick={() => fileInputRef.current?.click()} className="p-3 text-theme-subtext hover:text-theme-accent"><ImageIcon size={20} /></button>
                 <input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSend()} placeholder="输入消息..." className="flex-1 py-3 px-2 outline-none text-theme-text placeholder:text-theme-subtext bg-transparent text-sm" />

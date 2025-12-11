@@ -8,6 +8,7 @@ import ScriptMatcher from './components/ScriptMatcher';
 import AiAssistant from './components/AiAssistant';
 import CalendarView from './components/CalendarView';
 import ThemeBackground from './components/ThemeBackground';
+import CyberStormEffect from './components/CyberStormEffect';
 import { 
   Inbox, 
   CheckCircle2, 
@@ -26,63 +27,37 @@ import {
   CalendarRange,
   ChevronDown,
   LayoutList,
-  FileText
+  FileText,
+  Undo2,
+  Heart,
+  Trash2
 } from 'lucide-react';
 
-// Quotes (Kept unchanged)
+// Quotes (Customized for Plus-size Buyer: Caring + Black Humor)
 const FASHION_QUOTES = [
-  "“忙完这个 P0，就去买杯奶茶续命吧。”",
-  "“今天的精致是装的，想下班是真的。”",
-  "“只要我不看退货率，心情就是美好的。”",
-  "“不用算提成，反正没有，心如止水。”",
-  "“咖啡是续命水，KPI是催命符，我是中间那个冤种。”",
-  "“凌晨三点的夜色很美，主要因为那时候商家终于睡了。”",
-  "“别问为什么还没下班，问就是公司是我家，我在守家。”",
-  "“我的耐心就像月底的余额，看着挺多，一扣就没。”",
-  "“比起搞对象，我更想搞定那个只会发‘在吗’的商家。”",
-  "“已老实，求放过，只要能加站，我什么都愿意做。”",
-  "“建议把‘耐心’列入买手的高危职业病。”",
-  "“与其内耗自己，不如发疯外耗商家。”",
-  "“任何不能转化为GMV的沟通，都是对生命的浪费。”",
-  "“在大润发杀了十年的鱼，心已经像板房的石头一样冷了。”",
-  "“谁说买手光鲜亮丽？你来看看我几万行的 Excel。”",
-  "“周五不提 P0，我们还能做朋友。”",
-  "“审版不过多找找自己的原因，不要什么都跟我抱怨，我是买手还是保姆？”",
-  "“与其提升自己，不如埋怨环境，比如怪商家是真的蠢。”",
-  "“上班暂停，我想去楼下当一会儿流浪猫。”",
-  "“每天起床第一句，先给自己打个气（然后继续当牛马）。”",
-  "“已读乱回，读读读读读了也不回~”",
-  "“本高雅人士正在为您挑选下一季的爆款，请勿打扰~ ૮( 🌸UwU)ა”",
-  "“今天也是努力搬砖的一天，为了罐罐！🐱”",
-  "“虽然很累，但想到这一单能让胖MM穿得漂亮，突然觉得自己有点棒呢✨”",
-  "“小番茄能量加载中... 99%... 叮！满血复活！🍅”",
-  "“今日心情：多云转晴，因为发现了一个超好看的款！🌈”",
-  "“不管生活多苦，奶茶要选全糖！🧋”",
-  "“我是小番茄，跌倒了不仅要爬起来，还要把自己像皮球一样弹得更高！🏀”",
-  "“允许自己做一只偶尔摆烂的小海獭，晒晒太阳就好~ 🦦”",
-  "“今天也要做一个情绪稳定的成年人... 除非商家说他不做了。🙃”",
-  "“工作是老板的，但快乐是自己的，摸鱼半小时也是爱自己！💖”",
-  "“加油小番茄！只要干不死，就往死里干！(开玩笑的，保命要紧)”",
-  "“今日份的好运正在派送中，请查收~ 📦✨”",
-  "“虽然是小番茄，也有大大的梦想呀！🍅💭”",
-  "“把压力都变成动力... 或者变成好吃的零食！🍪”",
-  "“做一个快乐的选款机器，莫得感情（才怪）~ 🤖❤️”",
-  "“正在向宇宙发射爆款信号，哔哔哔... 📡”",
-  "“今天也是想在成堆的款里挖到宝藏的一天呢！💎”",
-  "“小番茄冲鸭！滚得越圆，跑得越快！🍅💨”",
-  "“电量不足，请求投喂下午茶... 🔋🍰”",
-  "“工作再忙，也要记得抬头看看云彩呀 ☁️”",
-  "“不仅要选出好款，还要选出好心情！🎵”",
-  "“遇到困难睡大觉，醒来又是好汉一条！💤”",
-  "“生活不仅有KPI，还有楼下的便利店和晚风。🍃”",
-  "“把自己照顾好，也是工作的一部分哦！🥗”",
-  "“不要急，最好的爆款都在路上啦~ 🚌”",
-  "“保持可爱，偶尔发呆，经常快乐！🎈”"
+  "“忙完这个P0，就去点杯半糖奶茶续个命吧。”",
+  "“上班到眼花？没事，那说明离爆款不远了（大概）。”",
+  "“咖啡是早上的救命水，奶茶是晚上的安魂汤。”",
+  "“催样催不动？深呼吸，商家也是肉做的，虽然有时像石头。”",
+  "“11点下班是常态，但千万别把心情也留在公司。”",
+  "“核价是门玄学，只要我不尴尬，尴尬的就是商家。”",
+  "“今天也是在成堆的样衣里淘金的一天，加油啊特种兵。”",
+  "“虽然是11-11-6，但快乐要是24小时的（做梦）。”",
+  "“别让那几个烂款坏了心情，它们不配。”",
+  "“加站成功的那一刻，感觉发际线都长回来了一点。”",
+  "“P0做不完没关系，地球离了你照样转，但你加班了会不开心。”",
+  "“做个情绪稳定的成年人... 除非商家说货还没发。”",
+  "“在这个冷漠的时尚圈，只有手里的热咖啡是有温度的。”",
+  "“已读乱回是成年人的保护色，特别是面对无理取闹的催单。”",
+  "“傻b商家不做就滚”",
+  "“宝，别太累了，那个只会发‘在吗’的商家不值得你长皱纹。”"
 ];
 
 const THEME_OPTIONS = [
   { id: 'glass', name: '默认 (玻璃)', color: '#a5b4fc' },
-  { id: 'pixel', name: '复古像素', color: '#86efac' },
+  { id: 'minecraft', name: '我的世界', color: '#5a8e3d' },
+  // 'sewer' (Cyber Matrix) is hidden (Easter Egg)
+  // 'christmas' (Snow Night) is hidden (Easter Egg)
   { id: 'kawaii', name: '糖果甜心', color: '#f9a8d4' },
   { id: 'wooden', name: '温暖木质', color: '#d4a373' },
   { id: 'watercolor', name: '水彩画布', color: '#93c5fd' },
@@ -100,7 +75,12 @@ const App: React.FC = () => {
     }));
   });
   
-  const [theme, setTheme] = useState(() => localStorage.getItem('app_theme') || 'glass');
+  const [theme, setTheme] = useState(() => {
+    const saved = localStorage.getItem('app_theme');
+    // Migration: 'pixel' -> 'minecraft'
+    if (saved === 'pixel') return 'minecraft';
+    return saved || 'glass';
+  });
   const [showThemeMenu, setShowThemeMenu] = useState(false);
 
   const [currentView, setCurrentView] = useState<'todos' | 'image-editor' | 'indie-chi' | 'script-matcher' | 'bot' | 'tomato-pdf'>('todos');
@@ -115,6 +95,11 @@ const App: React.FC = () => {
   const [quote, setQuote] = useState('');
 
   const [focusedTodoId, setFocusedTodoId] = useState<string | null>(null);
+
+  // Undo Delete State
+  const [lastDeleted, setLastDeleted] = useState<Todo | null>(null);
+  const [showUndo, setShowUndo] = useState(false);
+  const undoTimeoutRef = useRef<any>(null);
 
   // --- REFS ---
   const sortMenuRef = useRef<HTMLDivElement>(null);
@@ -164,8 +149,29 @@ const App: React.FC = () => {
   };
 
   const handleDeleteTodo = (id: string) => {
-    setTodos(prev => prev.filter(t => t.id !== id));
-    if (focusedTodoId === id) setFocusedTodoId(null);
+    const todoToDelete = todos.find(t => t.id === id);
+    if (todoToDelete) {
+        setLastDeleted(todoToDelete);
+        setTodos(prev => prev.filter(t => t.id !== id));
+        if (focusedTodoId === id) setFocusedTodoId(null);
+        
+        setShowUndo(true);
+        if (undoTimeoutRef.current) clearTimeout(undoTimeoutRef.current);
+        undoTimeoutRef.current = setTimeout(() => setShowUndo(false), 8000); // 8 seconds to undo
+    }
+  };
+
+  const handleUndoDelete = () => {
+    if (lastDeleted) {
+        setTodos(prev => [...prev, lastDeleted]);
+        setShowUndo(false);
+        setLastDeleted(null);
+    }
+  };
+
+  const handleSecretCode = (code: string) => {
+     if (code === '1335465359') setTheme('sewer');
+     if (code === 'merry christmas') setTheme('christmas');
   };
 
   // --- DERIVED STATE ---
@@ -186,6 +192,12 @@ const App: React.FC = () => {
 
         const aDone = a.status === 'done';
         const bDone = b.status === 'done';
+
+        // NEW: Sort completed items by completion time (Recent -> Far)
+        if (aDone && bDone) {
+             return (b.completedAt || b.createdAt || 0) - (a.completedAt || a.createdAt || 0);
+        }
+
         if (aDone !== bDone) return aDone ? 1 : -1;
         
         if (sortMode === 'priority') {
@@ -269,15 +281,22 @@ const App: React.FC = () => {
         .bg-theme-menu {
             background-color: var(--bg-menu, rgba(255,255,255,0.95));
         }
+        /* Keep-alive helper class */
+        .view-hidden {
+            display: none !important;
+        }
     `}</style>
     <div className="h-screen w-full flex items-center justify-center p-4 sm:p-8" data-theme={theme}>
       <ThemeBackground theme={theme} />
       
       {/* Main Container */}
-      <div className="w-full max-w-6xl h-full max-h-[900px] bg-theme-panel rounded-theme-lg flex overflow-hidden shadow-theme transition-all duration-300 border-theme border-theme-width backdrop-blur-md">
+      <div className="w-full max-w-6xl h-full max-h-[900px] bg-theme-panel rounded-theme-lg flex overflow-hidden shadow-theme transition-all duration-300 border-theme border-theme-width backdrop-blur-md relative">
         
+        {/* === CYBER STORM EFFECT (Injected ONLY here, behind content but on top of panel bg) === */}
+        {theme === 'sewer' && <CyberStormEffect />}
+
         {/* Sidebar */}
-        <div className="w-64 bg-theme-sidebar border-r border-theme-border border-theme-width flex flex-col pt-6 pb-4 hidden md:flex shrink-0 transition-colors">
+        <div className="w-64 bg-theme-sidebar border-r border-theme-border border-theme-width flex flex-col pt-6 pb-4 hidden md:flex shrink-0 transition-colors z-10">
           
           {/* Theme Entry Point */}
           <div className="px-6 mb-8 relative" ref={themeMenuRef}>
@@ -303,6 +322,26 @@ const App: React.FC = () => {
                     {opt.name}
                   </button>
                 ))}
+                {/* Secret Theme Reveal if already selected via code */}
+                {theme === 'sewer' && (
+                   <button
+                   onClick={() => { setTheme('sewer'); setShowThemeMenu(false); }}
+                   className="w-full text-left px-3 py-2 rounded-theme-sm text-xs font-medium flex items-center gap-2 transition-colors bg-theme-accent-bg text-theme-accent"
+                 >
+                   <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#39ff14' }}></div>
+                   赛博矩阵
+                 </button>
+                )}
+                {/* Christmas Theme Reveal */}
+                {(theme === 'christmas' || theme === 'reindeer') && (
+                   <button
+                   onClick={() => { setTheme('christmas'); setShowThemeMenu(false); }}
+                   className="w-full text-left px-3 py-2 rounded-theme-sm text-xs font-medium flex items-center gap-2 transition-colors bg-theme-accent-bg text-theme-accent"
+                 >
+                   <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#0E2A20' }}></div>
+                   圣诞雪夜
+                 </button>
+                )}
               </div>
             )}
           </div>
@@ -341,19 +380,21 @@ const App: React.FC = () => {
           </nav>
 
           <div className="px-6 mt-auto mb-4 space-y-3">
-             <div className="p-4 bg-theme-card rounded-theme border border-theme-border border-theme-width shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
-                <Quote className="absolute -top-1 -left-1 text-theme-subtext w-8 h-8 opacity-20" />
-                <p className="text-[11px] text-theme-subtext font-medium italic relative z-10 leading-relaxed">
+             <div className="p-4 rounded-theme border border-theme-border/50 border-theme-width shadow-sm relative overflow-hidden group hover:shadow-md transition-all bg-gradient-to-br from-theme-card/50 to-theme-card">
+                <Heart className="absolute -top-1 -left-1 text-theme-accent w-6 h-6 opacity-10" />
+                <p className="text-[11px] text-theme-subtext font-medium leading-relaxed relative z-10">
                    {quote}
                 </p>
              </div>
           </div>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 flex flex-col bg-transparent relative min-w-0">
-            {currentView === 'todos' && (
-              <div className="flex flex-col h-full">
+        {/* Content Area - KEEP ALIVE IMPLEMENTATION */}
+        {/* We use CSS classes to hide/show views instead of React conditional rendering */}
+        <div className="flex-1 flex flex-col bg-transparent relative min-w-0 z-10 h-full overflow-hidden">
+            
+            {/* 1. TODOS VIEW */}
+            <div className={`flex flex-col h-full ${currentView === 'todos' ? '' : 'view-hidden'}`}>
                 {/* Header */}
                 <div className="h-16 border-b border-theme-border border-theme-width flex items-center justify-between px-8 bg-theme-panel/50 backdrop-blur-md sticky top-0 z-10 shrink-0">
                   <div className="flex flex-col">
@@ -436,30 +477,62 @@ const App: React.FC = () => {
                       )}
                     </div>
                     <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-theme-panel via-theme-panel/80 to-transparent pt-12 z-20">
-                      <div className="max-w-3xl mx-auto"><TaskInput onAddTodos={handleAddTodos} onUpdateTodo={handleUpdateTodo} onDeleteTodo={handleDeleteTodo} /></div>
+                      <div className="max-w-3xl mx-auto"><TaskInput onAddTodos={handleAddTodos} onUpdateTodo={handleUpdateTodo} onDeleteTodo={handleDeleteTodo} onSecretCode={handleSecretCode} /></div>
                     </div>
                   </>
                 ) : (
                   <div className="flex-1 p-6 overflow-hidden"><CalendarView todos={todos} onToggle={handleToggleTodo} onDelete={handleDeleteTodo} onUpdate={handleUpdateTodo} focusedTodoId={focusedTodoId} setFocusedTodoId={setFocusedTodoId} /></div>
                 )}
-              </div>
-            )}
+            </div>
 
-            {/* IFRAMES / OTHER VIEWS */}
-            {currentView === 'image-editor' && <div className="h-full w-full"><ImageEditor /></div>}
-            {currentView === 'script-matcher' && <div className="h-full w-full"><ScriptMatcher /></div>}
-            {currentView === 'bot' && <div className="h-full w-full"><AiAssistant /></div>}
+            {/* 2. IMAGE EDITOR (Keep Alive) */}
+            <div className={`h-full w-full ${currentView === 'image-editor' ? '' : 'view-hidden'}`}>
+                <ImageEditor />
+            </div>
+
+            {/* 3. SCRIPT MATCHER (Keep Alive) */}
+            <div className={`h-full w-full ${currentView === 'script-matcher' ? '' : 'view-hidden'}`}>
+                <ScriptMatcher />
+            </div>
+
+            {/* 4. AI ASSISTANT (Keep Alive) */}
+            <div className={`h-full w-full ${currentView === 'bot' ? '' : 'view-hidden'}`}>
+                <AiAssistant />
+            </div>
             
-            {(currentView === 'indie-chi' || currentView === 'tomato-pdf') && (
-              <div className="h-full w-full flex flex-col bg-white">
+            {/* 5. INDIE CHI (Iframe Keep Alive) */}
+            <div className={`h-full w-full flex flex-col bg-white ${currentView === 'indie-chi' ? '' : 'view-hidden'}`}>
                  <div className="h-12 border-b border-theme-border border-theme-width flex items-center justify-between px-6 bg-theme-panel/50 shrink-0">
-                    <div className="flex items-center gap-2"><h2 className="font-semibold text-theme-text text-sm">{currentView === 'indie-chi' ? 'Indie Chi 选款' : '番茄PDF'}</h2></div>
-                    <a href={currentView === 'indie-chi' ? "https://fake-indie.vercel.app/" : "https://share-pdf-beta.vercel.app/"} target="_blank" className="flex items-center gap-1.5 text-xs text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-md"><ExternalLink size={12} /> 新窗口打开</a>
+                    <div className="flex items-center gap-2"><h2 className="font-semibold text-theme-text text-sm">Indie Chi 选款</h2></div>
+                    <a href="https://fake-indie.vercel.app/" target="_blank" className="flex items-center gap-1.5 text-xs text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-md"><ExternalLink size={12} /> 新窗口打开</a>
                  </div>
-                 <iframe src={currentView === 'indie-chi' ? "https://fake-indie.vercel.app/" : "https://share-pdf-beta.vercel.app/"} className="flex-1 w-full border-none bg-white" />
-              </div>
-            )}
+                 <iframe src="https://fake-indie.vercel.app/" className="flex-1 w-full border-none bg-white" />
+            </div>
+
+            {/* 6. TOMATO PDF (Iframe Keep Alive) */}
+            <div className={`h-full w-full flex flex-col bg-white ${currentView === 'tomato-pdf' ? '' : 'view-hidden'}`}>
+                 <div className="h-12 border-b border-theme-border border-theme-width flex items-center justify-between px-6 bg-theme-panel/50 shrink-0">
+                    <div className="flex items-center gap-2"><h2 className="font-semibold text-theme-text text-sm">番茄PDF</h2></div>
+                    <a href="https://share-pdf-beta.vercel.app/" target="_blank" className="flex items-center gap-1.5 text-xs text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-md"><ExternalLink size={12} /> 新窗口打开</a>
+                 </div>
+                 <iframe src="https://share-pdf-beta.vercel.app/" className="flex-1 w-full border-none bg-white" />
+            </div>
         </div>
+
+        {/* Undo Toast */}
+        {showUndo && (
+          <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-8 duration-300">
+             <div className="flex items-center gap-4 pl-5 pr-4 py-3 bg-[#1e1e1e]/90 text-white rounded-full shadow-2xl backdrop-blur-xl border border-white/10 ring-1 ring-black/20">
+                 <div className="flex flex-col">
+                     <span className="text-sm font-medium">任务已放入回收站</span>
+                 </div>
+                 <div className="h-4 w-px bg-white/10"></div>
+                 <button onClick={handleUndoDelete} className="text-xs font-bold bg-white text-black px-3 py-1.5 rounded-full hover:bg-gray-200 transition-colors flex items-center gap-1.5 active:scale-95">
+                     <Undo2 size={12} strokeWidth={3} /> 撤销
+                 </button>
+             </div>
+          </div>
+        )}
       </div>
     </div>
     </>

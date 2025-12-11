@@ -10,9 +10,10 @@ interface TaskInputProps {
   onAddTodos: (todos: Todo[]) => void;
   onUpdateTodo?: (id: string, updates: Partial<Todo>) => void;
   onDeleteTodo?: (id: string) => void;
+  onSecretCode?: (code: string) => void;
 }
 
-const TaskInput: React.FC<TaskInputProps> = ({ onAddTodos, onUpdateTodo, onDeleteTodo }) => {
+const TaskInput: React.FC<TaskInputProps> = ({ onAddTodos, onUpdateTodo, onDeleteTodo, onSecretCode }) => {
   const [text, setText] = useState('');
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -56,6 +57,20 @@ const TaskInput: React.FC<TaskInputProps> = ({ onAddTodos, onUpdateTodo, onDelet
     setSelectedImage(null);
     setImagePreview(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+  
+  const handleTextChange = (val: string) => {
+      setText(val);
+      // Check for secret codes
+      if (onSecretCode) {
+         if (val === '1335465359') {
+             onSecretCode(val);
+             setText('');
+         } else if (val.toLowerCase() === 'merry christmas') {
+             onSecretCode('merry christmas');
+             setText('');
+         }
+      }
   };
 
   const handleSubmit = async () => {
@@ -126,7 +141,7 @@ const TaskInput: React.FC<TaskInputProps> = ({ onAddTodos, onUpdateTodo, onDelet
          <textarea
           ref={textAreaRef}
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => handleTextChange(e.target.value)}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(); }}}
@@ -138,14 +153,14 @@ const TaskInput: React.FC<TaskInputProps> = ({ onAddTodos, onUpdateTodo, onDelet
         <div className="flex items-center gap-1.5 shrink-0 pb-1.5 pr-1">
            <button
              onClick={() => setIsSmartMode(!isSmartMode)}
-             className={`p-2 rounded-theme-md transition-all flex items-center justify-center border-none ${isSmartMode ? 'bg-theme-accent-bg text-theme-accent' : 'bg-transparent text-theme-subtext hover:bg-theme-input'}`}
+             className={`p-2 rounded-theme transition-all flex items-center justify-center border-none ${isSmartMode ? 'bg-theme-accent-bg text-theme-accent' : 'bg-transparent text-theme-subtext hover:bg-theme-input'}`}
              title={isSmartMode ? "AI 智能识别已开启" : "开启 AI 智能识别"}
            >
               <Sparkles size={18} fill={isSmartMode ? "currentColor" : "none"} />
            </button>
            <button 
              onClick={() => fileInputRef.current?.click()} 
-             className={`p-2 rounded-theme-md transition-colors ${selectedImage ? 'bg-theme-accent-bg text-theme-accent' : 'text-theme-subtext hover:bg-theme-input'}`}
+             className={`p-2 rounded-theme transition-colors ${selectedImage ? 'bg-theme-accent-bg text-theme-accent' : 'text-theme-subtext hover:bg-theme-input'}`}
              title="上传截图"
            >
              <ImageIcon size={20} />
@@ -153,7 +168,7 @@ const TaskInput: React.FC<TaskInputProps> = ({ onAddTodos, onUpdateTodo, onDelet
            <button 
              onClick={handleSubmit} 
              disabled={!text && !selectedImage} 
-             className={`w-9 h-9 rounded-theme-md transition-all flex items-center justify-center ${(!text && !selectedImage) ? 'bg-theme-input text-theme-subtext cursor-not-allowed opacity-50' : 'bg-theme-accent text-white hover:opacity-90 shadow-md active:scale-95'}`}
+             className={`w-9 h-9 rounded-theme transition-all flex items-center justify-center ${(!text && !selectedImage) ? 'bg-theme-input text-theme-subtext cursor-not-allowed opacity-50' : 'bg-theme-accent text-white hover:opacity-90 shadow-md active:scale-95'}`}
            >
              <Send size={18} className={(!text && !selectedImage) ? "" : "ml-0.5"} />
            </button>
