@@ -178,6 +178,12 @@ const App: React.FC = () => {
         return priorityOrder[p as Priority] ?? 5;
     };
     return [...todos].sort((a, b) => {
+        // Always place processing tasks at the very top for visual feedback
+        const aProc = a.aiStatus === 'processing';
+        const bProc = b.aiStatus === 'processing';
+        if (aProc && !bProc) return -1;
+        if (!aProc && bProc) return 1;
+
         const aDone = a.status === 'done';
         const bDone = b.status === 'done';
         if (aDone !== bDone) return aDone ? 1 : -1;
@@ -203,19 +209,27 @@ const App: React.FC = () => {
     });
   }, [todos, sortMode]);
 
-  const filteredTodos = sortedTodos.filter(todo => {
-    if (searchQuery) {
-       const query = searchQuery.toLowerCase();
-       const matches = todo.title.toLowerCase().includes(query) || 
-                       todo.shopId?.includes(query) ||
-                       todo.description?.toLowerCase().includes(query);
-       if (!matches) return false;
-    }
-    if (filter === 'completed') return todo.status === 'done';
-    if (todo.status === 'done') return false;
-    if (filter === 'p0') return todo.priority === Priority.P0 || (todo.priority as string) === 'HIGH';
-    return true;
-  });
+  // Seperate processing tasks to ensure they are always pinned on top visually
+  const processingTodos = useMemo(() => todos.filter(t => t.aiStatus === 'processing'), [todos]);
+  
+  // Normal Filtered List (Excluding processing which we render manually)
+  const filteredTodos = useMemo(() => {
+    return sortedTodos.filter(todo => {
+        if (todo.aiStatus === 'processing') return false; // Handled separately
+
+        if (searchQuery) {
+           const query = searchQuery.toLowerCase();
+           const matches = todo.title.toLowerCase().includes(query) || 
+                           todo.shopId?.includes(query) ||
+                           todo.description?.toLowerCase().includes(query);
+           if (!matches) return false;
+        }
+        if (filter === 'completed') return todo.status === 'done';
+        if (todo.status === 'done') return false;
+        if (filter === 'p0') return todo.priority === Priority.P0 || (todo.priority as string) === 'HIGH';
+        return true;
+    });
+  }, [sortedTodos, searchQuery, filter]);
 
   const groupedTodos = useMemo(() => {
     if (!isGroupedByDay) return [];
@@ -249,6 +263,13 @@ const App: React.FC = () => {
   const p0Count = todos.filter(t => t.status !== 'done' && (t.priority === Priority.P0 || (t.priority as string) === 'HIGH')).length;
 
   return (
+    <>
+    <style>{`
+        /* Helper for solid menu background in App.tsx */
+        .bg-theme-menu {
+            background-color: var(--bg-menu, rgba(255,255,255,0.95));
+        }
+    `}</style>
     <div className="h-screen w-full flex items-center justify-center p-4 sm:p-8" data-theme={theme}>
       <ThemeBackground theme={theme} />
       
@@ -271,7 +292,7 @@ const App: React.FC = () => {
             </div>
             
             {showThemeMenu && (
-              <div className="absolute top-full left-6 mt-2 w-48 bg-theme-card border border-theme-border border-theme-width rounded-theme shadow-theme p-1 z-50 animate-in fade-in slide-in-from-top-2">
+              <div className="absolute top-full left-6 mt-2 w-48 bg-theme-menu border border-theme-border border-theme-width rounded-theme shadow-theme p-1 z-50 animate-in fade-in slide-in-from-top-2 backdrop-blur-xl">
                 {THEME_OPTIONS.map(opt => (
                   <button
                     key={opt.id}
@@ -371,7 +392,7 @@ const App: React.FC = () => {
                             <ChevronDown size={12} className={`text-theme-subtext transition-transform ${showSortMenu ? 'rotate-180' : ''}`} />
                         </button>
                         {showSortMenu && (
-                            <div className="absolute top-full left-0 mt-1 w-36 bg-theme-card border border-theme-border border-theme-width rounded-theme shadow-theme p-1 z-50 animate-in fade-in zoom-in-95">
+                            <div className="absolute top-full left-0 mt-1 w-36 bg-theme-menu border border-theme-border border-theme-width rounded-theme shadow-theme p-1 z-50 animate-in fade-in zoom-in-95 backdrop-blur-xl">
                                 <button onClick={() => { setSortMode('priority'); setIsGroupedByDay(false); setShowSortMenu(false); }} className="w-full text-left px-3 py-2 rounded-theme-sm text-xs font-medium flex items-center gap-2 hover:bg-theme-input text-theme-text"><ArrowUpDown size={13} /> 优先级</button>
                                 <button onClick={() => { setSortMode('deadline'); setIsGroupedByDay(false); setShowSortMenu(false); }} className="w-full text-left px-3 py-2 rounded-theme-sm text-xs font-medium flex items-center gap-2 hover:bg-theme-input text-theme-text"><Clock size={13} /> 截止时间</button>
                                 <button onClick={() => { setSortMode('created'); setIsGroupedByDay(false); setShowSortMenu(false); }} className="w-full text-left px-3 py-2 rounded-theme-sm text-xs font-medium flex items-center gap-2 hover:bg-theme-input text-theme-text"><Calendar size={13} /> 创建时间</button>
@@ -392,13 +413,19 @@ const App: React.FC = () => {
                 {viewMode === 'list' ? (
                   <>
                     <div className="flex-1 overflow-y-auto p-6 md:p-8 scroll-smooth">
-                      {filteredTodos.length === 0 ? (
+                      {filteredTodos.length === 0 && processingTodos.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center text-theme-subtext">
                             <Layout className="w-16 h-16 mb-4 opacity-10" />
                             <p className="text-sm font-medium opacity-50">暂无任务</p>
                         </div>
                       ) : (
                         <div className="space-y-3 pb-24">
+                           {/* Pinned Processing Items (The "Tomato" Card) */}
+                           {processingTodos.map(todo => (
+                               <TodoItem key={todo.id} todo={todo} onToggle={handleToggleTodo} onDelete={handleDeleteTodo} onUpdate={handleUpdateTodo} focusedTodoId={focusedTodoId} setFocusedTodoId={setFocusedTodoId} />
+                           ))}
+
+                           {/* Main List */}
                            {isGroupedByDay ? groupedTodos.map(group => (
                              <div key={group.title} className="space-y-3">
                                <div className="flex items-center gap-2 px-1"><h3 className="text-xs font-bold text-theme-subtext opacity-70 uppercase tracking-wider">{group.title}</h3></div>
@@ -435,6 +462,7 @@ const App: React.FC = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

@@ -58,9 +58,9 @@ const TodoItem: React.FC<TodoItemProps> = ({
 
   // --- EFFECTS ---
   useEffect(() => {
-    if (Date.now() - todo.createdAt < 10000) {
+    if (Date.now() - todo.createdAt < 4000) { // Glow for 4 seconds
         setIsJustAdded(true);
-        const timer = setTimeout(() => setIsJustAdded(false), 10000);
+        const timer = setTimeout(() => setIsJustAdded(false), 4000);
         return () => clearTimeout(timer);
     }
   }, [todo.createdAt]);
@@ -125,7 +125,8 @@ const TodoItem: React.FC<TodoItemProps> = ({
   const handleCopyId = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (todo.shopId) {
-        const cleanId = todo.shopId.replace(/[【】\[\]]/g, '');
+        // Clean ID for clipboard
+        const cleanId = todo.shopId.replace(/[【】\[\]\s]/g, '');
         navigator.clipboard.writeText(cleanId);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
@@ -181,10 +182,10 @@ const TodoItem: React.FC<TodoItemProps> = ({
 
   if (isAiProcessing) {
       return (
-        <div className="relative rounded-theme border border-theme-border border-theme-width bg-theme-card/80 backdrop-blur-md p-3.5 flex items-center justify-center min-h-[56px] shadow-sm transition-all my-1">
+        <div className="relative rounded-theme border border-theme-border border-theme-width bg-theme-card/80 backdrop-blur-md p-3.5 flex items-center justify-center min-h-[56px] shadow-sm transition-all my-1 mb-3 ring-2 ring-theme-accent/30 animate-pulse">
              <div className="flex items-center gap-2.5 text-theme-accent font-medium text-sm">
-                <span className="text-lg animate-bounce">🍅</span>
-                <span className="animate-pulse tracking-wide">小番茄正在看你发了什么...</span>
+                <span className="text-xl animate-bounce">🍅</span>
+                <span className="tracking-wide font-semibold">小番茄正在看你发了什么...</span>
             </div>
         </div>
       );
@@ -207,6 +208,10 @@ const TodoItem: React.FC<TodoItemProps> = ({
         .theme-border-style {
             border-style: var(--border-style, solid);
         }
+        /* Helper for solid menu background */
+        .bg-theme-menu {
+            background-color: var(--bg-menu, rgba(255,255,255,0.95));
+        }
     `}</style>
 
     <div 
@@ -224,7 +229,7 @@ const TodoItem: React.FC<TodoItemProps> = ({
                   )
             }
             ${!isFocusMode && (showPriorityMenu || showDateMenu) ? 'z-50' : ''}
-            ${isJustAdded ? 'animate-pulse' : ''}
+            ${isJustAdded && !isFocusMode ? 'animate-breathe-glow z-10' : ''}
         `}
     >
         {isFocusMode ? (
@@ -279,7 +284,7 @@ const TodoItem: React.FC<TodoItemProps> = ({
                             {/* ShopID Bubble */}
                             {todo.shopId && (
                                 <span className="flex items-center gap-1 px-2 py-0.5 rounded-theme-btn text-[10px] bg-white/50 backdrop-blur-sm text-theme-subtext font-mono ring-1 ring-inset ring-theme-border/50">
-                                    <Copy size={10} /> {todo.shopId}
+                                    <Copy size={10} /> {todo.shopId.replace(/\s/g,'')}
                                 </span>
                             )}
                         </div>
@@ -330,9 +335,10 @@ const TodoItem: React.FC<TodoItemProps> = ({
                             {statusStyle.label}
                         </div>
                         {todo.shopId && (
-                            <div onClick={handleCopyId} className="flex items-center gap-1 px-1.5 py-0.5 rounded-theme-btn text-[11px] font-medium bg-theme-input text-theme-subtext ring-1 ring-inset ring-theme-border/50 cursor-pointer hover:bg-theme-card active:scale-95 transition-colors">
-                                {copied ? <Check size={10} className="text-green-500"/> : <Copy size={10} />}
-                                <span className="font-mono tracking-tight">{todo.shopId.replace(/[【】]/g, '')}</span>
+                            <div onClick={handleCopyId} className="flex items-center gap-1.5 px-2 py-0.5 rounded-theme-btn text-[11px] font-medium bg-theme-input/80 hover:bg-theme-input text-theme-subtext border border-theme-border/50 cursor-pointer active:scale-95 transition-all shadow-sm group/shop">
+                                {copied ? <Check size={11} className="text-green-500"/> : <Copy size={11} className="opacity-60 group-hover/shop:opacity-100" />}
+                                {/* Clean ID without spaces, Mono font, Wide tracking */}
+                                <span className="font-mono tracking-[0.15em] font-semibold">{todo.shopId.replace(/\s/g,'')}</span>
                             </div>
                         )}
                         {todo.quantity && ( <span className="px-1.5 py-0.5 rounded-theme-btn text-[11px] font-medium bg-indigo-50 text-indigo-600 ring-1 ring-inset ring-indigo-500/20">{todo.quantity}款</span> )}
@@ -354,7 +360,7 @@ const TodoItem: React.FC<TodoItemProps> = ({
 
         {/* --- MENU: PRIORITY --- */}
         {!isFocusMode && showPriorityMenu && (
-            <div ref={priorityMenuRef} className="absolute top-10 left-0 z-50 w-32 bg-theme-card border border-theme-border rounded-theme shadow-theme p-1 animate-in fade-in zoom-in-95">
+            <div ref={priorityMenuRef} className="absolute top-10 left-0 z-50 w-32 bg-theme-menu border border-theme-border rounded-theme shadow-theme p-1 animate-in fade-in zoom-in-95 backdrop-blur-xl">
                 {[Priority.P0, Priority.P1, Priority.P2, Priority.P3, Priority.P4].map((p) => {
                     const style = getPriorityStyle(p);
                     return (
@@ -369,7 +375,7 @@ const TodoItem: React.FC<TodoItemProps> = ({
 
         {/* --- MENU: DATE --- */}
         {!isFocusMode && showDateMenu && (
-            <div ref={dateMenuRef} className="absolute top-full right-0 mt-2 w-48 bg-theme-card border border-theme-border rounded-theme shadow-theme p-1.5 z-50 animate-in fade-in zoom-in-95 origin-top-right">
+            <div ref={dateMenuRef} className="absolute top-full right-0 mt-2 w-48 bg-theme-menu border border-theme-border rounded-theme shadow-theme p-1.5 z-50 animate-in fade-in zoom-in-95 origin-top-right backdrop-blur-xl">
                 <div className="text-[10px] font-bold text-theme-subtext px-2 py-1 uppercase tracking-wider mb-0.5 opacity-60">快速设定</div>
                 <button onClick={(e) => { e.stopPropagation(); handleQuickDate('today'); }} className="w-full text-left px-2 py-2 rounded-theme-sm text-xs text-theme-text hover:bg-theme-input flex items-center gap-2 transition-colors"><Sun size={14} className="text-orange-500" /> 今天 (23:00)</button>
                 <button onClick={(e) => { e.stopPropagation(); handleQuickDate('tomorrow'); }} className="w-full text-left px-2 py-2 rounded-theme-sm text-xs text-theme-text hover:bg-theme-input flex items-center gap-2 transition-colors"><ArrowRight size={14} className="text-blue-500" /> 明天 (23:00)</button>

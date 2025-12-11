@@ -9,11 +9,13 @@
   /* ==================
      1. GLASS (Default)
      ================== */
-  --bg-panel: rgba(255, 255, 255, 0.4);
-  --bg-sidebar: rgba(245, 245, 247, 0.6);
-  --bg-card: rgba(255, 255, 255, 0.65);
-  --bg-card-hover: rgba(255, 255, 255, 0.85);
-  --bg-input: rgba(255, 255, 255, 0.5);
+  /* Increased opacity for better legibility */
+  --bg-panel: rgba(255, 255, 255, 0.6); 
+  --bg-sidebar: rgba(245, 245, 247, 0.75);
+  --bg-card: rgba(255, 255, 255, 0.9); /* Much more opaque */
+  --bg-card-hover: rgba(255, 255, 255, 0.98);
+  --bg-input: rgba(255, 255, 255, 0.85);
+  --bg-menu: rgba(255, 255, 255, 0.98); /* Solid menu background */
   
   --border-theme: rgba(255, 255, 255, 0.6);
   --border-width: 1px;
@@ -31,6 +33,9 @@
   
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -1px rgb(0 0 0 / 0.03);
   --backdrop-blur: blur(12px);
+
+  /* Contrast Glow Color for New Items (Pink/Rose for Glass) */
+  --glow-color: rgba(244, 63, 94, 0.5);
 
   /* P-Level Gradients */
   --p0-text: #be123c; --p0-bg: linear-gradient(135deg, #fda4af 0%, #f43f5e 100%); --p0-base: #fff1f2;
@@ -54,6 +59,7 @@
   --bg-card: #ffffff;
   --bg-card-hover: #f0f0f0;
   --bg-input: #ffffff;
+  --bg-menu: #ffffff;
   
   --border-theme: #000000;
   --border-width: 2px;
@@ -73,6 +79,9 @@
   --shadow-md: 4px 4px 0px 0px #000000;
   --backdrop-blur: none; /* No blur in retro mode */
 
+  /* Contrast Glow: Neon Green */
+  --glow-color: rgba(34, 197, 94, 0.7);
+
   /* High Contrast Pixel Colors */
   --p0-text: #000000; --p0-bg: #ff3333; --p0-base: #ffcccc;
   --p1-text: #000000; --p1-bg: #ff9900; --p1-base: #ffeebb;
@@ -91,10 +100,11 @@
 [data-theme='wooden'] {
   /* WARM WOODEN (Skeuomorphic) */
   --bg-panel: rgba(253, 246, 227, 0.95);
-  --bg-sidebar: rgba(210, 180, 140, 0.4);
+  --bg-sidebar: rgba(210, 180, 140, 0.6);
   --bg-card: #fffcf5; /* Cream paper */
   --bg-card-hover: #ffffff;
   --bg-input: #ffffff;
+  --bg-menu: #fffbf0;
   
   --border-theme: #8b5a2b; /* Brown ink */
   --border-width: 1px;
@@ -113,6 +123,9 @@
   --shadow-md: 1px 1px 3px rgba(62, 39, 35, 0.2);
   --backdrop-blur: blur(4px);
 
+  /* Contrast Glow: Cyan/Teal (Contrast to Brown) */
+  --glow-color: rgba(6, 182, 212, 0.6);
+
   /* Earthy Tones */
   --p0-text: #7f1d1d; --p0-bg: #ef4444; --p0-base: #fef2f2;
   --p1-text: #7c2d12; --p1-bg: #f97316; --p1-base: #fff7ed;
@@ -130,11 +143,12 @@
 
 [data-theme='watercolor'] {
   /* WATERCOLOR (Ethereal) */
-  --bg-panel: rgba(255, 255, 255, 0.6);
-  --bg-sidebar: rgba(255, 255, 255, 0.4);
-  --bg-card: rgba(255, 255, 255, 0.7);
-  --bg-card-hover: rgba(255, 255, 255, 0.9);
-  --bg-input: rgba(255, 255, 255, 0.8);
+  --bg-panel: rgba(255, 255, 255, 0.75); /* More opaque */
+  --bg-sidebar: rgba(255, 255, 255, 0.6);
+  --bg-card: rgba(255, 255, 255, 0.88); /* More opaque */
+  --bg-card-hover: rgba(255, 255, 255, 0.98);
+  --bg-input: rgba(255, 255, 255, 0.9);
+  --bg-menu: rgba(255, 255, 255, 0.98);
   
   --border-theme: rgba(255, 255, 255, 0); /* Invisible border, rely on shadow */
   --border-width: 0px;
@@ -154,6 +168,9 @@
   --shadow-md: 0 10px 30px -5px rgba(100, 116, 139, 0.15), 0 4px 10px -2px rgba(96, 165, 250, 0.1);
   --backdrop-blur: blur(20px);
 
+  /* Contrast Glow: Deep Violet */
+  --glow-color: rgba(139, 92, 246, 0.5);
+
   /* Washy Colors */
   --p0-text: #e11d48; --p0-bg: linear-gradient(120deg, rgba(255,99,132,0.8), rgba(255,99,132,0)); --p0-base: #fff1f2;
   --p1-text: #ea580c; --p1-bg: linear-gradient(120deg, rgba(255,159,64,0.8), rgba(255,159,64,0)); --p1-base: #fff7ed;
@@ -170,11 +187,12 @@
 
 [data-theme='kawaii'] {
   /* KAWAII (Soft & Cute) */
-  --bg-panel: rgba(255, 250, 252, 0.8);
-  --bg-sidebar: rgba(255, 240, 245, 0.9);
+  --bg-panel: rgba(255, 250, 252, 0.9);
+  --bg-sidebar: rgba(255, 240, 245, 0.95);
   --bg-card: #ffffff;
   --bg-card-hover: #fff5f8;
   --bg-input: #fffbfd;
+  --bg-menu: #ffffff;
   
   --border-theme: #fbcfe8; /* Pink border */
   --border-width: 2px;
@@ -192,6 +210,9 @@
   
   --shadow-md: 4px 4px 0px 0px #fbcfe8; /* Pop shadow */
   --backdrop-blur: blur(8px);
+
+  /* Contrast Glow: Mint Green */
+  --glow-color: rgba(52, 211, 153, 0.7);
 
   /* Pastel Pop */
   --p0-text: #db2777; --p0-bg: #f472b6; --p0-base: #fdf2f8;
@@ -214,6 +235,7 @@
   --bg-card: #ffffff;
   --bg-card-hover: #fafafa;
   --bg-input: #f4f4f4;
+  --bg-menu: #ffffff;
   
   --border-theme: #e5e5e5;
   --border-width: 1px;
@@ -231,6 +253,9 @@
   
   --shadow-md: 1px 1px 0px rgba(0,0,0,0.05);
   --backdrop-blur: none;
+
+  /* Contrast Glow: Bright Blue */
+  --glow-color: rgba(59, 130, 246, 0.5);
 
   /* Marker / Highlighter */
   --p0-text: #000; --p0-bg: #fecaca; --p0-base: #fff1f2;
@@ -257,8 +282,17 @@
   100% { transform: translateX(200%) skewX(-15deg); }
 }
 
+@keyframes breathe-glow {
+  0%, 100% { box-shadow: 0 0 0px var(--glow-color); border-color: var(--border-theme); }
+  50% { box-shadow: 0 0 16px var(--glow-color); border-color: var(--glow-color); }
+}
+
 .animate-flow-shimmer {
   animation: shimmerMove 3s infinite cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.animate-breathe-glow {
+  animation: breathe-glow 2.5s ease-in-out infinite;
 }
 
 /* Global Transition */
