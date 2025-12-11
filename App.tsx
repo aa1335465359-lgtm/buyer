@@ -427,9 +427,9 @@ const App: React.FC = () => {
               <div className="h-full w-full flex flex-col bg-white">
                  <div className="h-12 border-b border-theme-border border-theme-width flex items-center justify-between px-6 bg-theme-panel/50 shrink-0">
                     <div className="flex items-center gap-2"><h2 className="font-semibold text-theme-text text-sm">{currentView === 'indie-chi' ? 'Indie Chi 选款' : '番茄PDF'}</h2></div>
-                    <a href={currentView === 'indie-chi' ? "https://indie-chi.vercel.app/" : "https://share-pdf-beta.vercel.app/"} target="_blank" className="flex items-center gap-1.5 text-xs text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-md"><ExternalLink size={12} /> 新窗口打开</a>
+                    <a href={currentView === 'indie-chi' ? "https://fake-indie.vercel.app/" : "https://share-pdf-beta.vercel.app/"} target="_blank" className="flex items-center gap-1.5 text-xs text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-md"><ExternalLink size={12} /> 新窗口打开</a>
                  </div>
-                 <iframe src={currentView === 'indie-chi' ? "https://indie-chi.vercel.app/" : "https://share-pdf-beta.vercel.app/"} className="flex-1 w-full border-none bg-white" />
+                 <iframe src={currentView === 'indie-chi' ? "https://fake-indie.vercel.app/" : "https://share-pdf-beta.vercel.app/"} className="flex-1 w-full border-none bg-white" />
               </div>
             )}
         </div>
