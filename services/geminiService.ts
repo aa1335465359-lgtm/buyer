@@ -137,6 +137,46 @@ async function callGeminiApi(
   return text;
 }
 
+// Helper: Parse natural language time to timestamp
+// Explicit Rule: "下班前" = 23:00
+const parseDeadline = (timeStr: string | undefined): number | undefined => {
+    if (!timeStr) return undefined;
+    const lower = timeStr.toLowerCase();
+    const now = new Date();
+    let target = new Date();
+
+    // 1. Handle "下班前" (End of work day) -> 23:00 strict
+    if (lower.includes('下班') || lower.includes('晚') || lower.includes('before work')) {
+        // If it says "Tomorrow", add a day
+        if (lower.includes('明天') || lower.includes('tomorrow')) {
+            target.setDate(target.getDate() + 1);
+        }
+        target.setHours(23, 0, 0, 0);
+        return target.getTime();
+    }
+
+    // 2. Handle simple "Tomorrow" without specific time -> 23:00 default
+    if (lower.includes('明天') || lower.includes('tomorrow')) {
+        target.setDate(target.getDate() + 1);
+        target.setHours(23, 0, 0, 0);
+        return target.getTime();
+    }
+
+    // 3. Handle "Afternoon" -> 17:00
+    if (lower.includes('下午') || lower.includes('afternoon')) {
+        target.setHours(17, 0, 0, 0);
+        return target.getTime();
+    }
+    
+    // 4. Handle "Today" generic -> 23:00
+    if (lower.includes('今天') || lower.includes('today')) {
+        target.setHours(23, 0, 0, 0);
+        return target.getTime();
+    }
+
+    return undefined;
+};
+
 // 1. Image & Text Analysis for Task Input
 export const analyzeImageAndText = async (text: string, image?: File): Promise<AITaskResponse> => {
   const systemPrompt = `
@@ -162,7 +202,7 @@ export const analyzeImageAndText = async (text: string, image?: File): Promise<A
       "style_focus": "品类/风格",
       "targeting_count": 数字,
       "priority": "高/中/低",
-      "follow_time": "YYYY-MM-DD 或 相对时间"
+      "follow_time": "YYYY-MM-DD 或 相对时间 (例如：今天下班前)"
     }
   ]
 }
@@ -253,11 +293,7 @@ export const analyzeImageAndText = async (text: string, image?: File): Promise<A
           // Description Construction
           let desc = item.description || "";
           
-          // Only perform strict template augmentation for "发定向" if description is empty or very short
-          // The Prompt is now generating good descriptions, so we trust it more.
-          // Just adding metadata if missing.
           if (item.type === "发定向") {
-               // Ensure description isn't just empty
                if (!desc) {
                    const focus = item.style_focus || "大码女装";
                    const count = item.targeting_count || "若干";
@@ -265,13 +301,17 @@ export const analyzeImageAndText = async (text: string, image?: File): Promise<A
                }
           }
 
+          // Parse deadline based on "follow_time"
+          const deadlineTimestamp = parseDeadline(item.follow_time);
+
           return {
               title: item.title,
               description: desc,
               priority: p,
               shopId: item.merchant_id,
               quantity: item.targeting_count ? String(item.targeting_count) : undefined,
-              actionTime: item.follow_time
+              actionTime: item.follow_time,
+              deadline: deadlineTimestamp // New field
           };
       });
       

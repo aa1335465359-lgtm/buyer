@@ -18,15 +18,32 @@ const AiAssistant: React.FC = () => {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  // Use a ref for the scrollable container instead of the dummy element at the end
+  // This prevents 'scrollIntoView' from scrolling the parent window/body causing layout jumps
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const savedSessions = localStorage.getItem('temu_chat_sessions');
     if (savedSessions) setSessions(JSON.parse(savedSessions));
   }, []);
-  useEffect(() => { if (sessions.length > 0) localStorage.setItem('temu_chat_sessions', JSON.stringify(sessions)); }, [sessions]);
-  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+  
+  useEffect(() => { 
+      // Always persist sessions when they change, but handle empty array correctly (clear vs init)
+      if (sessions.length > 0 || localStorage.getItem('temu_chat_sessions')) {
+          localStorage.setItem('temu_chat_sessions', JSON.stringify(sessions)); 
+      }
+  }, [sessions]);
+  
+  // Optimized scroll logic: Scroll the container directly
+  useEffect(() => { 
+    if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTo({
+            top: scrollContainerRef.current.scrollHeight,
+            behavior: 'smooth'
+        });
+    }
+  }, [messages]);
 
   const startNewChat = () => {
     setMessages([{ role: 'model', text: '你好呀！我是小番茄。' }]);
@@ -34,6 +51,15 @@ const AiAssistant: React.FC = () => {
     setShowHistory(false);
     setInput('');
     setImagePreviews([]); setSelectedImages([]);
+  };
+
+  const handleDeleteSession = (e: React.MouseEvent, id: string) => {
+      e.stopPropagation();
+      const newSessions = sessions.filter(s => s.id !== id);
+      setSessions(newSessions);
+      if (currentSessionId === id) {
+          startNewChat();
+      }
   };
 
   const handleSend = async () => {
@@ -83,10 +109,20 @@ const AiAssistant: React.FC = () => {
              <button onClick={() => setShowHistory(false)} className="p-1.5 hover:bg-black/5 rounded-theme-sm text-theme-subtext"><X size={18} /></button>
           </div>
           <div className="flex-1 overflow-y-auto p-2 space-y-1">
+               {sessions.length === 0 && <div className="p-4 text-center text-theme-subtext text-xs">暂无历史记录</div>}
                {sessions.map(s => (
-                 <div key={s.id} onClick={() => { setMessages(s.messages); setCurrentSessionId(s.id); setShowHistory(false); }} className={`p-3 rounded-theme-sm cursor-pointer border border-transparent hover:bg-theme-input ${currentSessionId === s.id ? 'bg-theme-input border-theme-border' : ''}`}>
-                    <p className="text-sm font-medium text-theme-text truncate">{s.title}</p>
-                    <p className="text-[10px] text-theme-subtext">{new Date(s.timestamp).toLocaleString()}</p>
+                 <div key={s.id} onClick={() => { setMessages(s.messages); setCurrentSessionId(s.id); setShowHistory(false); }} className={`group relative p-3 rounded-theme-sm cursor-pointer border border-transparent hover:bg-theme-input ${currentSessionId === s.id ? 'bg-theme-input border-theme-border' : ''}`}>
+                    <div className="pr-6">
+                        <p className="text-sm font-medium text-theme-text truncate">{s.title}</p>
+                        <p className="text-[10px] text-theme-subtext">{new Date(s.timestamp).toLocaleString()}</p>
+                    </div>
+                    <button 
+                        onClick={(e) => handleDeleteSession(e, s.id)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-theme-subtext hover:text-red-500 hover:bg-theme-card border border-transparent hover:border-theme-border rounded-md opacity-0 group-hover:opacity-100 transition-all z-10"
+                        title="删除对话"
+                    >
+                        <Trash2 size={14} />
+                    </button>
                  </div>
                ))}
           </div>
@@ -105,7 +141,7 @@ const AiAssistant: React.FC = () => {
              </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-6 space-y-6">
              {messages.map((msg, idx) => (
                 <div key={idx} className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${msg.role === 'user' ? 'bg-theme-accent text-white' : 'bg-red-500 text-white'}`}>{msg.role === 'user' ? <User size={16} /> : <Bot size={16} />}</div>
@@ -118,7 +154,6 @@ const AiAssistant: React.FC = () => {
                 </div>
              ))}
              {isLoading && <div className="flex gap-4"><div className="w-8 h-8 rounded-full bg-red-500 flex items-center justify-center"><Bot size={16} className="text-white"/></div><div className="bg-theme-card px-4 py-3 rounded-theme border border-theme-border flex items-center gap-2"><Loader2 size={16} className="animate-spin text-theme-accent"/><span className="text-xs text-theme-subtext">思考中...</span></div></div>}
-             <div ref={messagesEndRef} />
           </div>
 
           <div className="p-4 bg-theme-panel/60 border-t border-theme-border backdrop-blur-md shrink-0 w-full">

@@ -39,6 +39,7 @@ export interface AITaskResponse {
     shopId?: string;
     quantity?: string;
     actionTime?: string;
+    deadline?: number; // timestamp
   }[];
 }
 

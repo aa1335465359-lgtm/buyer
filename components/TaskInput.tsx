@@ -79,6 +79,7 @@ const TaskInput: React.FC<TaskInputProps> = ({ onAddTodos, onUpdateTodo, onDelet
     const tempId = generateId();
     const needsAi = isSmartMode || !!selectedImage;
 
+    // 1. Simple Task Mode
     if (!needsAi) {
         onAddTodos([{
             id: tempId, title: text, priority: Priority.P2, status: 'todo', isCompleted: false, createdAt: Date.now(), aiStatus: 'idle'
@@ -87,18 +88,23 @@ const TaskInput: React.FC<TaskInputProps> = ({ onAddTodos, onUpdateTodo, onDelet
         return; 
     }
     
+    // 2. AI Mode - Add Processing Placeholder
     onAddTodos([{
         id: tempId, title: `待整理记录`, description: '🍅 正在帮你拆分任务…', priority: Priority.P2, status: 'todo', isCompleted: false, createdAt: Date.now(), aiStatus: 'processing'
     }]);
     
     const payloadText = text;
     const payloadImage = selectedImage;
+    
+    // Clear Input UI immediately
     setText('');
     clearImage();
 
     try {
         const aiResponse = await analyzeImageAndText(payloadText, payloadImage || undefined);
+        
         if (aiResponse.tasks && aiResponse.tasks.length > 0) {
+            // Transform AI response to Todo objects
             const realTodos = aiResponse.tasks.map(task => ({
                 id: generateId(), 
                 title: task.title,
@@ -110,11 +116,19 @@ const TaskInput: React.FC<TaskInputProps> = ({ onAddTodos, onUpdateTodo, onDelet
                 shopId: task.shopId,
                 quantity: task.quantity,
                 actionTime: task.actionTime,
+                deadline: task.deadline, // Use the parsed timestamp for countdown
                 aiStatus: 'done' 
             } as Todo));
-            if (onDeleteTodo) onDeleteTodo(tempId);
+
+            // CRITICAL: Delete the processing placeholder FIRST to ensure UI cleanup
+            if (onDeleteTodo) {
+                onDeleteTodo(tempId);
+            }
+            
+            // Then add the new tasks
             onAddTodos(realTodos);
         } else {
+            // Fallback: Just update the placeholder to a generic task if AI failed to parse meaningful tasks
             if (onUpdateTodo) onUpdateTodo(tempId, { aiStatus: 'done', title: payloadText || '未识别到任务', description: 'AI 未提取到有效信息' });
         }
     } catch (error) {
