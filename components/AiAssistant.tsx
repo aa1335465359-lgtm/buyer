@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Send, Bot, User, Loader2, Image as ImageIcon, X, History, Plus, Trash2, Clock, 
-  Heart, Box, Terminal, Trees, Gift, Feather 
+  Heart, Box, Terminal, Trees, Gift, Feather, CloudRain, Zap, Disc
 } from 'lucide-react';
 import { chatWithBuyerAI } from '../services/geminiService';
 import ReactMarkdown from 'react-markdown';
@@ -99,6 +99,62 @@ const AiAssistant: React.FC<AiAssistantProps> = ({ theme }) => {
           icon: <Gift size={18} />,
           bgClass: 'bg-[#B22D2D]',
           textClass: 'text-[#E8C887]'
+        };
+      case 'rainy':
+        return {
+          icon: <CloudRain size={18} />,
+          bgClass: 'bg-[#3FA9FF]',
+          textClass: 'text-white'
+        };
+      // Light Pollution 1.0
+      case 'ultra-rgb':
+        return {
+          icon: <Zap size={18} fill="currentColor" />,
+          bgClass: 'bg-[#D000FF]',
+          textClass: 'text-[#00F6FF]'
+        };
+      case 'laser-tunnel':
+        return {
+          icon: <Box size={18} />,
+          bgClass: 'bg-[#10F2FF]',
+          textClass: 'text-black'
+        };
+      case 'oil-slick':
+        return {
+          icon: <Feather size={18} />,
+          bgClass: 'bg-[#FF7B89]',
+          textClass: 'text-[#F4F0FF]'
+        };
+      case 'neon-billboard':
+        return {
+          icon: <Terminal size={18} />,
+          bgClass: 'bg-[#FF3EA6]',
+          textClass: 'text-[#FFDF4A]'
+        };
+      // Light Pollution 2.0 (New Themes)
+      case 'dragonScale':
+        return {
+          icon: <Box size={18} strokeWidth={2.5} />, // Abstract box or custom dragon icon if available
+          bgClass: 'bg-[#D92A2A]',
+          textClass: 'text-[#F6C15A]'
+        };
+      case 'deepNebula':
+        return {
+          icon: <Zap size={18} />,
+          bgClass: 'bg-[#4DA6FF]',
+          textClass: 'text-[#050513]'
+        };
+      case 'blackGold':
+        return {
+          icon: <Disc size={18} />,
+          bgClass: 'bg-[#000]',
+          textClass: 'text-[#F0C674]'
+        };
+      case 'synthwaveGrid':
+        return {
+          icon: <Disc size={18} />,
+          bgClass: 'bg-[#2D1B4E]',
+          textClass: 'text-[#FF4FAE]'
         };
       default:
         return {

@@ -6,507 +6,554 @@
 /* --- THEME SYSTEM --- */
 
 :root {
-  /* ==================
-     1. GLASS (Default)
-     ================== */
+  /* Default Defaults */
   --bg-panel: rgba(255, 255, 255, 0.6); 
   --bg-sidebar: rgba(245, 245, 247, 0.75);
   --bg-card: rgba(255, 255, 255, 0.9);
   --bg-card-hover: rgba(255, 255, 255, 0.98);
   --bg-input: rgba(255, 255, 255, 0.85);
   --bg-menu: rgba(255, 255, 255, 0.95);
-  
   --border-theme: rgba(255, 255, 255, 0.6);
   --border-width: 1px;
-  --border-style: solid;
-  
   --text-primary: #1e293b;
   --text-secondary: #64748b;
   --text-accent: #4f46e5;
   --accent-bg: rgba(79, 70, 229, 0.1);
-  
   --radius-lg: 24px;
   --radius-md: 16px;
   --radius-sm: 8px;
-  --radius-btn: 12px;
-  
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -1px rgb(0 0 0 / 0.03);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.05);
   --backdrop-blur: blur(12px);
-
-  --glow-color: rgba(244, 63, 94, 0.5);
-
-  /* P-Level Gradients */
-  --p0-text: #be123c; --p0-bg: linear-gradient(135deg, #fda4af 0%, #f43f5e 100%); --p0-base: #fff1f2;
-  --p1-text: #c2410c; --p1-bg: linear-gradient(135deg, #fdba74 0%, #f97316 100%); --p1-base: #fff7ed;
-  --p2-text: #1d4ed8; --p2-bg: linear-gradient(135deg, #93c5fd 0%, #3b82f6 100%); --p2-base: #eff6ff;
-  --p3-text: #047857; --p3-bg: linear-gradient(135deg, #6ee7b7 0%, #10b981 100%); --p3-base: #ecfdf5;
-  --p4-text: #475569; --p4-bg: linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%); --p4-base: #f8fafc;
-
   --font-main: 'Inter', sans-serif;
   --font-mono: 'ui-monospace', monospace;
-  
-  --progress-mask: none;
-  --progress-blend: normal;
+  --panel-border: 1px solid transparent;
 }
 
-[data-theme='minecraft'] {
-  /* MINECRAFT STYLE - Authentic GUI */
-  --bg-panel: #C6C6C6; 
-  --bg-sidebar: #C6C6C6;
-  --bg-card: #C6C6C6; 
-  --bg-card-hover: #D0D0D0;
-  --bg-input: #8B8B8B; 
-  --bg-menu: #C6C6C6;
-  
-  --border-theme: #000000;
-  --border-width: 2px;
-  --border-style: solid;
-  
-  --text-primary: #3f3f3f; 
-  --text-secondary: #505050;
-  --text-accent: #202020; 
-  --accent-bg: #ffffff;
-  
-  --radius-lg: 0px; 
-  --radius-md: 0px; 
-  --radius-sm: 0px;
-  --radius-btn: 0px; 
-  
-  --shadow-md: inset 2px 2px 0px #FFFFFF, inset -2px -2px 0px #555555;
-  --backdrop-blur: none; 
-
-  --glow-color: rgba(0, 0, 0, 0.2);
-
-  --p0-text: #FFFFFF; --p0-bg: #9e2b27; --p0-base: #cf2a2a; 
-  --p1-text: #FFFFFF; --p1-bg: #ea7e35; --p1-base: #e08324;
-  --p2-text: #FFFFFF; --p2-bg: #3c44aa; --p2-base: #3c44aa;
-  --p3-text: #FFFFFF; --p3-bg: #5e7c16; --p3-base: #5e7c16;
-  --p4-text: #FFFFFF; --p4-bg: #3d3d3d; --p4-base: #8e8e8e;
-
-  --font-main: 'VT323', monospace;
-  --font-mono: 'VT323', monospace;
-  
-  --progress-mask: none;
-  --progress-blend: normal;
-  
-  image-rendering: pixelated;
-}
-
-/* Specific overrides for Minecraft */
-[data-theme='minecraft'] button,
-[data-theme='minecraft'] .bg-theme-card {
-    border: 2px solid #000 !important; 
-    box-shadow: inset 2px 2px 0px #FFFFFF, inset -2px -2px 0px #555555 !important;
-}
-[data-theme='minecraft'] input,
-[data-theme='minecraft'] textarea,
-[data-theme='minecraft'] .bg-theme-input {
-    border: 2px solid #555555 !important;
-    background-color: #8B8B8B !important;
-    box-shadow: inset 2px 2px 0px #373737, inset -2px -2px 0px #FFFFFF !important;
-    color: #fff !important;
-}
-
-[data-theme='wooden'] {
-  /* WARM WOODEN */
-  --bg-panel: rgba(253, 246, 227, 0.95);
-  --bg-sidebar: rgba(210, 180, 140, 0.6);
-  --bg-card: #fffcf5; 
-  --bg-card-hover: #ffffff;
-  --bg-input: #ffffff;
-  --bg-menu: #fffbf0;
-  
-  --border-theme: #8b5a2b; 
+/* =========================================================
+   SPECIAL THEME: LANDETIAN (Blue Sky Overdrive)
+   ========================================================= */
+[data-theme='landetian'] {
+  --bg-panel: rgba(255, 255, 255, 0);
+  --bg-sidebar: rgba(255, 255, 255, 0);
+  --bg-card: rgba(255, 255, 255, 0);
+  --bg-card-hover: rgba(255, 255, 255, 0.1);
+  --bg-input: rgba(255, 255, 255, 0.1);
+  --bg-menu: rgba(255, 255, 255, 0.9);
+  --border-theme: rgba(255, 255, 255, 0.6);
   --border-width: 1px;
-  --border-style: dashed; 
-  
-  --text-primary: #3e2723;
-  --text-secondary: #8d6e63;
-  --text-accent: #a0522d;
-  --accent-bg: #faebd7;
-  
-  --radius-lg: 2px;
-  --radius-md: 2px;
-  --radius-sm: 1px;
-  --radius-btn: 4px;
-  
-  --shadow-md: 1px 1px 3px rgba(62, 39, 35, 0.2);
-  --backdrop-blur: blur(4px);
-
-  --glow-color: rgba(6, 182, 212, 0.6);
-
-  --p0-text: #7f1d1d; --p0-bg: #ef4444; --p0-base: #fef2f2;
-  --p1-text: #7c2d12; --p1-bg: #f97316; --p1-base: #fff7ed;
-  --p2-text: #1e3a8a; --p2-bg: #3b82f6; --p2-base: #eff6ff;
-  --p3-text: #14532d; --p3-bg: #22c55e; --p3-base: #f0fdf4;
-  --p4-text: #57534e; --p4-bg: #a8a29e; --p4-base: #fafaf9;
-  
-  --font-main: 'Playfair Display', serif;
-  --font-mono: 'Courier Prime', monospace;
-  
-  --progress-mask: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.2'/%3E%3C/svg%3E");
-  --progress-blend: multiply;
-}
-
-[data-theme='watercolor'] {
-  /* WATERCOLOR */
-  --bg-panel: rgba(255, 255, 255, 0.85); 
-  --bg-sidebar: rgba(245, 245, 250, 0.8);
-  --bg-card: rgba(255, 255, 255, 0.9);
-  --bg-card-hover: #ffffff;
-  --bg-input: rgba(255, 255, 255, 0.9);
-  --bg-menu: rgba(255, 255, 255, 0.95);
-  
-  --border-theme: rgba(203, 213, 225, 0.3);
-  --border-width: 1px;
-  --border-style: solid;
-  
-  --text-primary: #334155;
-  --text-secondary: #64748b;
-  --text-accent: #3b82f6;
-  --accent-bg: rgba(59, 130, 246, 0.1);
-  
-  --radius-lg: 32px;
-  --radius-md: 24px;
-  --radius-sm: 12px;
-  --radius-btn: 16px;
-  
-  --shadow-md: 0 4px 15px -3px rgba(0,0,0,0.05);
-  --backdrop-blur: blur(8px);
-
-  --glow-color: rgba(139, 92, 246, 0.5);
-
-  --p0-text: #e11d48; --p0-bg: linear-gradient(120deg, #fecdd3, #fda4af); --p0-base: #fff1f2;
-  --p1-text: #ea580c; --p1-bg: linear-gradient(120deg, #fed7aa, #fdba74); --p1-base: #fff7ed;
-  --p2-text: #2563eb; --p2-bg: linear-gradient(120deg, #bfdbfe, #93c5fd); --p2-base: #eff6ff;
-  --p3-text: #059669; --p3-bg: linear-gradient(120deg, #a7f3d0, #6ee7b7); --p3-base: #ecfdf5;
-  --p4-text: #64748b; --p4-bg: linear-gradient(120deg, #e2e8f0, #cbd5e1); --p4-base: #f8fafc;
-  
-  --font-main: 'Quicksand', sans-serif;
-  --font-mono: 'ui-monospace', monospace;
-  
-  --progress-mask: none;
-  --progress-blend: normal;
-}
-
-[data-theme='paper'] {
-  /* KRAFT PAPER (Sketchbook Style) */
-  /* Background mimics kraft paper color */
-  --bg-panel: rgba(235, 225, 210, 0.96); 
-  --bg-sidebar: rgba(225, 215, 200, 0.95);
-  
-  /* Cards look like torn paper notes or sticky notes */
-  --bg-card: rgba(245, 240, 230, 0.8);
-  --bg-card-hover: rgba(255, 250, 240, 1);
-  --bg-input: rgba(245, 240, 230, 0.5);
-  --bg-menu: #f5f0e6;
-  
-  /* Borders look like pen/pencil strokes */
-  --border-theme: #8c7b6c;
-  --border-width: 1px;
-  --border-style: solid;
-  
-  /* Ink-like Colors */
-  --text-primary: #3e2723; /* Dark Brown Ink */
-  --text-secondary: #795548; /* Faded Brown */
-  --text-accent: #a52a2a; /* Red Ink for accents */
-  --accent-bg: rgba(165, 42, 42, 0.08);
-  
-  --radius-lg: 2px;
-  --radius-md: 2px;
-  --radius-sm: 1px;
-  --radius-btn: 3px;
-  
-  /* Paper lift shadow */
-  --shadow-md: 2px 3px 0px rgba(60, 40, 30, 0.1), 0 1px 2px rgba(0,0,0,0.1);
-  --backdrop-blur: none;
-
-  --glow-color: rgba(165, 42, 42, 0.3);
-
-  /* Marker Highlighter Colors */
-  --p0-text: #3e2723; --p0-bg: #ffcdd2; --p0-base: #ffebee;
-  --p1-text: #3e2723; --p1-bg: #ffe0b2; --p1-base: #fff3e0;
-  --p2-text: #3e2723; --p2-bg: #bbdefb; --p2-base: #e3f2fd;
-  --p3-text: #3e2723; --p3-bg: #c8e6c9; --p3-base: #e8f5e9;
-  --p4-text: #5d4037; --p4-bg: #d7ccc8; --p4-base: #efebe9;
-
-  /* Handwriting Font */
-  --font-main: 'Patrick Hand', 'Caveat', cursive;
-  --font-mono: 'Patrick Hand', cursive;
-  
-  --progress-mask: none;
-  --progress-blend: normal;
-}
-
-/* === KAWAII CANDY WORLD THEME === */
-[data-theme='kawaii'] {
-  /*
-    Palette:
-    - Strawberry Milk: #FFB7CE
-    - White Peach: #FFD9E6
-    - Cotton Candy Blue: #B1DFFF
-    - Mint Candy: #C7F2E3
-    - Cream Yellow: #FFF4C2
-    - Text: Chocolate Brown #5d4037
-  */
-
-  /* Panels: Creamy, Glazed glass feel */
-  --bg-panel: rgba(255, 255, 255, 0.65); 
-  --bg-sidebar: rgba(255, 245, 248, 0.9); /* Very light strawberry milk */
-  
-  /* Cards: White Chocolate / Marshmallow feel */
-  --bg-card: #ffffff; 
-  --bg-card-hover: #fff9fc; /* Slight pink tint on hover */
-  --bg-input: rgba(255, 255, 255, 0.8);
-  --bg-menu: rgba(255, 250, 252, 0.98);
-  
-  /* Borders: Thick, Soft, Frosting-like */
-  --border-theme: #ffcce0; /* Soft Pink Frosting */
-  --border-width: 2px;
-  --border-style: solid;
-  
-  /* Text: Warm Chocolate/Cocoa instead of harsh black */
-  --text-primary: #6d4c41; /* Deep Cocoa */
-  --text-secondary: #a1887f; /* Milk Chocolate */
-  --text-accent: #ff69b4; /* Hot Pink Candy */
-  --accent-bg: #ffe4ef;
-  
-  /* Radius: Super Rounded (Gummies) */
-  --radius-lg: 32px;
-  --radius-md: 24px;
-  --radius-sm: 16px;
-  --radius-btn: 20px;
-  
-  /* Shadows: The "Jelly/3D" Look */
-  /* Inner light + Bottom shadow to create volume */
-  --shadow-md: 0 4px 12px rgba(255, 183, 206, 0.4), inset 0 -2px 0 rgba(0,0,0,0.02);
-  --backdrop-blur: blur(16px);
-
-  --glow-color: rgba(255, 105, 180, 0.5);
-
-  /* P-Levels: Candy Flavors (High Saturation + Softness) */
-  /* P0: Strawberry Red */
-  --p0-text: #fff; --p0-bg: #ff6b81; --p0-base: #ffe0e6;
-  /* P1: Orange Gummy */
-  --p1-text: #fff; --p1-bg: #ffa502; --p1-base: #fff0c2;
-  /* P2: Mint/Blueberry Soda */
-  --p2-text: #fff; --p2-bg: #7bed9f; --p2-base: #e0f9f4; /* Using Mint for P2 as it's calmer */
-  /* P3: Milk Gray */
-  --p3-text: #8d6e63; --p3-bg: #dfe6e9; --p3-base: #f5f6fa;
-  /* P4: Marshmallow White */
-  --p4-text: #a4b0be; --p4-bg: #f1f2f6; --p4-base: #ffffff;
-
-  --font-main: 'Quicksand', 'Inter', sans-serif; /* Rounded Font */
-  --font-mono: 'Quicksand', monospace;
-  
-  --progress-mask: none;
-  --progress-blend: normal;
-}
-
-/* Kawaii Specific overrides for "Jelly" buttons */
-[data-theme='kawaii'] button, 
-[data-theme='kawaii'] .bg-theme-card {
-  /* Add inner highlight for 3D effect */
-  box-shadow: 
-    0 4px 10px rgba(255, 182, 193, 0.3), /* Drop shadow */
-    inset 0 2px 0 rgba(255, 255, 255, 0.8), /* Top highlight */
-    inset 0 -2px 0 rgba(0, 0, 0, 0.03); /* Bottom shade */
-  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); /* Bouncy transition */
-}
-[data-theme='kawaii'] button:active {
-  transform: scale(0.95);
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
-}
-
-[data-theme='sewer'] {
-  /* CYBER MATRIX (Neon Green Glow & Transparent Panels) */
-  /* HIGHLY TRANSPARENT to show lightning from background, 
-     but slightly tinted to provide contrast for the foreground rain */
-  --bg-panel: rgba(0, 10, 0, 0.4); 
-  --bg-sidebar: rgba(0, 5, 0, 0.6);
-  --bg-card: rgba(10, 25, 10, 0.3);
-  --bg-card-hover: rgba(20, 40, 20, 0.4);
-  --bg-input: rgba(0, 10, 0, 0.3);
-  --bg-menu: rgba(5, 10, 5, 0.9);
-  
-  --border-theme: #39ff14; /* Neon Green Border */
-  --border-width: 1px;
-  --border-style: solid;
-  
-  --text-primary: #e0e0e0; 
-  --text-secondary: #39ff14; 
-  --text-accent: #39ff14; 
-  --accent-bg: rgba(57, 255, 20, 0.15);
-  
-  --radius-lg: 2px;
-  --radius-md: 2px;
-  --radius-sm: 0px;
-  --radius-btn: 0px;
-  
-  --shadow-md: 0 0 10px rgba(57, 255, 20, 0.6), inset 0 0 5px rgba(57, 255, 20, 0.2);
-  --backdrop-blur: blur(2px); /* Slight blur for the glass look */
-
-  --glow-color: #39ff14;
-
-  --p0-text: #000000; --p0-bg: #39ff14; --p0-base: #0f2e0f;
-  --p1-text: #ffffff; --p1-bg: #d32f2f; --p1-base: #2e0f0f;
-  --p2-text: #ffffff; --p2-bg: #424242; --p2-base: #212121;
-  --p3-text: #aaaaaa; --p3-bg: #212121; --p3-base: #111111;
-  --p4-text: #666666; --p4-bg: #111111; --p4-base: #000000;
-
-  --font-main: 'Courier Prime', monospace;
-  --font-mono: 'Courier Prime', monospace;
-  
-  --progress-mask: none;
-  --progress-blend: normal;
-}
-
-/* === CHRISTMAS REINDEER (Previous iteration - kept for compatibility, now alias to christmas style if needed) === */
-[data-theme='reindeer'] {
-  --bg-panel: rgba(15, 46, 31, 0.85); 
-  --bg-sidebar: rgba(10, 35, 20, 0.9);
-  --bg-card: rgba(20, 55, 40, 0.7); 
-  --bg-card-hover: rgba(25, 65, 50, 0.85);
-  --bg-input: rgba(15, 46, 31, 0.6);
-  --bg-menu: rgba(15, 46, 31, 0.95);
-  --border-theme: rgba(217, 181, 111, 0.3); 
-  --border-width: 1px;
-  --border-style: solid;
-  --text-primary: #F7FAFF; 
-  --text-secondary: #CDE7FF; 
-  --text-accent: #D9B56F; 
-  --accent-bg: rgba(217, 181, 111, 0.15);
-  --radius-lg: 24px; --radius-md: 16px; --radius-sm: 8px; --radius-btn: 12px;
-  --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(217, 181, 111, 0.1);
-  --backdrop-blur: blur(20px);
-  --glow-color: rgba(217, 181, 111, 0.5);
-  --p0-text: #fff; --p0-bg: #C4233C; --p0-base: #3d0a10;
-  --p1-text: #fff; --p1-bg: #EFB864; --p1-base: #3d2f10;
-  --p2-text: #0f172a; --p2-bg: #93D6FF; --p2-base: #102a3d;
-  --p3-text: #fff; --p3-bg: #4E5F57; --p3-base: #1a2620;
-  --p4-text: #0f172a; --p4-bg: #F2F7F9; --p4-base: #2a353a;
-  --font-main: 'Playfair Display', 'Inter', serif;
-  --font-mono: 'Inter', monospace;
-  --progress-mask: none;
-  --progress-blend: normal;
-}
-[data-theme='reindeer'] button, [data-theme='reindeer'] .bg-theme-card {
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -2px 10px rgba(0,0,0,0.2); 
-}
-
-/* === CHRISTMAS SNOW NIGHT (NEW SKIN) === */
-[data-theme='christmas'] {
-  /* 
-     - Deep Forest Green: #0E2A20
-     - Gold Glow: rgba(255, 220, 150, 0.4)
-     - Text: #EAF7F4
-     - Accent: #B22D2D (Red), #E8C887 (Gold)
-  */
-
-  --bg-panel: rgba(10, 25, 20, 0.85); /* Increased opacity for readability */
-  --bg-sidebar: rgba(5, 20, 15, 0.9);
-  
-  --bg-card: rgba(14, 42, 32, 0.7); 
-  --bg-card-hover: rgba(20, 50, 40, 0.85);
-  --bg-input: rgba(10, 30, 25, 0.6);
-  --bg-menu: rgba(14, 42, 32, 0.95);
-  
-  --border-theme: rgba(255, 220, 150, 0.4); /* Stronger gold border */
-  --border-width: 1px;
-  --border-style: solid;
-  
-  --text-primary: #FFFFFF; /* Pure White */
-  --text-secondary: rgba(234, 247, 244, 0.7);
-  --text-accent: #E8C887; 
-  --accent-bg: rgba(232, 200, 135, 0.15);
-  
+  --text-primary: #0B1C3D;
+  --text-secondary: rgba(11, 28, 61, 0.7);
+  --text-accent: #1447C7;
+  --accent-bg: rgba(84, 224, 255, 0.2);
   --radius-lg: 24px;
   --radius-md: 16px;
   --radius-sm: 8px;
-  --radius-btn: 12px;
-  
-  /* Gold Glow Shadow */
-  --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 15px rgba(232, 200, 135, 0.15), inset 0 1px 0 rgba(255,255,255,0.1);
-  --backdrop-blur: blur(16px);
-
-  --glow-color: #E8C887;
-
-  /* P-Levels: Christmas Festive */
-  /* P0: Christmas Red */
-  --p0-text: #fff; --p0-bg: #B22D2D; --p0-base: #330d0d;
-  /* P1: Gold Star */
-  --p1-text: #000; --p1-bg: #E8C887; --p1-base: #332915;
-  /* P2: Ice Blue */
-  --p2-text: #000; --p2-bg: #A3D9E8; --p2-base: #1a2a2e;
-  /* P3: Pine Green */
-  --p3-text: #fff; --p3-bg: #2D5A4C; --p3-base: #0f1f1a;
-  /* P4: Snow White */
-  --p4-text: #000; --p4-bg: #EAF7F4; --p4-base: #2a353a;
-
-  --font-main: 'Playfair Display', 'Inter', serif;
-  --font-mono: 'Inter', monospace;
-  
-  --progress-mask: none;
-  --progress-blend: normal;
+  --shadow-md: none;
+  --backdrop-blur: none;
+  --font-main: 'Quicksand', sans-serif;
+  --panel-border: 1px solid rgba(255, 255, 255, 0.4);
+}
+[data-theme='landetian'] .bg-theme-card:hover {
+    background-color: rgba(255, 255, 255, 0.15) !important;
+    border-color: #FFF;
+}
+[data-theme='landetian'] button.bg-theme-accent {
+    background: linear-gradient(135deg, #54E0FF 0%, #FFC94A 100%);
+    color: #0B1C3D;
+    box-shadow: 0 4px 15px rgba(95, 224, 255, 0.5);
+    border: 1px solid rgba(255,255,255,0.6);
+}
+[data-theme='landetian'] button.bg-theme-accent:hover {
+    box-shadow: 0 0 20px rgba(255, 201, 74, 0.6);
+    filter: brightness(1.05);
+}
+[data-theme='landetian'] .text-theme-subtext {
+    color: rgba(11, 28, 61, 0.75) !important;
+}
+[data-theme='landetian'] input:focus, 
+[data-theme='landetian'] textarea:focus {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+    box-shadow: 0 0 12px rgba(84, 224, 255, 0.5);
+    border-color: #54E0FF;
 }
 
-[data-theme='christmas'] button, 
+/* =========================================================
+   SPECIAL THEME: MINECRAFT (True 3D GUI - Enhanced)
+   ========================================================= */
+[data-theme='minecraft'] { 
+  --bg-panel: #C6C6C6; 
+  --bg-sidebar: #C6C6C6; 
+  --bg-card: #C6C6C6; 
+  --bg-card-hover: #D0D0D0; 
+  --bg-input: #000000; 
+  --bg-menu: #C6C6C6;
+  
+  --border-theme: transparent; 
+  --border-width: 0px; 
+  
+  --text-primary: #3F3F3F; 
+  --text-secondary: #525252;
+  --text-accent: #202020; 
+  --accent-bg: #AAAAAA;
+  
+  --radius-lg: 0px;
+  --radius-md: 0px;
+  --radius-sm: 0px;
+  
+  --shadow-md: none;
+  --backdrop-blur: none;
+  
+  --font-main: 'VT323', monospace;
+  -webkit-font-smoothing: none;
+  image-rendering: pixelated;
+  
+  --panel-border: 0px solid transparent;
+}
+
+/* MC Global Reset */
+[data-theme='minecraft'] * {
+    border-radius: 0px !important;
+    box-shadow: none !important;
+    font-family: 'VT323', monospace;
+    letter-spacing: 0.5px;
+}
+
+/* MC Raised Mixin (The 3D Bevel) */
+[data-theme='minecraft'] .bg-theme-panel,
+[data-theme='minecraft'] .bg-theme-sidebar,
+[data-theme='minecraft'] .bg-theme-menu,
+[data-theme='minecraft'] .bg-theme-card,
+[data-theme='minecraft'] button:not(.text-theme-subtext):not(.text-red-500) {
+    background-color: #C6C6C6 !important;
+    /* Inner Bevel */
+    box-shadow: inset 2px 2px 0px #FFFFFF, inset -2px -2px 0px #555555 !important;
+    /* Outer Border */
+    border: 2px solid #000000 !important;
+    margin: 2px;
+}
+
+/* MC Sunken Mixin (Inputs, Active Buttons) */
+[data-theme='minecraft'] input, 
+[data-theme='minecraft'] textarea,
+[data-theme='minecraft'] .bg-theme-input {
+    background-color: #000000 !important;
+    color: #FFFFFF !important;
+    border: 2px solid #A0A0A0 !important;
+    /* Sunken shadow */
+    box-shadow: inset 2px 2px 0px #373737, inset -2px -2px 0px #FFFFFF !important;
+    font-size: 20px;
+    padding: 8px;
+}
+
+[data-theme='minecraft'] input::placeholder, 
+[data-theme='minecraft'] textarea::placeholder { 
+    color: #AAAAAA; 
+}
+
+/* MC Hover States */
+[data-theme='minecraft'] .bg-theme-card:hover { 
+    background-color: #D9D9D9 !important; 
+}
+
+/* MC Buttons - Primary */
+[data-theme='minecraft'] button.bg-theme-accent { 
+    background-color: #7289da !important; 
+    color: #FFFFFF !important; 
+    text-shadow: 2px 2px 0px #3f3f3f;
+    box-shadow: inset 2px 2px 0px #8ea4f0, inset -2px -2px 0px #4b5a8f !important;
+    border: 2px solid #000000 !important;
+}
+
+[data-theme='minecraft'] button.bg-theme-accent:active { 
+    background-color: #4b5a8f !important; 
+    box-shadow: inset 2px 2px 0px #373737, inset -2px -2px 0px #8ea4f0 !important;
+    transform: translateY(2px); 
+}
+
+/* MC Scrollbar */
+[data-theme='minecraft'] ::-webkit-scrollbar { width: 12px; background: #000000; }
+[data-theme='minecraft'] ::-webkit-scrollbar-track { background: #000000; }
+[data-theme='minecraft'] ::-webkit-scrollbar-thumb { 
+    background-color: #C6C6C6; 
+    border: 2px solid #000;
+    box-shadow: inset 1px 1px 0 #FFF, inset -1px -1px 0 #555;
+}
+
+/* MC Text */
+[data-theme='minecraft'] .text-theme-text, 
+[data-theme='minecraft'] h1, 
+[data-theme='minecraft'] h2, 
+[data-theme='minecraft'] p {
+    color: #202020 !important;
+    text-shadow: 1px 1px 0px #C6C6C6;
+}
+[data-theme='minecraft'] .text-white {
+    color: #FFFFFF !important;
+    text-shadow: 2px 2px 0px #000000;
+}
+
+/* =========================================================
+   SPECIAL THEME: CHRISTMAS SNOW NIGHT
+   ========================================================= */
+[data-theme='christmas'] {
+  --bg-panel: rgba(178, 45, 45, 0.85); 
+  --bg-sidebar: rgba(140, 35, 35, 0.9);
+  --bg-card: rgba(130, 30, 30, 0.6);
+  --bg-card-hover: rgba(160, 40, 40, 0.8);
+  --bg-input: rgba(0, 0, 0, 0.3);
+  --bg-menu: #8a2020;
+  --border-theme: rgba(255, 222, 150, 0.45); 
+  --border-width: 1px;
+  --text-primary: #FFF9F2;
+  --text-secondary: rgba(255, 249, 242, 0.7);
+  --text-accent: #E8C887; 
+  --accent-bg: rgba(232, 200, 135, 0.2);
+  --radius-lg: 16px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+  --shadow-md: 0 0 15px rgba(240, 210, 150, 0.2); 
+  --backdrop-blur: blur(12px);
+  --font-main: 'Playfair Display', serif;
+  --panel-border: 1px solid rgba(255, 222, 150, 0.5);
+}
+[data-theme='christmas'] .bg-theme-panel,
 [data-theme='christmas'] .bg-theme-card {
-  box-shadow: 0 4px 20px rgba(0,0,0,0.2), inset 0 0 0 1px rgba(255, 220, 150, 0.2), 0 0 10px rgba(232, 200, 135, 0.05);
-  transition: all 0.3s ease;
+    box-shadow: 0 0 12px rgba(240, 210, 150, 0.15), inset 0 0 20px rgba(255, 255, 255, 0.05);
 }
-[data-theme='christmas'] button:hover,
-[data-theme='christmas'] .bg-theme-card:hover {
-  box-shadow: 0 8px 25px rgba(0,0,0,0.3), inset 0 0 0 1px rgba(255, 220, 150, 0.4), 0 0 15px rgba(232, 200, 135, 0.2);
+[data-theme='christmas'] .border-theme-border {
+    border-color: rgba(255, 222, 150, 0.3) !important;
 }
 
-/* --- ANIMATIONS --- */
-
-@keyframes breathe-glow {
-  0%, 100% { box-shadow: 0 0 0px var(--glow-color); border-color: var(--border-theme); }
-  50% { box-shadow: 0 0 16px var(--glow-color); border-color: var(--glow-color); }
+/* =========================================================
+   SPECIAL THEME: SEWER (Thunderstorm & Cyber Rain)
+   ========================================================= */
+[data-theme='sewer'] { 
+  --bg-panel: rgba(2, 10, 5, 0.6); 
+  --bg-sidebar: rgba(0, 5, 0, 0.8); 
+  --bg-card: rgba(10, 30, 15, 0.4); 
+  --bg-card-hover: rgba(20, 50, 30, 0.5); 
+  --bg-input: rgba(0, 10, 0, 0.5); 
+  --border-theme: #00FF66; 
+  --border-width: 1px; 
+  --text-primary: #e0e0e0; 
+  --text-secondary: #00FF66; 
+  --text-accent: #00FF66; 
+  --accent-bg: rgba(0, 255, 102, 0.15); 
+  --radius-lg: 2px; 
+  --radius-md: 2px; 
+  --radius-sm: 0px; 
+  --shadow-md: 0 0 15px rgba(0, 255, 102, 0.4); 
+  --backdrop-blur: blur(2px); 
+  --font-main: 'Courier Prime', monospace;
+  
+  --storm-bg-top: #020908;
+  --storm-bg-mid: #04180E;
+  --storm-bg-bottom: #072312;
+  --storm-lightning-core: #FFFFFF;
+  --storm-lightning-glow: #00FF66;
+  --storm-lightning-fog: rgba(0, 255, 120, 0.18);
+  --storm-flash: rgba(125, 255, 125, 0.35);
+  --storm-structure-dark: rgba(3, 17, 10, 0.12);
 }
 
-@keyframes lightning-flash-area {
-  0% { opacity: 0; }
-  2% { opacity: 0.8; transform: scale(1.5); }
-  4% { opacity: 0.3; } 
-  6% { opacity: 0.6; } 
-  100% { opacity: 0; }
+/* =========================================================
+   UPDATED: RAINY (NIGHT HIGHWAY DRIVE)
+   ========================================================= */
+[data-theme='rainy'] { 
+  --bg-panel: rgba(10, 15, 20, 0.7); 
+  --bg-sidebar: rgba(5, 8, 12, 0.85); 
+  --bg-card: rgba(20, 25, 35, 0.6); 
+  --bg-card-hover: rgba(30, 40, 50, 0.8); 
+  --bg-input: rgba(0, 0, 0, 0.5); 
+  --bg-menu: #0A0F14; 
+  --border-theme: rgba(100, 150, 255, 0.2); 
+  --border-width: 1px; 
+  --text-primary: #E0E6ED; 
+  --text-secondary: #94A3B8; 
+  --text-accent: #60A5FA; 
+  --accent-bg: rgba(96, 165, 250, 0.2); 
+  --radius-lg: 16px; 
+  --radius-md: 12px; 
+  --radius-sm: 6px; 
+  --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.5); 
+  --backdrop-blur: blur(10px); 
+  --font-main: 'Inter', sans-serif;
+  --panel-border: 1px solid rgba(100, 150, 255, 0.1);
 }
 
-@keyframes lightning-bolt-strike {
-  0% { opacity: 0; pathLength: 0; }
-  1% { opacity: 1; pathLength: 1; filter: drop-shadow(0 0 10px #fff) drop-shadow(0 0 20px #39ff14); }
-  3% { opacity: 1; }
-  5% { opacity: 0; }
-  6% { opacity: 0.5; } 
-  10% { opacity: 0; }
-  100% { opacity: 0; }
+/* =========================================================
+   UPDATED: WATERCOLOR (VAN GOGH STARRY NIGHT)
+   ========================================================= */
+[data-theme='watercolor'] { 
+  --bg-panel: rgba(20, 30, 50, 0.6); 
+  --bg-sidebar: rgba(10, 20, 40, 0.8); 
+  --bg-card: rgba(255, 255, 200, 0.1); 
+  --bg-card-hover: rgba(255, 255, 200, 0.2); 
+  --bg-input: rgba(0, 0, 0, 0.3); 
+  --bg-menu: #1B2B44; 
+  --border-theme: rgba(244, 196, 48, 0.4); /* Star Yellow */
+  --border-width: 1px; 
+  --text-primary: #FFFCF0; 
+  --text-secondary: #FFE066; 
+  --text-accent: #F4C430; 
+  --accent-bg: rgba(244, 196, 48, 0.2); 
+  --radius-lg: 20px; 
+  --radius-md: 16px; 
+  --radius-sm: 10px; 
+  --shadow-md: 0 4px 15px rgba(244, 196, 48, 0.15); 
+  --backdrop-blur: blur(4px); 
+  --font-main: 'Patrick Hand', cursive; 
+  --panel-border: 1px solid rgba(244, 196, 48, 0.3);
+}
+/* Artistic Button Style for Watercolor */
+[data-theme='watercolor'] button.bg-theme-accent {
+    border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+    box-shadow: 1px 2px 0px #C9A000;
 }
 
-/* Candy Floating Animation */
-@keyframes float-up {
-  0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
-  10% { opacity: 0.8; }
-  90% { opacity: 0.8; }
-  100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+/* =========================================================
+   OTHER PRESERVED THEMES
+   ========================================================= */
+[data-theme='kawaii'] { --bg-panel: rgba(255, 230, 240, 0.95); --bg-sidebar: #FFD1DC; --bg-card: #FFF0F5; --bg-card-hover: #FFFFFF; --bg-input: #FFFFFF; --bg-menu: #FFF0F5; --border-theme: #FF69B4; --border-width: 4px; --text-primary: #FF1493; --text-secondary: #FF69B4; --text-accent: #FF1493; --accent-bg: #FFC0CB; --radius-lg: 0px; --radius-md: 0px; --radius-sm: 0px; --shadow-md: 4px 4px 0px #FF1493; --backdrop-blur: none; --font-main: 'Press Start 2P', cursive; --panel-border: 4px solid #FF69B4; }
+[data-theme='kawaii'] .bg-theme-card { border: 4px solid #FF69B4; box-shadow: 4px 4px 0px #FF1493; }
+
+[data-theme='wooden'] { --bg-panel: rgba(253, 246, 227, 0.95); --bg-sidebar: rgba(210, 180, 140, 0.6); --bg-card: #fffcf5; --bg-card-hover: #ffffff; --bg-input: #ffffff; --border-theme: #8b5a2b; --text-primary: #3e2723; --text-secondary: #8d6e63; --text-accent: #a0522d; --accent-bg: #faebd7; --radius-lg: 2px; --radius-md: 2px; --shadow-md: 1px 1px 3px rgba(62, 39, 35, 0.2); --backdrop-blur: blur(4px); --font-main: 'Playfair Display', serif; }
+[data-theme='paper'] { --bg-panel: rgba(235, 225, 210, 0.96); --bg-sidebar: rgba(225, 215, 200, 0.95); --bg-card: rgba(245, 240, 230, 0.8); --bg-card-hover: rgba(255, 250, 240, 1); --bg-input: rgba(245, 240, 230, 0.5); --border-theme: #8c7b6c; --text-primary: #3e2723; --text-secondary: #795548; --text-accent: #a52a2a; --accent-bg: rgba(165, 42, 42, 0.08); --radius-lg: 2px; --radius-md: 2px; --shadow-md: 2px 3px 0px rgba(60, 40, 30, 0.1); --backdrop-blur: none; --font-main: 'Patrick Hand', cursive; }
+
+/* =============================================================================
+   VISUAL UPGRADE FOR 8 SPECIAL THEMES
+   ============================================================================= */
+
+/* 1. RGB NIGHTCLUB (MAX) */
+[data-theme='ultra-rgb'] { 
+  --bg-panel: rgba(0, 0, 0, 0.8); /* Darkened for readability */
+  --bg-sidebar: #000000; 
+  --bg-card: #000000; 
+  --bg-card-hover: #111111; 
+  --bg-input: #000000; 
+  --bg-menu: #000000; 
+  --border-theme: #00F6FF; 
+  --border-width: 2px; 
+  --text-primary: #FFFFFF; 
+  --text-secondary: #AAAAAA; 
+  --text-accent: #CCFF00; 
+  --accent-bg: rgba(0, 246, 255, 0.2); 
+  --radius-lg: 0px; 
+  --radius-md: 0px; 
+  --radius-sm: 0px; 
+  --shadow-md: 0 0 15px rgba(0, 246, 255, 0.5), 4px 4px 0px rgba(255, 0, 85, 0.8); 
+  --backdrop-blur: none; 
+  --font-main: 'Inter', sans-serif; 
+  --panel-border: 2px solid #00F6FF; 
+}
+[data-theme='ultra-rgb'] button:hover, 
+[data-theme='ultra-rgb'] .bg-theme-card:hover {
+  animation: glitch-anim 0.2s linear infinite;
+  border-color: #FF0055;
+  box-shadow: -2px 0 #00F6FF, 2px 0 #CCFF00;
+}
+@keyframes glitch-anim {
+  0% { transform: translate(0); }
+  20% { transform: translate(-2px, 2px); }
+  40% { transform: translate(-2px, -2px); }
+  60% { transform: translate(2px, 2px); }
+  80% { transform: translate(2px, -2px); }
+  100% { transform: translate(0); }
 }
 
-/* Snowfall Animation */
-@keyframes snow-fall {
-  0% { transform: translateY(-10vh); }
-  100% { transform: translateY(110vh); }
+/* 2. LASER TUNNEL */
+[data-theme='laser-tunnel'] { 
+  --bg-panel: rgba(0, 10, 30, 0.3); 
+  --bg-sidebar: rgba(0, 5, 20, 0.7); 
+  --bg-card: rgba(34, 242, 255, 0.05); 
+  --bg-card-hover: rgba(34, 242, 255, 0.15); 
+  --bg-input: rgba(0, 0, 0, 0.6); 
+  --bg-menu: #020510; 
+  --border-theme: #22F2FF; 
+  --border-width: 1px; 
+  --text-primary: #E0F7FF; 
+  --text-secondary: #5DE2FF; 
+  --text-accent: #B04CFF; 
+  --accent-bg: rgba(34, 242, 255, 0.1); 
+  --radius-lg: 4px; 
+  --radius-md: 4px; 
+  --radius-sm: 2px; 
+  --shadow-md: 0 0 10px rgba(34, 242, 255, 0.4); 
+  --backdrop-blur: none; 
+  --font-main: 'Share Tech Mono', monospace; 
+  --panel-border: 1px solid #22F2FF; 
+}
+/* Tech Corners for Cards */
+[data-theme='laser-tunnel'] .bg-theme-card {
+  position: relative;
+  border: 1px solid rgba(34, 242, 255, 0.3);
+  box-shadow: inset 0 0 10px rgba(34, 242, 255, 0.1);
+  clip-path: polygon(
+    0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 
+    0 100%, 0 8px, 8px 0
+  );
+}
+[data-theme='laser-tunnel'] .bg-theme-card:hover {
+  border-color: #22F2FF;
+  box-shadow: inset 0 0 20px rgba(34, 242, 255, 0.2);
 }
 
-/* Snow Sway (Wind) */
-@keyframes snow-sway {
-  0%, 100% { margin-left: 0; }
-  50% { margin-left: 20px; }
+/* 3. OIL SLICK (IRIDESCENT) - OPTIMIZED FOR READABILITY */
+[data-theme='oil-slick'] { 
+  --bg-panel: rgba(255, 255, 255, 0.7); /* Increased Opacity for readability */
+  --bg-sidebar: rgba(255, 255, 255, 0.8); 
+  --bg-card: rgba(255, 255, 255, 0.9); /* Solid cards */
+  --bg-card-hover: #FFFFFF; 
+  --bg-input: rgba(255, 255, 255, 0.9); 
+  --bg-menu: #FFFFFF; 
+  --border-theme: rgba(200, 200, 200, 0.5); 
+  --border-width: 1px; 
+  --text-primary: #1A1A1A; /* Darker text */
+  --text-secondary: #4A4A4A; 
+  --text-accent: #FF3EA6; 
+  --accent-bg: linear-gradient(135deg, #FF9ED8 0%, #B04CFF 100%); 
+  --radius-lg: 32px; 
+  --radius-md: 24px; 
+  --radius-sm: 16px; 
+  --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.05); 
+  --backdrop-blur: blur(30px); 
+  --font-main: 'Quicksand', sans-serif; 
+  --panel-border: 1px solid rgba(255, 255, 255, 0.8); 
+}
+[data-theme='oil-slick'] button.bg-theme-accent {
+  background: linear-gradient(90deg, #FF7B89, #8A2BE2, #00F0FF);
+  background-size: 200% 200%;
+  animation: iridescence-flow 3s ease infinite;
+  box-shadow: 0 5px 15px rgba(138, 43, 226, 0.3);
+  color: white;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+@keyframes iridescence-flow { 0% { background-position: 0% 50% } 50% { background-position: 100% 50% } 100% { background-position: 0% 50% } }
+
+/* 4. URBAN NEON */
+[data-theme='neon-billboard'] { 
+  --bg-panel: rgba(13, 5, 16, 0.85); 
+  --bg-sidebar: #0a020d; 
+  --bg-card: rgba(20, 5, 25, 0.8); 
+  --bg-card-hover: rgba(40, 10, 50, 0.9); 
+  --bg-input: #000; 
+  --bg-menu: #150520; 
+  --border-theme: #FF3EA6; 
+  --border-width: 2px; 
+  --text-primary: #FF9ED8; 
+  --text-secondary: #4DADFF; 
+  --text-accent: #FFDF4A; 
+  --accent-bg: rgba(255, 62, 166, 0.25); 
+  --radius-lg: 6px; 
+  --radius-md: 4px; 
+  --radius-sm: 2px; 
+  --shadow-md: 0 0 10px #FF3EA6, 4px 4px 0px #000; 
+  --backdrop-blur: none; 
+  --font-main: 'VT323', monospace; 
+  --panel-border: 2px solid #4DADFF; 
+}
+[data-theme='neon-billboard'] .bg-theme-card {
+  background-image: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+  background-size: 100% 4px, 6px 100%;
 }
 
-/* Global Transition */
-* {
-    transition-property: background-color, border-color, color, fill, stroke, border-radius;
-    transition-duration: 200ms;
+/* 5. DRAGON SCALE */
+[data-theme='dragonScale'] { 
+  --bg-panel: rgba(26, 5, 5, 0.9); 
+  --bg-sidebar: #2A0A0A; 
+  --bg-card: #3A0A0A; 
+  --bg-card-hover: #4A0E0E; 
+  --bg-input: #1A0505; 
+  --bg-menu: #2A0A0A; 
+  --border-theme: #F6C15A; 
+  --border-width: 1px; 
+  --text-primary: #F6C15A; 
+  --text-secondary: #FFB3B3; 
+  --text-accent: #D92A2A; 
+  --accent-bg: rgba(246, 193, 90, 0.2); 
+  --radius-lg: 8px; 
+  --radius-md: 4px; 
+  --radius-sm: 2px; 
+  --shadow-md: 0 4px 15px rgba(0, 0, 0, 0.5), inset 0 0 30px rgba(217, 42, 42, 0.1); 
+  --backdrop-blur: none; 
+  --font-main: 'Playfair Display', serif; 
+  --panel-border: 2px solid #F6C15A; 
+}
+[data-theme='dragonScale'] .bg-theme-card {
+  border-image: linear-gradient(to bottom, #F6C15A, #D92A2A) 1;
+}
+
+/* 6. DEEP NEBULA */
+[data-theme='deepNebula'] { 
+  --bg-panel: rgba(5, 7, 20, 0.6); 
+  --bg-sidebar: rgba(5, 7, 20, 0.8); 
+  --bg-card: rgba(255, 255, 255, 0.05); 
+  --bg-card-hover: rgba(255, 255, 255, 0.1); 
+  --bg-input: rgba(0, 0, 0, 0.3); 
+  --bg-menu: #050714; 
+  --border-theme: rgba(255, 255, 255, 0.1); 
+  --border-width: 1px; 
+  --text-primary: #EEF2FF; 
+  --text-secondary: #8E9DFF; 
+  --text-accent: #4DA6FF; 
+  --accent-bg: rgba(77, 166, 255, 0.2); 
+  --radius-lg: 16px; 
+  --radius-md: 12px; 
+  --radius-sm: 8px; 
+  --shadow-md: none; 
+  --backdrop-blur: blur(20px); 
+  --font-main: 'Inter', sans-serif; 
+  --panel-border: 1px solid rgba(255, 255, 255, 0.1); 
+}
+
+/* 7. BLACK GOLD LUXURY */
+[data-theme='blackGold'] { 
+  --bg-panel: #080808; 
+  --bg-sidebar: #0C0C0C; 
+  --bg-card: #141414; 
+  --bg-card-hover: #1A1A1A; 
+  --bg-input: #000000; 
+  --bg-menu: #080808; 
+  --border-theme: #C99A3D; 
+  --border-width: 1px; 
+  --text-primary: #F8F3E9; 
+  --text-secondary: #888888; 
+  --text-accent: #F0C674; 
+  --accent-bg: linear-gradient(90deg, #C99A3D 0%, #F0C674 100%); 
+  --radius-lg: 2px; 
+  --radius-md: 2px; 
+  --radius-sm: 0px; 
+  --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.8); 
+  --backdrop-blur: none; 
+  --font-main: 'Playfair Display', serif; 
+  --panel-border: 1px solid #333; 
+}
+[data-theme='blackGold'] .bg-theme-card {
+  border: 1px solid transparent;
+  background-image: linear-gradient(#141414, #141414), linear-gradient(to right, #C99A3D, #F0C674);
+  background-origin: border-box;
+  background-clip: content-box, border-box;
+}
+
+/* 8. SYNTHWAVE 1980 */
+[data-theme='synthwaveGrid'] { 
+  --bg-panel: rgba(16, 5, 26, 0.8); 
+  --bg-sidebar: #10051A; 
+  --bg-card: rgba(45, 27, 78, 0.6); 
+  --bg-card-hover: rgba(93, 39, 93, 0.8); 
+  --bg-input: #000; 
+  --bg-menu: #2D1B4E; 
+  --border-theme: #FF4FAE; 
+  --border-width: 2px; 
+  --text-primary: #FFCF5A; 
+  --text-secondary: #46F0FF; 
+  --text-accent: #FF4FAE; 
+  --accent-bg: rgba(255, 79, 174, 0.3); 
+  --radius-lg: 0px; 
+  --radius-md: 0px; 
+  --radius-sm: 0px; 
+  --shadow-md: 4px 4px 0px #46F0FF; 
+  --backdrop-blur: none; 
+  --font-main: 'Press Start 2P', cursive; 
+  --panel-border: 2px solid #FFCF5A; 
 }

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Todo, Priority } from './types';
 import TaskInput from './components/TaskInput';
@@ -8,6 +9,7 @@ import AiAssistant from './components/AiAssistant';
 import CalendarView from './components/CalendarView';
 import ThemeBackground from './components/ThemeBackground';
 import CyberStormEffect from './components/CyberStormEffect';
+import SnowEffect from './components/SnowEffect';
 import { 
   Inbox, 
   CheckCircle2, 
@@ -55,12 +57,22 @@ const FASHION_QUOTES = [
 const THEME_OPTIONS = [
   { id: 'glass', name: '默认 (玻璃)', color: '#a5b4fc' },
   { id: 'minecraft', name: '我的世界', color: '#5a8e3d' },
-  // 'sewer' (Cyber Matrix) is hidden (Easter Egg)
-  // 'christmas' (Snow Night) is hidden (Easter Egg)
+  { id: 'rainy', name: '雨夜车窗', color: '#3FA9FF' },
+  // Christmas removed - Easter Egg Only
   { id: 'kawaii', name: '糖果甜心', color: '#f9a8d4' },
   { id: 'wooden', name: '温暖木质', color: '#d4a373' },
   { id: 'watercolor', name: '水彩画布', color: '#93c5fd' },
   { id: 'paper', name: '极简纸张', color: '#cbd5e1' },
+  // Light Pollution 1.0 Themes
+  { id: 'ultra-rgb', name: 'RGB夜店 (MAX)', color: '#D000FF' },
+  { id: 'laser-tunnel', name: '激光隧道', color: '#10F2FF' },
+  { id: 'oil-slick', name: '油膜虹彩', color: '#FF7B89' },
+  { id: 'neon-billboard', name: '都市霓虹', color: '#FF3EA6' },
+  // Light Pollution 2.0 Themes
+  { id: 'dragonScale', name: '龙鳞春节', color: '#D92A2A' },
+  { id: 'deepNebula', name: '深空星云', color: '#4DA6FF' },
+  { id: 'blackGold', name: '黑金奢华', color: '#F0C674' },
+  { id: 'synthwaveGrid', name: '合成波1980', color: '#FF4FAE' },
 ];
 
 const App: React.FC = () => {
@@ -103,6 +115,9 @@ const App: React.FC = () => {
   const [showUndo, setShowUndo] = useState(false);
   const undoTimeoutRef = useRef<any>(null);
 
+  // Store previous theme for temporary switches
+  const previousThemeRef = useRef<string | null>(null);
+
   // --- REFS ---
   const sortMenuRef = useRef<HTMLDivElement>(null);
   const themeMenuRef = useRef<HTMLDivElement>(null);
@@ -114,7 +129,12 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => { localStorage.setItem('buyer_todos', JSON.stringify(todos)); }, [todos]);
-  useEffect(() => { localStorage.setItem('app_theme', theme); }, [theme]);
+  useEffect(() => { 
+      // Only persist theme if it's NOT a temporary one
+      if (theme !== 'landetian') {
+          localStorage.setItem('app_theme', theme); 
+      }
+  }, [theme]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -152,10 +172,6 @@ const App: React.FC = () => {
 
   const handleDeleteTodo = (id: string) => {
     // 1. Attempt to find task for Undo feature
-    // Note: When deleting a temporary "Processing" placeholder from an async callback (TaskInput), 
-    // 'todos' here might be stale (not yet containing the placeholder). 
-    // In that case, 'todoToDelete' is undefined, which is actually correct/desired 
-    // because we don't want to offer Undo for a processing placeholder.
     const todoToDelete = todos.find(t => t.id === id);
     
     if (todoToDelete) {
@@ -166,7 +182,6 @@ const App: React.FC = () => {
     }
 
     // 2. ALWAYS perform deletion using functional update
-    // This ensures that even if 'todos' in the closure is stale, we correctly remove the item from the latest state.
     setTodos(prev => prev.filter(t => t.id !== id));
     
     if (focusedTodoId === id) setFocusedTodoId(null);
@@ -181,8 +196,22 @@ const App: React.FC = () => {
   };
 
   const handleSecretCode = (code: string) => {
-     if (code === '1335465359') setTheme('sewer');
-     if (code === 'merry christmas') setTheme('christmas');
+     const lower = code.toLowerCase();
+     if (lower === '1335465359') setTheme('sewer');
+     if (lower === 'merry christmas' || lower === '圣诞快乐') setTheme('christmas');
+     
+     // Temporary Theme Logic for Landetian
+     if (lower === 'landetian' || lower === '蓝的天') {
+         if (theme !== 'landetian') {
+            previousThemeRef.current = theme;
+            setTheme('landetian');
+         }
+     } else if (lower === 'exit_landetian') {
+         if (theme === 'landetian' && previousThemeRef.current) {
+             setTheme(previousThemeRef.current);
+             previousThemeRef.current = null;
+         }
+     }
   };
 
   // --- DERIVED STATE ---
@@ -305,6 +334,9 @@ const App: React.FC = () => {
         
         {/* === CYBER STORM EFFECT (Injected ONLY here, behind content but on top of panel bg) === */}
         {theme === 'sewer' && <CyberStormEffect />}
+        
+        {/* === SNOW EFFECT (Injected ONLY here, behind content but on top of panel bg) === */}
+        {(theme === 'christmas' || theme === 'reindeer') && <SnowEffect />}
 
         {/* Sidebar */}
         <div className="w-64 bg-theme-sidebar border-r border-theme-border border-theme-width flex flex-col pt-6 pb-4 hidden md:flex shrink-0 transition-colors z-10">
@@ -322,7 +354,7 @@ const App: React.FC = () => {
             </div>
             
             {showThemeMenu && (
-              <div className="absolute top-full left-6 mt-2 w-48 bg-theme-menu border border-theme-border border-theme-width rounded-theme shadow-theme p-1 z-50 animate-in fade-in slide-in-from-top-2 backdrop-blur-xl">
+              <div className="absolute top-full left-6 mt-2 w-48 max-h-[400px] overflow-y-auto bg-theme-menu border border-theme-border border-theme-width rounded-theme shadow-theme p-1 z-50 animate-in fade-in slide-in-from-top-2 backdrop-blur-xl">
                 {THEME_OPTIONS.map(opt => (
                   <button
                     key={opt.id}
@@ -349,7 +381,7 @@ const App: React.FC = () => {
                    onClick={() => { setTheme('christmas'); setShowThemeMenu(false); }}
                    className="w-full text-left px-3 py-2 rounded-theme-sm text-xs font-medium flex items-center gap-2 transition-colors bg-theme-accent-bg text-theme-accent"
                  >
-                   <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#0E2A20' }}></div>
+                   <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#B22D2D' }}></div>
                    圣诞雪夜
                  </button>
                 )}
@@ -401,7 +433,6 @@ const App: React.FC = () => {
         </div>
 
         {/* Content Area - KEEP ALIVE IMPLEMENTATION */}
-        {/* We use CSS classes to hide/show views instead of React conditional rendering */}
         <div className="flex-1 flex flex-col bg-transparent relative min-w-0 z-10 h-full overflow-hidden">
             
             {/* 1. TODOS VIEW */}

@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Image as ImageIcon, X, Sparkles, Send } from 'lucide-react';
 import { analyzeImageAndText } from '../services/geminiService';
@@ -18,6 +19,7 @@ const TaskInput: React.FC<TaskInputProps> = ({ onAddTodos, onUpdateTodo, onDelet
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isFocused, setIsFocused] = useState(false);
   const [isSmartMode, setIsSmartMode] = useState(false);
+  // isLandetianMode state removed as we don't need to track 'locking' anymore, just trigger once.
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
@@ -68,6 +70,12 @@ const TaskInput: React.FC<TaskInputProps> = ({ onAddTodos, onUpdateTodo, onDelet
          } else if (val.toLowerCase() === 'merry christmas') {
              onSecretCode('merry christmas');
              setText('');
+         }
+         
+         // Landetian Logic (Trigger Only)
+         // Input '蓝的天' triggers the theme. Deleting it does NOT revert.
+         if (val === '蓝的天') {
+             onSecretCode('landetian');
          }
       }
   };
