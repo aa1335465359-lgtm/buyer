@@ -43,10 +43,13 @@ export interface AITaskResponse {
   }[];
 }
 
+export interface WorkSummaryTheme {
+  title: string;
+  actions: string[];
+}
+
 export interface WorkSummary {
   rangeLabel: string;
-  score: number; // 0-100 Health Score
-  overview: string; // High-level executive summary
   stats: {
     total: number;
     completed: number;
@@ -55,7 +58,6 @@ export interface WorkSummary {
     p0Total: number;
     p0Completed: number;
   };
-  achievements: string[]; // Key wins
-  risks: string[];        // Potential issues/blockers
-  suggestions: string[];  // Actionable advice
+  themes: WorkSummaryTheme[]; // New structure
+  suggestions: string[];
 }

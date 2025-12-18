@@ -466,9 +466,6 @@ export const editImage = async (images: File[] | undefined, prompt: string): Pro
 
 // 4. Chat Assistant
 export const chatWithBuyerAI = async (history: any[], lastUserMsg: string, images?: File[]): Promise<string> => {
-    // Note: 'history' here is passed for context maintenance.
-    // We will do a direct fetch here to support history properly.
-    
     // Limit chat history context to reduce token usage
     const MAX_HISTORY = 16;
     const trimmedHistory = history.slice(-MAX_HISTORY);
@@ -476,12 +473,6 @@ export const chatWithBuyerAI = async (history: any[], lastUserMsg: string, image
     // history should already be in { role, parts } format
     const contents = [...trimmedHistory]; 
     
-    /* 
-       However, to keep it simple and consistent with the types used in AiAssistant.tsx:
-       The frontend passes standard Google format history. We can just send that to our /api/gemini endpoint.
-    */
-    
-    // Updated System Prompt to allow markdown
     const systemPrompt = `
 你是买手工作台里的「小番茄」，一只性格日常、靠谱贴心的大码女装甜妹助理。
 

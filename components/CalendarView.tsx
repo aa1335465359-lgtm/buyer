@@ -6,7 +6,7 @@ import {
   ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, 
   Sparkles, FileText, BarChart3, TrendingUp, CheckCircle2, 
   AlertCircle, Loader2, ArrowRight, Zap, Target, ShieldAlert,
-  Award, RefreshCcw
+  Award, RefreshCcw, Layers
 } from 'lucide-react';
 import { generateDailyReport, generateWorkSummary } from '../services/geminiService';
 
@@ -118,13 +118,21 @@ const CalendarView: React.FC<CalendarViewProps> = ({ todos, onToggle, onDelete, 
 
   const handleGenerateWorkSummary = async (range: SummaryRange) => {
     const { tasks, label } = getRangeTasks(range);
-    if (tasks.length === 0) {
-        // Optional: show toast or alert?
-    }
+    
+    // Calculate Stats locally
+    const total = tasks.length;
+    const completed = tasks.filter(t => t.status === 'done').length;
+    const completionRate = total > 0 ? `${Math.round((completed / total) * 100)}%` : '0%';
+    const overdue = tasks.filter(t => t.status !== 'done' && t.deadline && t.deadline < Date.now()).length;
+    const p0Tasks = tasks.filter(t => t.priority === Priority.P0 || (t.priority as string) === 'HIGH');
+    const p0Total = p0Tasks.length;
+    const p0Completed = p0Tasks.filter(t => t.status === 'done').length;
+    
+    const stats = { total, completed, completionRate, overdue, p0Total, p0Completed };
 
     setIsGeneratingWorkSummary(true);
     try {
-      const summary = await generateWorkSummary(tasks, label);
+      const summary = await generateWorkSummary(tasks, stats, label);
       setWorkSummary(summary);
     } catch (e) {
       console.error(e);
@@ -297,44 +305,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ todos, onToggle, onDelete, 
                  ) : workSummary ? (
                    <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                       
-                      {/* 1. Score & Overview Card */}
-                      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-                          {/* Score Card */}
-                          <div className="md:col-span-4 bg-theme-card border border-theme-border rounded-xl p-6 shadow-sm flex flex-col items-center justify-center relative overflow-hidden">
-                              <div className={`absolute top-0 left-0 w-full h-1 ${workSummary.score >= 80 ? 'bg-emerald-500' : (workSummary.score >= 60 ? 'bg-yellow-500' : 'bg-red-500')}`}></div>
-                              <h3 className="text-xs font-bold text-theme-subtext uppercase tracking-widest mb-4">综合健康分</h3>
-                              <div className="relative mb-2">
-                                  <svg className="w-32 h-32 transform -rotate-90">
-                                      <circle cx="64" cy="64" r="56" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-theme-input" />
-                                      <circle cx="64" cy="64" r="56" stroke="currentColor" strokeWidth="8" fill="transparent" 
-                                              strokeDasharray={351.86} 
-                                              strokeDashoffset={351.86 - (351.86 * workSummary.score) / 100} 
-                                              className={`${workSummary.score >= 80 ? 'text-emerald-500' : (workSummary.score >= 60 ? 'text-yellow-500' : 'text-red-500')} transition-all duration-1000 ease-out`} 
-                                              strokeLinecap="round" />
-                                  </svg>
-                                  <div className="absolute inset-0 flex items-center justify-center text-4xl font-black text-theme-text">
-                                      {workSummary.score}
-                                  </div>
-                              </div>
-                              <p className={`text-sm font-bold ${workSummary.score >= 80 ? 'text-emerald-500' : (workSummary.score >= 60 ? 'text-yellow-500' : 'text-red-500')}`}>
-                                  {workSummary.score >= 80 ? '表现优异' : (workSummary.score >= 60 ? '状态良好' : '需要注意')}
-                              </p>
-                          </div>
-                          
-                          {/* Overview Text */}
-                          <div className="md:col-span-8 bg-theme-card border border-theme-border rounded-xl p-6 shadow-sm flex flex-col justify-center">
-                              <h3 className="text-xs font-bold text-theme-subtext uppercase tracking-widest mb-3 flex items-center gap-2"><FileText size={14} /> 执行综述</h3>
-                              <p className="text-sm md:text-base text-theme-text leading-relaxed font-medium">
-                                  {workSummary.overview}
-                              </p>
-                              <div className="mt-4 pt-4 border-t border-theme-border flex gap-4 text-xs text-theme-subtext">
-                                  <span>统计周期: {workSummary.rangeLabel}</span>
-                                  <span>任务总数: {workSummary.stats.total}</span>
-                              </div>
-                          </div>
-                      </div>
-
-                      {/* 2. Key Metrics Grid (Redesigned) */}
+                      {/* 1. Key Metrics Grid */}
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                          <StatCard 
                             type="success"
@@ -366,42 +337,38 @@ const CalendarView: React.FC<CalendarViewProps> = ({ todos, onToggle, onDelete, 
                          />
                       </div>
 
-                      {/* 3. Split View: Highlights vs Risks */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          {/* Achievements */}
+                      {/* 2. Main Themes (Work Breakdown) */}
+                      <div className="grid grid-cols-1 gap-6">
                           <div className="bg-theme-card/50 border border-theme-border rounded-xl p-5 shadow-sm">
-                              <h4 className="flex items-center gap-2 text-sm font-bold text-emerald-600 mb-4 bg-emerald-500/10 px-3 py-1.5 rounded-lg w-fit">
-                                  <Award size={16} /> 核心亮点
+                              <h4 className="flex items-center gap-2 text-sm font-bold text-theme-accent mb-4 bg-theme-accent/10 px-3 py-1.5 rounded-lg w-fit">
+                                  <Layers size={16} /> 核心工作项
                               </h4>
-                              <ul className="space-y-3">
-                                  {workSummary.achievements.map((item, i) => (
-                                      <li key={i} className="flex items-start gap-3 text-sm text-theme-text">
-                                          <div className="mt-0.5 w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 shadow-[0_0_5px_rgba(16,185,129,0.5)]"></div>
-                                          <span className="leading-snug">{item}</span>
-                                      </li>
-                                  ))}
-                                  {workSummary.achievements.length === 0 && <p className="text-xs text-theme-subtext italic">暂无特别亮点提取</p>}
-                              </ul>
-                          </div>
-
-                          {/* Risks */}
-                          <div className="bg-theme-card/50 border border-theme-border rounded-xl p-5 shadow-sm">
-                              <h4 className="flex items-center gap-2 text-sm font-bold text-red-600 mb-4 bg-red-500/10 px-3 py-1.5 rounded-lg w-fit">
-                                  <ShieldAlert size={16} /> 风险预警
-                              </h4>
-                              <ul className="space-y-3">
-                                  {workSummary.risks.map((item, i) => (
-                                      <li key={i} className="flex items-start gap-3 text-sm text-theme-text">
-                                          <div className="mt-0.5 w-1.5 h-1.5 rounded-full bg-red-500 shrink-0 shadow-[0_0_5px_rgba(239,68,68,0.5)]"></div>
-                                          <span className="leading-snug">{item}</span>
-                                      </li>
-                                  ))}
-                                  {workSummary.risks.length === 0 && <p className="text-xs text-theme-subtext italic">暂无明显风险</p>}
-                              </ul>
+                              {workSummary.themes.length > 0 ? (
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                      {workSummary.themes.map((theme, i) => (
+                                          <div key={i} className="bg-theme-card border border-theme-border/50 rounded-lg p-4">
+                                              <h5 className="font-bold text-theme-text text-sm mb-3 flex items-center gap-2">
+                                                  <span className="w-2 h-2 rounded-full bg-theme-accent"></span>
+                                                  {theme.title}
+                                              </h5>
+                                              <ul className="space-y-2">
+                                                  {theme.actions.map((action, j) => (
+                                                      <li key={j} className="text-xs text-theme-subtext flex items-start gap-2 leading-relaxed">
+                                                          <span className="mt-1 w-1 h-1 rounded-full bg-theme-subtext/50 shrink-0"></span>
+                                                          {action}
+                                                      </li>
+                                                  ))}
+                                              </ul>
+                                          </div>
+                                      ))}
+                                  </div>
+                              ) : (
+                                  <p className="text-xs text-theme-subtext italic">暂无归类数据</p>
+                              )}
                           </div>
                       </div>
 
-                      {/* 4. Strategy Suggestions */}
+                      {/* 3. Strategy Suggestions */}
                       <div className="bg-theme-accent-bg border border-theme-accent/20 rounded-xl p-6 relative overflow-hidden">
                           <div className="absolute top-0 right-0 p-4 opacity-10">
                               <Target size={100} className="text-theme-accent" />
