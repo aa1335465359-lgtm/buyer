@@ -16,7 +16,11 @@ const ScriptMatcher: React.FC = () => {
   const handleImageSelect = (file: File) => {
     setSelectedImage(file);
     const reader = new FileReader();
-    reader.onloadend = () => setImagePreview(reader.result as string);
+    reader.onloadend = () => {
+        if (reader.result) {
+            setImagePreview(reader.result as string);
+        }
+    };
     reader.readAsDataURL(file);
   };
 

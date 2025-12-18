@@ -41,7 +41,10 @@ const ImageEditor: React.FC = () => {
   const processFile = (file: File, index: number) => {
     const reader = new FileReader();
     reader.onload = (e) => {
-        const newPreviews = [...previewUrls]; newPreviews[index] = e.target?.result as string; setPreviewUrls(newPreviews);
+        if (!e.target?.result) return;
+        const newPreviews = [...previewUrls]; 
+        newPreviews[index] = e.target.result as string; 
+        setPreviewUrls(newPreviews);
     };
     reader.readAsDataURL(file);
     const newImages = [...selectedImages]; newImages[index] = file; setSelectedImages(newImages);

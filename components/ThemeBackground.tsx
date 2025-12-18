@@ -12,6 +12,7 @@ import MaillardLayer from './MaillardLayer';
 import DopamineLayer from './DopamineLayer';
 import MemphisPatternLayer from './MemphisPatternLayer';
 import AmethystLayer from './AmethystLayer';
+import DigitalTerrariumLayer from './DigitalTerrariumLayer';
 
 interface ThemeBackgroundProps {
   theme: string;
@@ -47,6 +48,9 @@ const ThemeBackground: React.FC<ThemeBackgroundProps> = ({ theme }) => {
              `}</style>
           </div>
         )}
+
+        {/* DIGITAL TERRARIUM: Bioluminescent Ecosystem */}
+        {theme === 'terrarium' && <DigitalTerrariumLayer />}
         
         {/* MINECRAFT - Authentic Panorama Scroll */}
         {theme === 'minecraft' && (

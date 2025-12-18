@@ -40,6 +40,9 @@ const TodoItem: React.FC<TodoItemProps> = ({
 
   const isDone = todo.status === 'done';
   const isAiProcessing = todo.aiStatus === 'processing';
+  
+  // Check if P0 for Digital Terrarium class logic
+  const isP0 = todo.priority === Priority.P0 || (todo.priority as string) === 'HIGH';
 
   // --- CONFIG (P0-P4) ---
   // Updated to Solid, Low Saturation Colors
@@ -206,6 +209,7 @@ const TodoItem: React.FC<TodoItemProps> = ({
         onDoubleClick={enterFocusMode}
         className={`
             group relative rounded-theme transition-all duration-500 border-theme-width ease-in-out select-none theme-border-style
+            ${isP0 ? 'p0-organism' : ''} 
             ${isDimmed 
                 ? 'opacity-20 grayscale blur-[1px] scale-95 pointer-events-none bg-transparent border-transparent' 
                 : (isFocusMode 

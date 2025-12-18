@@ -55,8 +55,9 @@ const FASHION_QUOTES = [
 ];
 
 const THEME_OPTIONS = [
+  { id: 'terrarium', name: '生态缸', color: '#00F0FF' }, // NEW
   { id: 'glass', name: '玻璃', color: '#a5b4fc' },
-  { id: 'amethyst', name: '紫晶', color: '#4E345C' }, // New
+  { id: 'amethyst', name: '紫晶', color: '#4E345C' },
   { id: 'memphis', name: '孟菲', color: '#FFEB3B' },
   { id: 'dopamine', name: '多巴', color: '#002FA7' },
   { id: 'maillard', name: '美拉', color: '#8B4513' },
@@ -415,8 +416,18 @@ const App: React.FC = () => {
                <SidebarItem icon={<Bot size={18} />} label="小番茄" active={currentView === 'bot'} onClick={() => setCurrentView('bot')} />
                <SidebarItem icon={<Palette size={18} />} label="智能改图" active={currentView === 'image-editor'} onClick={() => setCurrentView('image-editor')} />
                <SidebarItem icon={<MessageSquare size={18} />} label="话术推荐" active={currentView === 'script-matcher'} onClick={() => setCurrentView('script-matcher')} />
-               <SidebarItem icon={<ShoppingBag size={18} />} label="Indie Chi 选款" active={currentView === 'indie-chi'} onClick={() => setCurrentView('indie-chi')} />
-               <SidebarItem icon={<FileText size={18} />} label="番茄PDF" active={currentView === 'tomato-pdf'} onClick={() => setCurrentView('tomato-pdf')} />
+               <SidebarItem 
+                 icon={<ShoppingBag size={18} />} 
+                 label="Indie Chi 选款" 
+                 active={currentView === 'indie-chi'} 
+                 onClick={() => setCurrentView('indie-chi')} 
+               />
+               <SidebarItem 
+                 icon={<FileText size={18} />} 
+                 label="番茄PDF" 
+                 active={currentView === 'tomato-pdf'} 
+                 onClick={() => setCurrentView('tomato-pdf')} 
+               />
             </div>
           </nav>
 
@@ -545,11 +556,13 @@ const App: React.FC = () => {
                 <ImageEditor />
             </div>
 
-            {/* 3. INDIE CHI VIEW (Placeholder) */}
-            <div className={`h-full flex flex-col items-center justify-center text-theme-subtext ${currentView === 'indie-chi' ? '' : 'view-hidden'}`}>
-                <ShoppingBag size={48} className="mb-4 opacity-20" />
-                <h3 className="text-lg font-bold text-theme-text">Indie Chi 选款助手</h3>
-                <p className="text-sm opacity-60 mt-2">Coming Soon...</p>
+            {/* 3. INDIE CHI VIEW (Embedded) */}
+            <div className={`h-full w-full ${currentView === 'indie-chi' ? '' : 'view-hidden'}`}>
+                <iframe 
+                    src="https://fake-indie.vercel.app/" 
+                    className="w-full h-full border-none"
+                    title="Indie Chi"
+                />
             </div>
 
             {/* 4. SCRIPT MATCHER VIEW */}
@@ -562,11 +575,13 @@ const App: React.FC = () => {
                 <AiAssistant theme={theme} />
             </div>
 
-            {/* 6. TOMATO PDF VIEW (Placeholder) */}
-            <div className={`h-full flex flex-col items-center justify-center text-theme-subtext ${currentView === 'tomato-pdf' ? '' : 'view-hidden'}`}>
-                <FileText size={48} className="mb-4 opacity-20" />
-                <h3 className="text-lg font-bold text-theme-text">番茄 PDF</h3>
-                <p className="text-sm opacity-60 mt-2">Coming Soon...</p>
+            {/* 6. TOMATO PDF VIEW (Embedded) */}
+            <div className={`h-full w-full ${currentView === 'tomato-pdf' ? '' : 'view-hidden'}`}>
+                <iframe 
+                    src="https://share-pdf-beta.vercel.app/" 
+                    className="w-full h-full border-none"
+                    title="Tomato PDF"
+                />
             </div>
 
             {/* Undo Toast */}

@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { AITaskResponse, WorkSummary, Todo, Priority } from "../types";
 import { SALES_SCRIPTS, ScriptItem } from "../data/scriptLibrary";
@@ -9,6 +10,10 @@ export const fileToBase64 = async (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onloadend = () => {
+      if (!reader.result) {
+        reject(new Error("Failed to read file"));
+        return;
+      }
       const base64String = reader.result as string;
       // Remove data url prefix (e.g. "data:image/jpeg;base64,")
       const base64Data = base64String.split(',')[1];

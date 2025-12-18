@@ -59,6 +59,124 @@ button, input, textarea, .bg-theme-card {
 }
 
 /* =========================================================
+   SPECIAL THEME: DIGITAL TERRARIUM (Organic Bioluminescence)
+   ========================================================= */
+[data-theme='terrarium'] {
+  --bg-panel: rgba(2, 12, 18, 0.3); /* Ultra transparent glass container */
+  --bg-sidebar: rgba(0, 30, 40, 0.2);
+  
+  /* Cards are jelly-like organisms */
+  --bg-card: rgba(0, 240, 255, 0.05);
+  --bg-card-hover: rgba(0, 240, 255, 0.15);
+  --bg-input: rgba(0, 0, 0, 0.4);
+  --bg-menu: rgba(5, 15, 20, 0.9);
+  
+  --border-theme: rgba(0, 240, 255, 0.3);
+  --border-width: 1px;
+  
+  --text-primary: #E0F7FA;
+  --text-secondary: #4DD0E1;
+  --text-accent: #00F0FF;
+  --accent-bg: rgba(0, 240, 255, 0.1);
+  
+  --radius-lg: 40px;
+  --radius-md: 20px;
+  --radius-sm: 10px;
+  
+  --shadow-md: 0 0 20px rgba(0, 240, 255, 0.15), inset 0 0 10px rgba(0, 240, 255, 0.05);
+  --backdrop-blur: blur(8px);
+  
+  --font-main: 'Quicksand', sans-serif;
+  --panel-border: 1px solid rgba(0, 240, 255, 0.2);
+}
+
+/* --- TERRARIUM ORGANISM PHYSICS --- */
+
+/* 1. Container: Thick Curved Glass Tank */
+[data-theme='terrarium'] .bg-theme-panel {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 
+        inset 0 0 50px rgba(0, 0, 0, 0.5),
+        0 0 30px rgba(0, 240, 255, 0.1),
+        inset 0 0 2px rgba(255, 255, 255, 0.3); /* Glass rim highlight */
+    backdrop-filter: blur(4px) !important;
+}
+
+/* 2. Soft Body Cards (Normal Tasks) - Rounded Square Expansion */
+[data-theme='terrarium'] .bg-theme-card {
+    border-radius: 20px; /* Rounded Square, no longer blobby */
+    animation: terrarium-expand 4s ease-in-out infinite; /* Breathing outward */
+    border: 1px solid rgba(0, 240, 255, 0.2);
+    box-shadow: inset 0 0 20px rgba(0, 240, 255, 0.05);
+    margin-bottom: 8px; /* Ensure spacing so they aren't "squeezed" */
+}
+
+[data-theme='terrarium'] .bg-theme-card:hover {
+    animation-play-state: paused;
+    transform: scale(1.02); /* Slight active expansion */
+    background-color: rgba(0, 240, 255, 0.1);
+    box-shadow: 0 0 25px rgba(0, 240, 255, 0.3), inset 0 0 10px rgba(0, 240, 255, 0.1);
+}
+
+@keyframes terrarium-expand {
+    0%, 100% { 
+        transform: scale(1); 
+        box-shadow: inset 0 0 20px rgba(0, 240, 255, 0.05), 0 0 5px rgba(0, 240, 255, 0.1);
+        border-color: rgba(0, 240, 255, 0.2);
+    }
+    50% { 
+        transform: scale(1.015); /* Expands outwards */
+        box-shadow: inset 0 0 30px rgba(0, 240, 255, 0.1), 0 0 15px rgba(0, 240, 255, 0.25);
+        border-color: rgba(0, 240, 255, 0.4);
+    }
+}
+
+/* 3. P0 "Sea Urchin" Tasks - Aggressive Physics */
+/* We target the P0 card specifically via a data attribute or specific child styling in TodoItem */
+[data-theme='terrarium'] .p0-organism {
+    border-radius: 50%; /* Keep P0 special (circle/urchin) */
+    background: rgba(255, 50, 50, 0.1) !important;
+    border: 1px solid rgba(255, 50, 50, 0.5) !important;
+    box-shadow: 0 0 10px rgba(255, 0, 0, 0.4);
+    animation: urchin-pulse 0.2s infinite alternate !important;
+}
+[data-theme='terrarium'] .p0-organism:hover {
+    transform: scale(1.05) rotate(1deg);
+    box-shadow: 0 0 25px rgba(255, 0, 0, 0.8);
+}
+@keyframes urchin-pulse {
+    from { transform: scale(1); }
+    to { transform: scale(1.02); }
+}
+
+/* 4. Typography: Bubbles */
+[data-theme='terrarium'] h1, 
+[data-theme='terrarium'] h2, 
+[data-theme='terrarium'] h3 {
+    text-shadow: 0 0 10px rgba(0, 240, 255, 0.8), 0 0 20px rgba(0, 240, 255, 0.4);
+    letter-spacing: 1px;
+}
+[data-theme='terrarium'] .bg-theme-sidebar nav button {
+    border-radius: 20px;
+    background: rgba(0,0,0,0.2);
+    border: 1px solid rgba(255,255,255,0.05);
+}
+[data-theme='terrarium'] .bg-theme-sidebar nav button:hover {
+    background: rgba(0, 240, 255, 0.15);
+    border-color: rgba(0, 240, 255, 0.5);
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+}
+
+/* 5. Inputs: Deep Sea Vents */
+[data-theme='terrarium'] input, 
+[data-theme='terrarium'] textarea {
+    background: rgba(0,0,0,0.5) !important;
+    border: 1px solid rgba(0, 240, 255, 0.3) !important;
+    box-shadow: inset 0 0 15px rgba(0,0,0,0.8);
+    color: #fff !important;
+}
+
+/* =========================================================
    SPECIAL THEME: AMETHYST (Luxury Dark Mode)
    ========================================================= */
 [data-theme='amethyst'] {

@@ -45,7 +45,11 @@ const TaskInput: React.FC<TaskInputProps> = ({ onAddTodos, onUpdateTodo, onDelet
   const handleImageSelect = (file: File) => {
     setSelectedImage(file);
     const reader = new FileReader();
-    reader.onload = (e) => setImagePreview(e.target?.result as string);
+    reader.onload = (e) => {
+      if (e.target?.result) {
+        setImagePreview(e.target.result as string);
+      }
+    };
     reader.readAsDataURL(file);
     setIsSmartMode(true);
   };
