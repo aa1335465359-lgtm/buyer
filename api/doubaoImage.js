@@ -1,3 +1,4 @@
+
 // api/doubaoImage.js
 
 export default async function handler(req, res) {
@@ -48,10 +49,15 @@ export default async function handler(req, res) {
       watermark: false,
     };
 
-    // 图生图：官方只支持一个 image 字符串，这里只取第一张
+    // 图生图：处理多张图片
     if (Array.isArray(images_base64) && images_base64.length > 0) {
-      // Ark 文档示例用的是 URL，这里用 data URL 形式传 base64
-      payload.image = `data:image/jpeg;base64,${images_base64[0]}`;
+      if (images_base64.length === 1) {
+        // 单图兼容：使用 image 字段
+        payload.image = `data:image/jpeg;base64,${images_base64[0]}`;
+      } else {
+        // 多图：使用 image_urls 列表 (支持底图+参考图模式)
+        payload.image_urls = images_base64.map(b64 => `data:image/jpeg;base64,${b64}`);
+      }
     }
     // ===== payload 结束 =====
 

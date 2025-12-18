@@ -56,23 +56,15 @@ const FASHION_QUOTES = [
 
 const THEME_OPTIONS = [
   { id: 'glass', name: '默认 (玻璃)', color: '#a5b4fc' },
+  { id: 'dopamine', name: '多巴胺·潮流', color: '#002FA7' },
+  { id: 'maillard', name: '美拉德·复古', color: '#8B4513' },
   { id: 'minecraft', name: '我的世界', color: '#5a8e3d' },
-  { id: 'rainy', name: '雨夜车窗', color: '#3FA9FF' },
-  // Christmas removed - Easter Egg Only
   { id: 'kawaii', name: '糖果甜心', color: '#f9a8d4' },
   { id: 'wooden', name: '温暖木质', color: '#d4a373' },
   { id: 'watercolor', name: '水彩画布', color: '#93c5fd' },
-  { id: 'paper', name: '极简纸张', color: '#cbd5e1' },
-  // Light Pollution 1.0 Themes
-  { id: 'ultra-rgb', name: 'RGB夜店 (MAX)', color: '#D000FF' },
-  { id: 'laser-tunnel', name: '激光隧道', color: '#10F2FF' },
   { id: 'oil-slick', name: '油膜虹彩', color: '#FF7B89' },
   { id: 'neon-billboard', name: '都市霓虹', color: '#FF3EA6' },
-  // Light Pollution 2.0 Themes
-  { id: 'dragonScale', name: '龙鳞春节', color: '#D92A2A' },
   { id: 'deepNebula', name: '深空星云', color: '#4DA6FF' },
-  { id: 'blackGold', name: '黑金奢华', color: '#F0C674' },
-  { id: 'synthwaveGrid', name: '合成波1980', color: '#FF4FAE' },
 ];
 
 const App: React.FC = () => {
@@ -93,6 +85,10 @@ const App: React.FC = () => {
     const saved = localStorage.getItem('app_theme');
     // Migration: 'pixel' -> 'minecraft'
     if (saved === 'pixel') return 'minecraft';
+    // Migration: If user had a deleted theme, fallback to glass
+    if (['rainy', 'paper', 'ultra-rgb', 'laser-tunnel', 'dragonScale', 'blackGold', 'synthwaveGrid'].includes(saved || '')) {
+        return 'glass';
+    }
     return saved || 'glass';
   });
   const [showThemeMenu, setShowThemeMenu] = useState(false);
@@ -423,7 +419,7 @@ const App: React.FC = () => {
           </nav>
 
           <div className="px-6 mt-auto mb-4 space-y-3">
-             <div className="p-4 rounded-theme border border-theme-border/50 border-theme-width shadow-sm relative overflow-hidden group hover:shadow-md transition-all bg-gradient-to-br from-theme-card/50 to-theme-card">
+             <div className="p-4 rounded-theme border border-theme-border/50 border-theme-width shadow-sm relative overflow-hidden group hover:shadow-md transition-all bg-gradient-to-br from-theme-card/50 to-theme-card mc-3d-box">
                 <Heart className="absolute -top-1 -left-1 text-theme-accent w-6 h-6 opacity-10" />
                 <p className="text-[11px] text-theme-subtext font-medium leading-relaxed relative z-10">
                    {quote}

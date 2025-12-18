@@ -45,15 +45,17 @@ export interface AITaskResponse {
 
 export interface WorkSummary {
   rangeLabel: string;
+  score: number; // 0-100 Health Score
+  overview: string; // High-level executive summary
   stats: {
     total: number;
     completed: number;
     completionRate: string;
     overdue: number;
+    p0Total: number;
+    p0Completed: number;
   };
-  themes: {
-    title: string;
-    actions: string[];
-  }[];
-  suggestions: string[];
+  achievements: string[]; // Key wins
+  risks: string[];        // Potential issues/blockers
+  suggestions: string[];  // Actionable advice
 }
