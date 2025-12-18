@@ -12,7 +12,7 @@ import MaillardLayer from './MaillardLayer';
 import DopamineLayer from './DopamineLayer';
 import MemphisPatternLayer from './MemphisPatternLayer';
 import AmethystLayer from './AmethystLayer';
-import DigitalTerrariumLayer from './DigitalTerrariumLayer';
+import NeoChineseLayer from './NeoChineseLayer';
 
 interface ThemeBackgroundProps {
   theme: string;
@@ -49,39 +49,62 @@ const ThemeBackground: React.FC<ThemeBackgroundProps> = ({ theme }) => {
           </div>
         )}
 
-        {/* DIGITAL TERRARIUM: Bioluminescent Ecosystem */}
-        {theme === 'terrarium' && <DigitalTerrariumLayer />}
+        {/* NEO-CHINESE: Ink & Wood */}
+        {theme === 'neo-chinese' && <NeoChineseLayer />}
         
-        {/* MINECRAFT - Authentic Panorama Scroll */}
+        {/* MINECRAFT - Authentic Cross-Section World */}
         {theme === 'minecraft' && (
-          <div className="absolute inset-0 bg-[#757575] overflow-hidden">
-             {/* Dirt Texture Animation */}
-             <div 
-               className="absolute inset-0 opacity-100"
-               style={{
-                 backgroundImage: `
-                   linear-gradient(30deg, #606060 12%, transparent 12.5%, transparent 87%, #606060 87.5%, #606060),
-                   linear-gradient(150deg, #606060 12%, transparent 12.5%, transparent 87%, #606060 87.5%, #606060),
-                   linear-gradient(30deg, #606060 12%, transparent 12.5%, transparent 87%, #606060 87.5%, #606060),
-                   linear-gradient(150deg, #606060 12%, transparent 12.5%, transparent 87%, #606060 87.5%, #606060),
-                   linear-gradient(60deg, #888888 25%, transparent 25.5%, transparent 75%, #888888 75%, #888888),
-                   linear-gradient(60deg, #888888 25%, transparent 25.5%, transparent 75%, #888888 75%, #888888)
-                 `,
-                 backgroundSize: '100px 174px',
-                 imageRendering: 'pixelated',
-                 animation: 'scroll-bg 60s linear infinite'
-               }}
-             ></div>
+          <div className="absolute inset-0 bg-[#757575] overflow-hidden flex flex-col">
              
-             {/* Vignette Overlay */}
-             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,0,0,0.1)_0%,rgba(0,0,0,0.6)_100%)]"></div>
+             {/* Sky (Top 20%) */}
+             <div className="h-[20%] w-full bg-[#79C0FF] relative">
+                 <div className="absolute top-4 right-10 w-16 h-16 bg-[#FFF] opacity-90 shadow-[0_0_0_4px_rgba(255,255,255,0.3)]"></div>
+                 {/* Pixel Clouds */}
+                 <div className="absolute top-10 left-20 w-32 h-8 bg-white/80"></div>
+                 <div className="absolute top-6 left-28 w-16 h-8 bg-white/80"></div>
+             </div>
 
-             <style>{`
-               @keyframes scroll-bg {
-                 0% { background-position: 0 0; }
-                 100% { background-position: 100px 174px; }
-               }
-             `}</style>
+             {/* Grass Layer (Top strip) */}
+             <div className="h-8 w-full bg-[#5D9941] border-b-4 border-[#4A7A34] relative">
+                 <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPjxyZWN0IHdpZHRoPSI0IiBoZWlnaHQ9IjQiIGZpbGw9IiM2QUExNEEiLz48cmVjdCB3aWR0aD0iMSIgaGVpZ2h0PSIxIiBmaWxsPSIjOENCMjU4Ii8+PC9zdmc+')] opacity-20"></div>
+             </div>
+
+             {/* Dirt Layer (Middle 30%) */}
+             <div className="h-[30%] w-full bg-[#866043] relative">
+                 {/* Dirt Noise Pattern */}
+                 <div className="absolute inset-0 opacity-40"
+                      style={{
+                          backgroundImage: `linear-gradient(45deg, #5D4037 25%, transparent 25%, transparent 75%, #5D4037 75%, #5D4037), linear-gradient(45deg, #5D4037 25%, transparent 25%, transparent 75%, #5D4037 75%, #5D4037)`,
+                          backgroundSize: '8px 8px',
+                          backgroundPosition: '0 0, 4px 4px'
+                      }}
+                 ></div>
+             </div>
+
+             {/* Stone Layer (Bottom 50%) */}
+             <div className="flex-1 w-full bg-[#7D7D7D] relative">
+                 {/* Stone Texture */}
+                 <div className="absolute inset-0 opacity-30"
+                      style={{
+                          backgroundImage: `
+                            linear-gradient(30deg, #555 12%, transparent 12.5%, transparent 87%, #555 87.5%, #555),
+                            linear-gradient(150deg, #555 12%, transparent 12.5%, transparent 87%, #555 87.5%, #555),
+                            linear-gradient(30deg, #555 12%, transparent 12.5%, transparent 87%, #555 87.5%, #555),
+                            linear-gradient(150deg, #555 12%, transparent 12.5%, transparent 87%, #555 87.5%, #555),
+                            linear-gradient(60deg, #999 25%, transparent 25.5%, transparent 75%, #999 75%, #999),
+                            linear-gradient(60deg, #999 25%, transparent 25.5%, transparent 75%, #999 75%, #999)
+                          `,
+                          backgroundSize: '32px 32px'
+                      }}
+                 ></div>
+                 
+                 {/* Random Ores (Gold/Iron) */}
+                 <div className="absolute top-[20%] left-[10%] w-8 h-8 bg-[#F2CD67] shadow-[4px_4px_0_#A0843D] opacity-80"></div>
+                 <div className="absolute top-[60%] right-[20%] w-8 h-8 bg-[#D8AF93] shadow-[4px_4px_0_#9C7C68] opacity-80"></div>
+             </div>
+
+             {/* Bedrock (Bottom Edge) */}
+             <div className="h-4 w-full bg-[#222]"></div>
           </div>
         )}
 

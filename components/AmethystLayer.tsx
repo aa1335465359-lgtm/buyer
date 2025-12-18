@@ -13,70 +13,27 @@ const AmethystLayer: React.FC = () => {
     let width = canvas.width = window.innerWidth;
     let height = canvas.height = window.innerHeight;
 
-    // Configuration
-    // Deep, dark violet gradients for luxury feel
-    const colors = [
-        { r: 26, g: 22, b: 36 },   // #1A1624 Slate Violet
-        { r: 10, g: 8, b: 13 },    // #0A080D Near Black
-        { r: 78, g: 52, b: 92 },   // #4E345C Eggplant (Highlights)
-        { r: 40, g: 30, b: 50 }    // Mid-tone
-    ];
-
-    const orbs: {x: number, y: number, r: number, vx: number, vy: number, color: any, alpha: number}[] = [];
-    
-    // Create large, slow moving ambient lights
-    for(let i=0; i<6; i++) {
-        orbs.push({
-            x: Math.random() * width,
-            y: Math.random() * height,
-            r: Math.random() * 300 + 200, // Giant blobs
-            vx: (Math.random() - 0.5) * 0.2, // Very slow
-            vy: (Math.random() - 0.5) * 0.2,
-            color: colors[Math.floor(Math.random() * colors.length)],
-            alpha: Math.random() * 0.3 + 0.1
-        });
-    }
-
-    // Occasional "Crystal Glint" particles
-    const glints: {x: number, y: number, size: number, life: number, maxLife: number}[] = [];
+    // "Crystal Glint" particles - Sharper, brighter, rarer
+    const glints: {x: number, y: number, size: number, life: number, maxLife: number, rotation: number}[] = [];
 
     const animate = () => {
-        // Clear with base dark color
-        ctx.fillStyle = '#0A080D';
-        ctx.fillRect(0, 0, width, height);
+        ctx.clearRect(0, 0, width, height);
 
-        // Draw Ambient Orbs
-        orbs.forEach(orb => {
-            orb.x += orb.vx;
-            orb.y += orb.vy;
-
-            // Bounce gently
-            if(orb.x < -200 || orb.x > width + 200) orb.vx *= -1;
-            if(orb.y < -200 || orb.y > height + 200) orb.vy *= -1;
-
-            const grad = ctx.createRadialGradient(orb.x, orb.y, 0, orb.x, orb.y, orb.r);
-            grad.addColorStop(0, `rgba(${orb.color.r}, ${orb.color.g}, ${orb.color.b}, ${orb.alpha})`);
-            grad.addColorStop(1, `rgba(${orb.color.r}, ${orb.color.g}, ${orb.color.b}, 0)`);
-            
-            ctx.fillStyle = grad;
-            ctx.beginPath();
-            ctx.arc(orb.x, orb.y, orb.r, 0, Math.PI * 2);
-            ctx.fill();
-        });
-
-        // Spawn Glints (Rarely)
-        if(Math.random() < 0.02) {
+        // Spawn Glints (Rarely, like light catching a facet)
+        if(Math.random() < 0.03) {
             glints.push({
                 x: Math.random() * width,
                 y: Math.random() * height,
-                size: Math.random() * 2,
+                size: Math.random() * 3 + 1,
                 life: 0,
-                maxLife: 100 + Math.random() * 50
+                maxLife: 60 + Math.random() * 60,
+                rotation: Math.random() * Math.PI
             });
         }
 
-        // Draw Glints (Tiny gold sparkles)
-        ctx.fillStyle = '#C2B280'; // Champagne Gold
+        // Draw Glints (Sharp 4-point stars)
+        ctx.fillStyle = '#E6E1F0'; // White-ish Lavender
+        
         for(let i = glints.length - 1; i >= 0; i--) {
             const g = glints[i];
             g.life++;
@@ -85,22 +42,24 @@ const AmethystLayer: React.FC = () => {
                 continue;
             }
             
-            // Fade in/out
-            const opacity = Math.sin((g.life / g.maxLife) * Math.PI) * 0.8;
+            // Fade in/out sine wave
+            const opacity = Math.sin((g.life / g.maxLife) * Math.PI);
             ctx.globalAlpha = opacity;
             
-            ctx.beginPath();
-            // Cross shape for glint
-            ctx.moveTo(g.x - g.size*4, g.y); ctx.lineTo(g.x + g.size*4, g.y);
-            ctx.moveTo(g.x, g.y - g.size*4); ctx.lineTo(g.x, g.y + g.size*4);
-            ctx.strokeStyle = '#C2B280';
-            ctx.lineWidth = 0.5;
-            ctx.stroke();
+            ctx.save();
+            ctx.translate(g.x, g.y);
+            ctx.rotate(g.rotation);
             
-            // Core
+            // Draw Star Shape
             ctx.beginPath();
-            ctx.arc(g.x, g.y, g.size, 0, Math.PI * 2);
+            ctx.moveTo(0, -g.size * 3);
+            ctx.quadraticCurveTo(0, 0, g.size * 3, 0);
+            ctx.quadraticCurveTo(0, 0, 0, g.size * 3);
+            ctx.quadraticCurveTo(0, 0, -g.size * 3, 0);
+            ctx.quadraticCurveTo(0, 0, 0, -g.size * 3);
             ctx.fill();
+            
+            ctx.restore();
         }
         ctx.globalAlpha = 1.0;
 
@@ -114,14 +73,36 @@ const AmethystLayer: React.FC = () => {
   }, []);
 
   return (
-    <div className="absolute inset-0 bg-[#0A080D] overflow-hidden">
-      <canvas ref={canvasRef} className="absolute inset-0 z-0" />
+    <div className="absolute inset-0 bg-[#0F0B1A] overflow-hidden">
       
-      {/* Texture: Brushed Metal / Noise Overlay */}
-      <div className="absolute inset-0 opacity-5 pointer-events-none mix-blend-overlay bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
+      {/* 1. Deep Crystal Gradient (The "Geode" interior light) */}
+      {/* Center is brighter (Amethyst core), Edges are almost black (Obsidian casing) */}
+      <div 
+        className="absolute inset-0 z-0 opacity-80"
+        style={{
+            background: `
+                radial-gradient(circle at 50% 30%, #3A1C52 0%, transparent 50%),
+                radial-gradient(circle at 10% 90%, #2A1035 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, #1A0F2E 0%, transparent 40%),
+                linear-gradient(to bottom, #0F0B1A, #050308)
+            `
+        }}
+      />
+
+      {/* 2. Micro-Texture Noise Overlay (The "Stone" Feel) */}
+      {/* Adds grain to remove the "digital gradient" look */}
+      <div 
+        className="absolute inset-0 z-0 opacity-[0.07] mix-blend-overlay pointer-events-none"
+        style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`
+        }}
+      />
+
+      {/* 3. Canvas Glints (Foreground sparkles) */}
+      <canvas ref={canvasRef} className="absolute inset-0 z-10 mix-blend-screen pointer-events-none" />
       
-      {/* Vignette */}
-      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,transparent_0%,#000000_100%)] opacity-60" />
+      {/* 4. Glass Reflection Sheen */}
+      <div className="absolute inset-0 z-20 bg-[linear-gradient(115deg,transparent_40%,rgba(255,255,255,0.03)_45%,transparent_50%)] pointer-events-none" />
     </div>
   );
 };

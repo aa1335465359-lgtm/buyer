@@ -3,33 +3,34 @@ import React from 'react';
 
 const MaillardLayer: React.FC = () => {
   return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+    <div className="absolute inset-0 overflow-hidden pointer-events-none z-0 bg-[#2C1E16]">
       
-      {/* 1. Base Gradient: Deep Coffee to Warm Sand (The Maillard Tone) */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#3D2B1F] via-[#5D4037] to-[#8D6E63] z-0" />
+      {/* 1. Procedural Leather Texture (SVG Filter) */}
+      <svg className="absolute inset-0 w-full h-full opacity-40 mix-blend-overlay">
+        <filter id="leather-grain">
+          {/* Fractal Noise for organic pores */}
+          <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="4" stitchTiles="stitch" result="noise"/>
+          {/* Lighting to give the grain depth */}
+          <feDiffuseLighting in="noise" lightingColor="#D6B8A0" surfaceScale="1">
+            <feDistantLight azimuth="45" elevation="60" />
+          </feDiffuseLighting>
+        </filter>
+        <rect width="100%" height="100%" filter="url(#leather-grain)" />
+      </svg>
 
-      {/* 2. Leather Texture Simulation (Noise + Lighting) */}
-      <div className="absolute inset-0 opacity-20 mix-blend-overlay z-0 filter contrast-125 bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
-      
-      {/* 3. Linen/Fabric Weave Pattern */}
+      {/* 2. Patina/Sheen (Central Wear & Tear) */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(198,166,100,0.15)_0%,rgba(44,30,22,0.8)_80%)] mix-blend-soft-light" />
+
+      {/* 3. Deep Vignette (Burnished Edges of the Screen) */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_40%,#1a100c_100%)] opacity-80" />
+
+      {/* 4. Fine Scratches / Distressed Overlay */}
       <div 
-        className="absolute inset-0 z-0 opacity-10 mix-blend-soft-light"
+        className="absolute inset-0 opacity-10 mix-blend-overlay"
         style={{
-            backgroundImage: `
-                repeating-linear-gradient(45deg, transparent, transparent 2px, #000 2px, #000 3px),
-                repeating-linear-gradient(-45deg, transparent, transparent 2px, #000 2px, #000 3px)
-            `,
-            backgroundSize: '8px 8px'
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.5' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`
         }}
       />
-
-      {/* 4. Ambient Gold Lighting (Warmth) */}
-      <div className="absolute top-[-20%] right-[-10%] w-[80vw] h-[80vw] rounded-full bg-[#C6A664] opacity-20 blur-[100px] mix-blend-screen animate-[pulse_8s_ease-in-out_infinite]" />
-      <div className="absolute bottom-[-10%] left-[-10%] w-[60vw] h-[60vw] rounded-full bg-[#8B4513] opacity-30 blur-[120px] mix-blend-overlay" />
-
-      {/* 5. Vignette for Focus */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_40%,rgba(20,10,5,0.6)_100%)] z-10" />
-
     </div>
   );
 };

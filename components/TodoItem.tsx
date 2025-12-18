@@ -208,6 +208,7 @@ const TodoItem: React.FC<TodoItemProps> = ({
     <div 
         onDoubleClick={enterFocusMode}
         className={`
+            todo-card
             group relative rounded-theme transition-all duration-500 border-theme-width ease-in-out select-none theme-border-style
             ${isP0 ? 'p0-organism' : ''} 
             ${isDimmed 

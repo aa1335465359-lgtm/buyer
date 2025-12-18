@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Send, Bot, User, Loader2, Image as ImageIcon, X, History, Plus, Trash2, Clock, 
-  Heart, Box, Terminal, Trees, Gift, Feather, CloudRain, Zap, Disc
+  Heart, Box, Terminal, Trees, Gift, Feather, Zap
 } from 'lucide-react';
 import { chatWithBuyerAI } from '../services/geminiService';
 import ReactMarkdown from 'react-markdown';
@@ -259,37 +259,37 @@ const AiAssistant: React.FC<AiAssistantProps> = ({ theme }) => {
   };
 
   return (
-    <div className="flex h-full bg-transparent text-theme-text overflow-hidden relative font-sans">
+    <div className="flex h-full w-full bg-transparent text-theme-text overflow-hidden relative font-sans">
       
       {/* Main Chat Area */}
       <div 
-        className="flex-1 flex flex-col min-w-0 relative z-10"
+        className="flex-1 flex flex-col min-w-0 relative z-10 transition-all duration-300"
         onDragOver={(e) => e.preventDefault()}
         onDrop={handleDrop}
       >
-         {/* Header */}
-         <div className="h-14 px-5 border-b border-theme-border flex items-center justify-between shrink-0 bg-theme-panel/80 backdrop-blur-md z-20 transition-colors">
+         {/* Clean Header - justify-between ensures Title is left, Actions are right */}
+         <div className="h-16 px-6 flex items-center justify-between shrink-0 z-20">
              <div className="flex items-center gap-3">
-                 <div className={`w-8 h-8 rounded-full flex items-center justify-center shadow-sm ${botStyle.bgClass} ${botStyle.textClass}`}>
+                 <div className={`w-9 h-9 rounded-full flex items-center justify-center shadow-sm ${botStyle.bgClass} ${botStyle.textClass}`}>
                      {botStyle.icon}
                  </div>
                  <div className="flex flex-col">
                      <h2 className="font-bold text-theme-text text-sm">小番茄</h2>
-                     <span className="text-[10px] text-theme-subtext font-medium flex items-center gap-1.5">
+                     <span className="text-[10px] text-theme-subtext font-medium flex items-center gap-1.5 opacity-80">
                         <span className="w-1.5 h-1.5 rounded-full bg-green-400 shadow-[0_0_5px_rgba(74,222,128,0.5)]"></span>
                         24小时在线 • 懂选品
                      </span>
                  </div>
              </div>
              
-             <div className="flex items-center gap-2">
-                 <button onClick={startNewChat} className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-theme-border text-xs font-medium text-theme-subtext hover:bg-theme-input hover:text-theme-text transition-all active:scale-95">
+             <div className="flex items-center gap-4">
+                 <button onClick={startNewChat} className="flex items-center gap-1.5 text-xs font-medium text-theme-subtext hover:text-theme-text transition-colors">
                      <Plus size={14} /> 新对话
                  </button>
                  <button 
                     onClick={() => setShowHistory(!showHistory)} 
-                    className={`p-2 rounded-full transition-all ${showHistory ? 'bg-theme-input text-theme-text' : 'text-theme-subtext hover:text-theme-text hover:bg-theme-input'}`}
-                    title="历史记录"
+                    className={`text-theme-subtext hover:text-theme-text transition-colors ${showHistory ? 'text-theme-accent' : ''}`}
+                    title={showHistory ? "收起历史" : "历史记录"}
                  >
                      <Clock size={18} />
                  </button>
@@ -297,28 +297,28 @@ const AiAssistant: React.FC<AiAssistantProps> = ({ theme }) => {
          </div>
 
          {/* Messages */}
-         <div className="flex-1 overflow-y-auto p-4 md:px-8 md:py-6 scroll-smooth bg-transparent" ref={scrollContainerRef}>
+         <div className="flex-1 overflow-y-auto p-4 md:px-8 scroll-smooth bg-transparent" ref={scrollContainerRef}>
             {messages.map((msg, idx) => (
                 <div key={idx} className={`flex gap-3 mb-6 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
                     {/* Avatar */}
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5 shadow-sm border border-theme-border ${
+                    <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 mt-0.5 shadow-sm border border-theme-border ${
                         msg.role === 'model' 
                             ? `${botStyle.bgClass} ${botStyle.textClass}` 
                             : 'bg-theme-text text-theme-panel' // User avatar inverted
                     }`}>
-                        {msg.role === 'model' ? React.cloneElement(botStyle.icon as React.ReactElement<any>, { size: 16 }) : <User size={16} />}
+                        {msg.role === 'model' ? React.cloneElement(botStyle.icon as React.ReactElement<any>, { size: 18 }) : <User size={18} />}
                     </div>
                     
                     {/* Bubble */}
-                    <div className={`max-w-[80%] md:max-w-[65%] space-y-2`}>
+                    <div className={`max-w-[80%] md:max-w-[70%] space-y-2`}>
                         {msg.images && msg.images.map((img, i) => (
                             <img key={i} src={img} alt="uploaded" className="max-w-[200px] rounded-lg border border-theme-border shadow-sm" />
                         ))}
                         {msg.text && (
-                            <div className={`px-4 py-2.5 text-[14px] leading-relaxed shadow-sm backdrop-blur-sm ${
+                            <div className={`px-5 py-3.5 text-[14px] leading-relaxed shadow-sm ${
                                 msg.role === 'user' 
                                 ? 'bg-theme-text text-theme-panel rounded-2xl rounded-tr-sm font-medium' // User Bubble: High contrast (Inverted theme)
-                                : 'bg-theme-card/90 border border-theme-border text-theme-text rounded-2xl rounded-tl-sm' // Bot Bubble: Theme card
+                                : 'bg-theme-card border border-theme-border text-theme-text rounded-2xl rounded-tl-sm' // Bot Bubble: Theme card
                             }`}>
                                 <ReactMarkdown remarkPlugins={[remarkGfm]} components={{
                                     p: ({node, ...props}) => <p className="mb-2 last:mb-0" {...props} />,
@@ -358,10 +358,10 @@ const AiAssistant: React.FC<AiAssistantProps> = ({ theme }) => {
             ))}
             {isLoading && (
                 <div className="flex gap-3 mb-6">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${botStyle.bgClass} ${botStyle.textClass}`}>
-                        {React.cloneElement(botStyle.icon as React.ReactElement<any>, { size: 16 })}
+                    <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${botStyle.bgClass} ${botStyle.textClass}`}>
+                        {React.cloneElement(botStyle.icon as React.ReactElement<any>, { size: 18 })}
                     </div>
-                    <div className="bg-theme-card border border-theme-border px-4 py-3 rounded-2xl rounded-tl-sm shadow-sm flex items-center gap-2 text-theme-subtext text-xs backdrop-blur-sm">
+                    <div className="bg-theme-card border border-theme-border px-5 py-3 rounded-2xl rounded-tl-sm shadow-sm flex items-center gap-2 text-theme-subtext text-xs backdrop-blur-sm">
                         <Loader2 size={14} className="animate-spin text-theme-accent" />
                         <span className="animate-pulse">小番茄正在思考...</span>
                     </div>
@@ -369,12 +369,12 @@ const AiAssistant: React.FC<AiAssistantProps> = ({ theme }) => {
             )}
          </div>
 
-         {/* Input Area */}
-         <div className="p-4 border-t border-theme-border bg-theme-panel/80 backdrop-blur-md">
-             <div className={`max-w-2xl mx-auto border border-theme-border rounded-2xl transition-all shadow-sm ${imagePreviews.length > 0 ? 'bg-theme-input' : 'bg-theme-card/50'} focus-within:ring-2 focus-within:ring-theme-accent/20 focus-within:border-theme-accent/50 backdrop-blur-sm`}>
+         {/* Input Area (Floating) */}
+         <div className="p-6 md:px-12 bg-transparent shrink-0">
+             <div className={`w-full border border-theme-border rounded-2xl transition-all shadow-sm flex flex-col overflow-hidden ${imagePreviews.length > 0 ? 'bg-theme-input' : 'bg-theme-card'} focus-within:ring-1 focus-within:ring-theme-border`}>
                  {/* Image Preview Strip */}
                  {imagePreviews.length > 0 && (
-                     <div className="px-3 pt-3 flex gap-2 overflow-x-auto pb-2">
+                     <div className="px-3 pt-3 flex gap-2 overflow-x-auto pb-2 border-b border-theme-border/50">
                          {imagePreviews.map((src, i) => (
                              <div key={i} className="relative group w-14 h-14 shrink-0">
                                  <img src={src} className="w-full h-full object-cover rounded-md border border-theme-border shadow-sm" />
@@ -384,13 +384,13 @@ const AiAssistant: React.FC<AiAssistantProps> = ({ theme }) => {
                      </div>
                  )}
                  
-                 <div className="flex items-end gap-2 p-2 pl-3">
+                 <div className="flex items-center gap-2 p-2 pl-3">
                      <button 
                         onClick={() => fileInputRef.current?.click()} 
-                        className="p-2 text-theme-subtext hover:bg-theme-input hover:text-theme-text rounded-xl transition-colors shrink-0 mb-0.5"
+                        className="p-2 text-theme-subtext hover:bg-theme-input hover:text-theme-text rounded-xl transition-colors shrink-0"
                         title="上传图片"
                      >
-                         <ImageIcon size={20} />
+                         <ImageIcon size={22} />
                      </button>
                      <input type="file" ref={fileInputRef} onChange={onFileInputChange} className="hidden" accept="image/*" multiple />
                      
@@ -406,54 +406,65 @@ const AiAssistant: React.FC<AiAssistantProps> = ({ theme }) => {
                         }}
                         onPaste={handlePaste}
                         placeholder="想问点什么？"
-                        className="flex-1 bg-transparent border-none outline-none max-h-32 py-2.5 text-[14px] resize-none text-theme-text placeholder:text-theme-subtext/60 leading-normal"
+                        className="flex-1 bg-transparent border-none outline-none py-3 text-[15px] resize-none text-theme-text placeholder:text-theme-subtext/50 leading-normal"
                         rows={1}
-                        style={{ minHeight: '42px', height: '42px' }}
+                        style={{ minHeight: '48px', height: '48px' }}
                      />
                      <button 
                         onClick={handleSend}
                         disabled={!input.trim() && selectedImages.length === 0}
-                        className={`p-2 rounded-xl shrink-0 transition-all mb-0.5 ${
+                        className={`p-2 rounded-xl shrink-0 transition-all ${
                             input.trim() || selectedImages.length > 0 
                             ? 'text-theme-accent hover:bg-theme-accent-bg active:scale-95' 
-                            : 'text-theme-subtext cursor-not-allowed opacity-50'
+                            : 'text-theme-subtext cursor-not-allowed opacity-30'
                         }`}
                      >
-                         <Send size={20} />
+                         <Send size={22} />
                      </button>
                  </div>
              </div>
-             <p className="text-center text-[10px] text-theme-subtext mt-2 opacity-60">内容由 AI 生成，请核实后使用。</p>
+             <p className="text-center text-[10px] text-theme-subtext mt-3 opacity-60">内容由 AI 生成，请核实后使用。</p>
          </div>
       </div>
 
       {/* Right Sidebar: History (Toggled) */}
-      <div className={`absolute top-0 right-0 h-full w-72 bg-theme-sidebar border-l border-theme-border shadow-xl transform transition-transform duration-300 z-30 flex flex-col ${showHistory ? 'translate-x-0' : 'translate-x-full'}`}>
-         <div className="h-14 border-b border-theme-border flex items-center justify-between px-5 shrink-0 bg-theme-input/20">
-             <h3 className="font-semibold text-sm text-theme-text flex items-center gap-2">
-                 <History size={16} className="text-theme-subtext" /> 历史记录
-             </h3>
-             <button onClick={() => setShowHistory(false)} className="p-1.5 text-theme-subtext hover:text-theme-text hover:bg-theme-input rounded-md"><X size={16} /></button>
-         </div>
-         <div className="flex-1 overflow-y-auto p-3 space-y-1">
-             {sessions.length === 0 ? (
-                 <div className="flex flex-col items-center justify-center h-48 text-theme-subtext text-xs gap-2 opacity-60">
-                     <Clock size={32} className="opacity-50" />
-                     <p>暂无历史记录</p>
-                 </div>
-             ) : (
-                 sessions.map(session => (
-                     <div key={session.id} onClick={() => handleSelectSession(session)} className={`group relative p-3 rounded-lg cursor-pointer transition-all border border-transparent ${currentSessionId === session.id ? 'bg-theme-accent-bg border-theme-accent/20' : 'hover:bg-theme-input hover:border-theme-border'}`}>
-                         <div className={`text-sm font-medium truncate pr-6 ${currentSessionId === session.id ? 'text-theme-accent' : 'text-theme-text'}`}>{session.title}</div>
-                         <div className="text-[10px] text-theme-subtext mt-1.5 flex items-center gap-1 opacity-70">
-                             <Clock size={10} /> {new Date(session.timestamp).toLocaleDateString()}
-                         </div>
-                         <button onClick={(e) => handleDeleteSession(e, session.id)} className="absolute right-2 top-3 p-1.5 text-theme-subtext opacity-0 group-hover:opacity-100 hover:text-red-500 hover:bg-theme-card rounded shadow-sm transition-all">
-                             <Trash2 size={12} />
-                         </button>
+      {/* Changed to Collapsible Push Sidebar on Desktop */}
+      <div 
+          className={`
+            bg-theme-sidebar border-l border-theme-border shadow-xl z-30 flex flex-col transition-all duration-300 ease-in-out flex-shrink-0
+            absolute top-0 right-0 h-full
+            md:relative md:shadow-none
+            ${showHistory ? 'translate-x-0 w-72' : 'translate-x-full w-72 md:translate-x-0 md:w-0 md:border-l-0'}
+          `}
+      >
+         {/* Inner Container to hold content at fixed width prevents text wrapping during transition */}
+         <div className="w-72 h-full flex flex-col overflow-hidden">
+             <div className="h-16 border-b border-theme-border flex items-center justify-between px-5 shrink-0 bg-theme-input/20">
+                 <h3 className="font-semibold text-sm text-theme-text flex items-center gap-2">
+                     <History size={16} className="text-theme-subtext" /> 历史记录
+                 </h3>
+                 <button onClick={() => setShowHistory(false)} className="p-1.5 text-theme-subtext hover:text-theme-text hover:bg-theme-input rounded-md"><X size={16} /></button>
+             </div>
+             <div className="flex-1 overflow-y-auto p-3 space-y-1">
+                 {sessions.length === 0 ? (
+                     <div className="flex flex-col items-center justify-center h-48 text-theme-subtext text-xs gap-2 opacity-60">
+                         <Clock size={32} className="opacity-50" />
+                         <p>暂无历史记录</p>
                      </div>
-                 ))
-             )}
+                 ) : (
+                     sessions.map(session => (
+                         <div key={session.id} onClick={() => handleSelectSession(session)} className={`group relative p-3 rounded-lg cursor-pointer transition-all border border-transparent ${currentSessionId === session.id ? 'bg-theme-accent-bg border-theme-accent/20' : 'hover:bg-theme-input hover:border-theme-border'}`}>
+                             <div className={`text-sm font-medium truncate pr-6 ${currentSessionId === session.id ? 'text-theme-accent' : 'text-theme-text'}`}>{session.title}</div>
+                             <div className="text-[10px] text-theme-subtext mt-1.5 flex items-center gap-1 opacity-70">
+                                 <Clock size={10} /> {new Date(session.timestamp).toLocaleDateString()}
+                             </div>
+                             <button onClick={(e) => handleDeleteSession(e, session.id)} className="absolute right-2 top-3 p-1.5 text-theme-subtext opacity-0 group-hover:opacity-100 hover:text-red-500 hover:bg-theme-card rounded shadow-sm transition-all">
+                                 <Trash2 size={12} />
+                             </button>
+                         </div>
+                     ))
+                 )}
+             </div>
          </div>
       </div>
 

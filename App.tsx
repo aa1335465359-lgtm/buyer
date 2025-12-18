@@ -55,7 +55,7 @@ const FASHION_QUOTES = [
 ];
 
 const THEME_OPTIONS = [
-  { id: 'terrarium', name: '生态缸', color: '#00F0FF' }, // NEW
+  { id: 'neo-chinese', name: '中式', color: '#C93F3F' }, // Renamed
   { id: 'glass', name: '玻璃', color: '#a5b4fc' },
   { id: 'amethyst', name: '紫晶', color: '#4E345C' },
   { id: 'memphis', name: '孟菲', color: '#FFEB3B' },
@@ -88,8 +88,10 @@ const App: React.FC = () => {
     const saved = localStorage.getItem('app_theme');
     // Migration: 'pixel' -> 'minecraft'
     if (saved === 'pixel') return 'minecraft';
+    // Migration: 'terrarium' -> 'neo-chinese'
+    if (saved === 'terrarium') return 'neo-chinese';
     // Migration: If user had a deleted theme, fallback to glass
-    if (['rainy', 'paper', 'ultra-rgb', 'laser-tunnel', 'dragonScale', 'blackGold', 'synthwaveGrid'].includes(saved || '')) {
+    if (['rainy', 'paper', 'ultra-rgb', 'laser-tunnel', 'dragonScale', 'blackGold', 'synthwaveGrid', 'kinetic-chrome'].includes(saved || '')) {
         return 'glass';
     }
     return saved || 'glass';
@@ -338,7 +340,7 @@ const App: React.FC = () => {
         {(theme === 'christmas' || theme === 'reindeer') && <SnowEffect />}
 
         {/* Sidebar */}
-        <div className="w-64 bg-theme-sidebar border-r border-theme-border border-theme-width flex flex-col pt-6 pb-4 hidden md:flex shrink-0 transition-colors z-10">
+        <div className="main-sidebar w-64 bg-theme-sidebar border-r border-theme-border border-theme-width flex flex-col pt-6 pb-4 hidden md:flex shrink-0 transition-colors z-10">
           
           {/* Theme Entry Point */}
           <div className="px-6 mb-8 relative" ref={themeMenuRef}>
@@ -346,10 +348,10 @@ const App: React.FC = () => {
               className="cursor-pointer group select-none"
               onClick={() => setShowThemeMenu(!showThemeMenu)}
             >
-              <h1 className="text-sm font-bold tracking-wider text-theme-subtext uppercase group-hover:text-theme-accent transition-colors flex items-center gap-1">
-                BUYER MATE <ChevronDown size={12} className={`transition-transform ${showThemeMenu ? 'rotate-180' : ''}`} />
+              <h1 className="text-xl font-extrabold tracking-widest text-theme-text uppercase group-hover:text-theme-accent transition-colors flex items-center gap-1 font-sans">
+                BUYER MATE <ChevronDown size={14} className={`transition-transform opacity-50 ${showThemeMenu ? 'rotate-180' : ''}`} />
               </h1>
-              <p className="text-xs text-theme-subtext mt-1 opacity-60 font-mono">v3.0.0</p>
+              <p className="text-xs text-theme-subtext mt-1 opacity-60 font-mono tracking-widest">v3.0.0</p>
             </div>
             
             {showThemeMenu && (
@@ -364,26 +366,6 @@ const App: React.FC = () => {
                     {opt.name}
                   </button>
                 ))}
-                {/* Secret Theme Reveal if already selected via code */}
-                {theme === 'sewer' && (
-                   <button
-                   onClick={() => { setTheme('sewer'); setShowThemeMenu(false); }}
-                   className="w-full text-left px-3 py-2 rounded-theme-sm text-xs font-medium flex items-center gap-2 transition-colors bg-theme-accent-bg text-theme-accent"
-                 >
-                   <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#39ff14' }}></div>
-                   矩阵
-                 </button>
-                )}
-                {/* Christmas Theme Reveal */}
-                {(theme === 'christmas' || theme === 'reindeer') && (
-                   <button
-                   onClick={() => { setTheme('christmas'); setShowThemeMenu(false); }}
-                   className="w-full text-left px-3 py-2 rounded-theme-sm text-xs font-medium flex items-center gap-2 transition-colors bg-theme-accent-bg text-theme-accent"
-                 >
-                   <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#B22D2D' }}></div>
-                   圣诞
-                 </button>
-                )}
               </div>
             )}
           </div>
@@ -397,6 +379,7 @@ const App: React.FC = () => {
               active={currentView === 'todos' && filter === 'all'} 
               onClick={() => { setCurrentView('todos'); setFilter('all'); }} 
             />
+            
             <SidebarItem 
               icon={<Zap size={18} />} 
               label="紧急事项 (P0)" 
@@ -411,30 +394,34 @@ const App: React.FC = () => {
               onClick={() => { setCurrentView('todos'); setFilter('completed'); }} 
             />
 
-            <div className="pt-6 mt-2">
-               <p className="px-3 mb-3 text-[10px] font-bold text-theme-subtext opacity-70 uppercase tracking-widest">工具箱</p>
-               <SidebarItem icon={<Bot size={18} />} label="小番茄" active={currentView === 'bot'} onClick={() => setCurrentView('bot')} />
-               <SidebarItem icon={<Palette size={18} />} label="智能改图" active={currentView === 'image-editor'} onClick={() => setCurrentView('image-editor')} />
-               <SidebarItem icon={<MessageSquare size={18} />} label="话术推荐" active={currentView === 'script-matcher'} onClick={() => setCurrentView('script-matcher')} />
-               <SidebarItem 
-                 icon={<ShoppingBag size={18} />} 
-                 label="Indie Chi 选款" 
-                 active={currentView === 'indie-chi'} 
-                 onClick={() => setCurrentView('indie-chi')} 
-               />
-               <SidebarItem 
-                 icon={<FileText size={18} />} 
-                 label="番茄PDF" 
-                 active={currentView === 'tomato-pdf'} 
-                 onClick={() => setCurrentView('tomato-pdf')} 
-               />
+            {/* Toolbox Section */}
+            <div className="pt-6">
+               <p className="px-3 mb-3 text-[12px] font-medium text-theme-subtext opacity-70 tracking-widest">工具箱</p>
+               <div className="space-y-1">
+                   <SidebarItem icon={<Bot size={18} />} label="小番茄" active={currentView === 'bot'} onClick={() => setCurrentView('bot')} />
+                   <SidebarItem icon={<Palette size={18} />} label="智能改图" active={currentView === 'image-editor'} onClick={() => setCurrentView('image-editor')} />
+                   <SidebarItem icon={<MessageSquare size={18} />} label="话术推荐" active={currentView === 'script-matcher'} onClick={() => setCurrentView('script-matcher')} />
+                   <SidebarItem 
+                     icon={<ShoppingBag size={18} />} 
+                     label="Indie Chi 选款" 
+                     active={currentView === 'indie-chi'} 
+                     onClick={() => setCurrentView('indie-chi')} 
+                   />
+                   <SidebarItem 
+                     icon={<FileText size={18} />} 
+                     label="番茄PDF" 
+                     active={currentView === 'tomato-pdf'} 
+                     onClick={() => setCurrentView('tomato-pdf')} 
+                   />
+               </div>
             </div>
           </nav>
 
-          <div className="px-6 mt-auto mb-4 space-y-3">
-             <div className="p-4 rounded-theme border border-theme-border/50 border-theme-width shadow-sm relative overflow-hidden group hover:shadow-md transition-all bg-gradient-to-br from-theme-card/50 to-theme-card mc-3d-box">
-                <Heart className="absolute -top-1 -left-1 text-theme-accent w-6 h-6 opacity-10" />
-                <p className="text-[11px] text-theme-subtext font-medium leading-relaxed relative z-10">
+          <div className="px-5 mt-auto mb-6">
+             <div className="relative group p-4 bg-theme-card border border-theme-border rounded-theme shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5">
+                <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-8 h-1.5 bg-theme-border/20 rounded-full"></div>
+                <Heart className="absolute top-3 right-3 text-theme-accent w-4 h-4 opacity-40 group-hover:opacity-80 transition-opacity" />
+                <p className="text-[12px] md:text-[13px] text-theme-text font-medium leading-relaxed relative z-10 quote-vertical opacity-90">
                    {quote}
                 </p>
              </div>
@@ -608,31 +595,57 @@ interface SidebarItemProps {
   count?: number;
   active?: boolean;
   onClick: () => void;
+  variant?: 'default' | 'primary';
 }
 
-const SidebarItem: React.FC<SidebarItemProps> = ({ icon, label, count, active, onClick }) => (
-  <button
-    onClick={onClick}
-    className={`w-full flex items-center justify-between px-3 py-2 rounded-theme-sm transition-all group ${
-      active 
-        ? 'bg-theme-accent-bg text-theme-accent font-semibold shadow-sm' 
-        : 'text-theme-subtext hover:bg-theme-input hover:text-theme-text'
-    }`}
-  >
-    <div className="flex items-center gap-3">
-      <div className={`transition-colors ${active ? 'text-theme-accent' : 'text-theme-subtext group-hover:text-theme-text'}`}>
-        {icon}
+const SidebarItem: React.FC<SidebarItemProps> = ({ icon, label, count, active, onClick, variant = 'default' }) => {
+  if (variant === 'primary') {
+    return (
+      <button
+        onClick={onClick}
+        className={`w-full flex items-center justify-between px-4 py-3 rounded-theme-sm transition-all shadow-md group sidebar-btn-primary ${
+          active 
+            ? 'bg-theme-accent text-white font-bold' 
+            : 'bg-theme-card text-theme-text hover:brightness-95'
+        }`}
+      >
+        <div className="flex items-center gap-3">
+          <div className="text-inherit">
+            {icon}
+          </div>
+          <span className="text-base">{label}</span>
+        </div>
+        {count !== undefined && (
+          <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-white/20 text-inherit">
+            {count}
+          </span>
+        )}
+      </button>
+    );
+  }
+
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full flex items-center justify-between px-3 py-2 rounded-theme-sm transition-all group ${
+        active 
+          ? 'bg-theme-input font-bold text-theme-text' 
+          : 'text-theme-subtext hover:text-theme-text hover:bg-theme-input/50'
+      }`}
+    >
+      <div className="flex items-center gap-3">
+        <div className={`transition-colors ${active ? 'text-theme-text' : 'text-theme-subtext group-hover:text-theme-text'}`}>
+          {icon}
+        </div>
+        <span className="text-sm">{label}</span>
       </div>
-      <span className="text-sm">{label}</span>
-    </div>
-    {count !== undefined && count > 0 && (
-      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-        active ? 'bg-theme-accent text-white' : 'bg-theme-input text-theme-subtext'
-      }`}>
-        {count}
-      </span>
-    )}
-  </button>
-);
+      {count !== undefined && count > 0 && (
+        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-theme-input text-theme-subtext`}>
+          {count}
+        </span>
+      )}
+    </button>
+  );
+};
 
 export default App;
