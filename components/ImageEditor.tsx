@@ -53,8 +53,16 @@ const ImageEditor: React.FC = () => {
   const clearImage = (index: number) => {
       const newPreviews = [...previewUrls]; newPreviews[index] = null; setPreviewUrls(newPreviews);
       const newImages = [...selectedImages]; newImages[index] = null; setSelectedImages(newImages);
-      if (index === 0 && fileInputRef1.current) fileInputRef1.current.value = '';
-      if (index === 1 && fileInputRef2.current) fileInputRef2.current.value = '';
+      
+      // Fix for TS18047: Assign ref current to a variable to ensure type safety
+      if (index === 0) {
+          const input1 = fileInputRef1.current;
+          if (input1) input1.value = '';
+      }
+      if (index === 1) {
+          const input2 = fileInputRef2.current;
+          if (input2) input2.value = '';
+      }
   };
 
   const handleGenerate = async () => {
