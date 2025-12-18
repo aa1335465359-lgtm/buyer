@@ -243,8 +243,9 @@ export const editImage = async (images: File[] | undefined, prompt: string): Pro
       });
 
       // Find image part
-      if (response.candidates && response.candidates[0].content.parts) {
-          for (const part of response.candidates[0].content.parts) {
+      const partsList = response.candidates?.[0]?.content?.parts;
+      if (partsList) {
+          for (const part of partsList) {
               if (part.inlineData) {
                   return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
               }

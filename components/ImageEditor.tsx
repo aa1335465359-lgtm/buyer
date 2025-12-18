@@ -54,7 +54,7 @@ const ImageEditor: React.FC = () => {
       const newPreviews = [...previewUrls]; newPreviews[index] = null; setPreviewUrls(newPreviews);
       const newImages = [...selectedImages]; newImages[index] = null; setSelectedImages(newImages);
       if (index === 0 && fileInputRef1.current) fileInputRef1.current.value = '';
-      if (index === 1 && fileInputRef2.current) fileInputRef1.current.value = '';
+      if (index === 1 && fileInputRef2.current) fileInputRef2.current.value = '';
   };
 
   const handleGenerate = async () => {
