@@ -10,6 +10,8 @@ import WindowRainOverlay from './WindowRainOverlay';
 import StarryNightLayer from './StarryNightLayer';
 import MaillardLayer from './MaillardLayer';
 import DopamineLayer from './DopamineLayer';
+import MemphisPatternLayer from './MemphisPatternLayer';
+import AmethystLayer from './AmethystLayer';
 
 interface ThemeBackgroundProps {
   theme: string;
@@ -136,12 +138,18 @@ const ThemeBackground: React.FC<ThemeBackgroundProps> = ({ theme }) => {
         
         {/* DOPAMINE: Vibrant Trend */}
         {theme === 'dopamine' && <DopamineLayer />}
+        
+        {/* MEMPHIS: 80s Design Playground */}
+        {theme === 'memphis' && <MemphisPatternLayer />}
+        
+        {/* AMETHYST: Luxury Dark */}
+        {theme === 'amethyst' && <AmethystLayer />}
 
         {/* SEWER / 1335465359: Stormy Night Base */}
         {theme === 'sewer' && (
             <>
                {/* 1. Deep Green Night Gradient (Top to Bottom) */}
-               <div className="absolute inset-0 bg-gradient-to-b from-[var(--storm-bg-top)] via-[var(--storm-bg-mid)] to-[var(--storm-bg-bottom)]"></div>
+               <div className="absolute inset-0 bg-gradient-to-b from-[#020908] via-[#04180E] to-[#072312]"></div>
                
                {/* 2. Thunderstorm Layer: Lightning + Background Structures + Flashes */}
                <ThunderstormLayer />

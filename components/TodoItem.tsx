@@ -289,7 +289,10 @@ const TodoItem: React.FC<TodoItemProps> = ({
                          />
                      ) : (
                         <div className="flex items-center gap-2">
-                             <span className={`text-[15px] font-semibold truncate leading-tight text-theme-text ${isDone ? 'line-through text-theme-subtext opacity-60' : ''}`}>
+                             <span 
+                               className={`text-[15px] font-semibold truncate leading-tight text-theme-text select-text cursor-text ${isDone ? 'line-through text-theme-subtext opacity-60' : ''}`}
+                               onClick={(e) => e.stopPropagation()}
+                             >
                                  {todo.title}
                              </span>
                         </div>

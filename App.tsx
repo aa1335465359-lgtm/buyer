@@ -55,16 +55,18 @@ const FASHION_QUOTES = [
 ];
 
 const THEME_OPTIONS = [
-  { id: 'glass', name: '默认 (玻璃)', color: '#a5b4fc' },
-  { id: 'dopamine', name: '多巴胺·潮流', color: '#002FA7' },
-  { id: 'maillard', name: '美拉德·复古', color: '#8B4513' },
-  { id: 'minecraft', name: '我的世界', color: '#5a8e3d' },
-  { id: 'kawaii', name: '糖果甜心', color: '#f9a8d4' },
-  { id: 'wooden', name: '温暖木质', color: '#d4a373' },
-  { id: 'watercolor', name: '水彩画布', color: '#93c5fd' },
-  { id: 'oil-slick', name: '油膜虹彩', color: '#FF7B89' },
-  { id: 'neon-billboard', name: '都市霓虹', color: '#FF3EA6' },
-  { id: 'deepNebula', name: '深空星云', color: '#4DA6FF' },
+  { id: 'glass', name: '玻璃', color: '#a5b4fc' },
+  { id: 'amethyst', name: '紫晶', color: '#4E345C' }, // New
+  { id: 'memphis', name: '孟菲', color: '#FFEB3B' },
+  { id: 'dopamine', name: '多巴', color: '#002FA7' },
+  { id: 'maillard', name: '美拉', color: '#8B4513' },
+  { id: 'minecraft', name: '方块', color: '#5a8e3d' },
+  { id: 'kawaii', name: '甜心', color: '#f9a8d4' },
+  { id: 'wooden', name: '原木', color: '#d4a373' },
+  { id: 'watercolor', name: '水彩', color: '#93c5fd' },
+  { id: 'oil-slick', name: '虹彩', color: '#FF7B89' },
+  { id: 'neon-billboard', name: '霓虹', color: '#FF3EA6' },
+  { id: 'deepNebula', name: '星云', color: '#4DA6FF' },
 ];
 
 const App: React.FC = () => {
@@ -368,7 +370,7 @@ const App: React.FC = () => {
                    className="w-full text-left px-3 py-2 rounded-theme-sm text-xs font-medium flex items-center gap-2 transition-colors bg-theme-accent-bg text-theme-accent"
                  >
                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#39ff14' }}></div>
-                   赛博矩阵
+                   矩阵
                  </button>
                 )}
                 {/* Christmas Theme Reveal */}
@@ -378,7 +380,7 @@ const App: React.FC = () => {
                    className="w-full text-left px-3 py-2 rounded-theme-sm text-xs font-medium flex items-center gap-2 transition-colors bg-theme-accent-bg text-theme-accent"
                  >
                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#B22D2D' }}></div>
-                   圣诞雪夜
+                   圣诞
                  </button>
                 )}
               </div>
@@ -514,84 +516,104 @@ const App: React.FC = () => {
                         </div>
                       )}
                     </div>
-                    <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-theme-panel via-theme-panel/80 to-transparent pt-12 z-20">
-                      <div className="max-w-3xl mx-auto"><TaskInput onAddTodos={handleAddTodos} onUpdateTodo={handleUpdateTodo} onDeleteTodo={handleDeleteTodo} onSecretCode={handleSecretCode} /></div>
+
+                    <div className="p-6 md:px-8 bg-gradient-to-t from-theme-panel via-theme-panel/90 to-transparent sticky bottom-0 z-20">
+                       <TaskInput 
+                          onAddTodos={handleAddTodos} 
+                          onUpdateTodo={handleUpdateTodo} 
+                          onDeleteTodo={handleDeleteTodo}
+                          onSecretCode={handleSecretCode}
+                        />
                     </div>
                   </>
                 ) : (
-                  <div className="flex-1 p-6 overflow-hidden"><CalendarView todos={todos} onToggle={handleToggleTodo} onDelete={handleDeleteTodo} onUpdate={handleUpdateTodo} focusedTodoId={focusedTodoId} setFocusedTodoId={setFocusedTodoId} /></div>
+                  <div className="flex-1 p-6 md:p-8 overflow-hidden flex flex-col">
+                      <CalendarView 
+                        todos={todos} 
+                        onToggle={handleToggleTodo} 
+                        onDelete={handleDeleteTodo} 
+                        onUpdate={handleUpdateTodo} 
+                        focusedTodoId={focusedTodoId} 
+                        setFocusedTodoId={setFocusedTodoId} 
+                      />
+                  </div>
                 )}
             </div>
 
-            {/* 2. IMAGE EDITOR (Keep Alive) */}
-            <div className={`h-full w-full ${currentView === 'image-editor' ? '' : 'view-hidden'}`}>
+            {/* 2. IMAGE EDITOR VIEW */}
+            <div className={`h-full ${currentView === 'image-editor' ? '' : 'view-hidden'}`}>
                 <ImageEditor />
             </div>
 
-            {/* 3. SCRIPT MATCHER (Keep Alive) */}
-            <div className={`h-full w-full ${currentView === 'script-matcher' ? '' : 'view-hidden'}`}>
+            {/* 3. INDIE CHI VIEW (Placeholder) */}
+            <div className={`h-full flex flex-col items-center justify-center text-theme-subtext ${currentView === 'indie-chi' ? '' : 'view-hidden'}`}>
+                <ShoppingBag size={48} className="mb-4 opacity-20" />
+                <h3 className="text-lg font-bold text-theme-text">Indie Chi 选款助手</h3>
+                <p className="text-sm opacity-60 mt-2">Coming Soon...</p>
+            </div>
+
+            {/* 4. SCRIPT MATCHER VIEW */}
+            <div className={`h-full ${currentView === 'script-matcher' ? '' : 'view-hidden'}`}>
                 <ScriptMatcher />
             </div>
 
-            {/* 4. AI ASSISTANT (Keep Alive) */}
-            <div className={`h-full w-full ${currentView === 'bot' ? '' : 'view-hidden'}`}>
+            {/* 5. AI BOT VIEW */}
+            <div className={`h-full ${currentView === 'bot' ? '' : 'view-hidden'}`}>
                 <AiAssistant theme={theme} />
             </div>
-            
-            {/* 5. INDIE CHI (Iframe Keep Alive) */}
-            <div className={`h-full w-full flex flex-col bg-white ${currentView === 'indie-chi' ? '' : 'view-hidden'}`}>
-                 <div className="h-12 border-b border-theme-border border-theme-width flex items-center justify-between px-6 bg-theme-panel/50 shrink-0">
-                    <div className="flex items-center gap-2"><h2 className="font-semibold text-theme-text text-sm">Indie Chi 选款</h2></div>
-                    <a href="https://fake-indie.vercel.app/" target="_blank" className="flex items-center gap-1.5 text-xs text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-md"><ExternalLink size={12} /> 新窗口打开</a>
-                 </div>
-                 <iframe src="https://fake-indie.vercel.app/" className="flex-1 w-full border-none bg-white" />
+
+            {/* 6. TOMATO PDF VIEW (Placeholder) */}
+            <div className={`h-full flex flex-col items-center justify-center text-theme-subtext ${currentView === 'tomato-pdf' ? '' : 'view-hidden'}`}>
+                <FileText size={48} className="mb-4 opacity-20" />
+                <h3 className="text-lg font-bold text-theme-text">番茄 PDF</h3>
+                <p className="text-sm opacity-60 mt-2">Coming Soon...</p>
             </div>
 
-            {/* 6. TOMATO PDF (Iframe Keep Alive) */}
-            <div className={`h-full w-full flex flex-col bg-white ${currentView === 'tomato-pdf' ? '' : 'view-hidden'}`}>
-                 <div className="h-12 border-b border-theme-border border-theme-width flex items-center justify-between px-6 bg-theme-panel/50 shrink-0">
-                    <div className="flex items-center gap-2"><h2 className="font-semibold text-theme-text text-sm">番茄PDF</h2></div>
-                    <a href="https://share-pdf-beta.vercel.app/" target="_blank" className="flex items-center gap-1.5 text-xs text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-md"><ExternalLink size={12} /> 新窗口打开</a>
-                 </div>
-                 <iframe src="https://share-pdf-beta.vercel.app/" className="flex-1 w-full border-none bg-white" />
-            </div>
-        </div>
-
-        {/* Undo Toast */}
-        {showUndo && (
-          <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-8 duration-300">
-             <div className="flex items-center gap-4 pl-5 pr-4 py-3 bg-[#1e1e1e]/90 text-white rounded-full shadow-2xl backdrop-blur-xl border border-white/10 ring-1 ring-black/20">
-                 <div className="flex flex-col">
-                     <span className="text-sm font-medium">任务已放入回收站</span>
-                 </div>
-                 <div className="h-4 w-px bg-white/10"></div>
-                 <button onClick={handleUndoDelete} className="text-xs font-bold bg-white text-black px-3 py-1.5 rounded-full hover:bg-gray-200 transition-colors flex items-center gap-1.5 active:scale-95">
-                     <Undo2 size={12} strokeWidth={3} /> 撤销
+            {/* Undo Toast */}
+            {showUndo && (
+              <div className="absolute bottom-24 md:bottom-8 left-1/2 -translate-x-1/2 bg-theme-input/90 backdrop-blur-md border border-theme-border text-theme-text px-6 py-3 rounded-full shadow-lg flex items-center gap-4 z-50 animate-in fade-in slide-in-from-bottom-4">
+                 <span className="text-sm font-medium">已删除一项任务</span>
+                 <button onClick={handleUndoDelete} className="flex items-center gap-1 text-sm font-bold text-theme-accent hover:underline">
+                    <Undo2 size={14} /> 撤销
                  </button>
-             </div>
-          </div>
-        )}
+              </div>
+            )}
+
+        </div>
       </div>
     </div>
     </>
   );
 };
 
-const SidebarItem = ({ icon, label, count, active, onClick }: any) => (
-  <button 
+// Helper Component for Sidebar Items
+interface SidebarItemProps {
+  icon: React.ReactNode;
+  label: string;
+  count?: number;
+  active?: boolean;
+  onClick: () => void;
+}
+
+const SidebarItem: React.FC<SidebarItemProps> = ({ icon, label, count, active, onClick }) => (
+  <button
     onClick={onClick}
-    className={`w-full flex items-center justify-between px-3 py-2 rounded-theme-sm text-sm font-medium transition-all duration-200 group ${
+    className={`w-full flex items-center justify-between px-3 py-2 rounded-theme-sm transition-all group ${
       active 
-        ? 'bg-theme-accent-bg text-theme-accent' 
+        ? 'bg-theme-accent-bg text-theme-accent font-semibold shadow-sm' 
         : 'text-theme-subtext hover:bg-theme-input hover:text-theme-text'
     }`}
   >
-    <div className={`flex items-center gap-3 ${active ? 'text-theme-accent' : 'text-theme-subtext group-hover:text-theme-text'}`}>
-      {React.cloneElement(icon, { size: 18, strokeWidth: active ? 2.5 : 2 })}
-      <span>{label}</span>
+    <div className="flex items-center gap-3">
+      <div className={`transition-colors ${active ? 'text-theme-accent' : 'text-theme-subtext group-hover:text-theme-text'}`}>
+        {icon}
+      </div>
+      <span className="text-sm">{label}</span>
     </div>
     {count !== undefined && count > 0 && (
-      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${active ? 'bg-theme-card text-theme-accent' : 'bg-transparent text-theme-subtext group-hover:bg-theme-input'}`}>
+      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+        active ? 'bg-theme-accent text-white' : 'bg-theme-input text-theme-subtext'
+      }`}>
         {count}
       </span>
     )}

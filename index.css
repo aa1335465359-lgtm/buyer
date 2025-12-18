@@ -59,6 +59,222 @@ button, input, textarea, .bg-theme-card {
 }
 
 /* =========================================================
+   SPECIAL THEME: AMETHYST (Luxury Dark Mode)
+   ========================================================= */
+[data-theme='amethyst'] {
+  --bg-panel: rgba(26, 22, 36, 0.85); /* Slate Violet Glass */
+  --bg-sidebar: rgba(15, 12, 20, 0.95); /* Deep Dark Metal */
+  --bg-card: rgba(30, 20, 40, 0.6); /* Tinted Glass */
+  --bg-card-hover: rgba(45, 30, 60, 0.7);
+  --bg-input: rgba(10, 8, 13, 0.6);
+  --bg-menu: #1A1624;
+
+  --border-theme: #C2B280; /* Champagne Gold */
+  --border-width: 1px;
+
+  --text-primary: #E6E1F0; /* Off-white / Lavender tint */
+  --text-secondary: #C2B280; /* Gold text for secondary */
+  --text-accent: #C2B280; /* Gold Accent */
+  --accent-bg: rgba(194, 178, 128, 0.15); /* Gold sheen */
+
+  --radius-lg: 4px; /* Minimalist / Executive */
+  --radius-md: 2px;
+  --radius-sm: 0px;
+
+  --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.5);
+  --backdrop-blur: blur(20px);
+
+  --font-main: 'Inter', sans-serif;
+  --panel-border: 1px solid rgba(194, 178, 128, 0.3);
+}
+
+/* Amethyst Special Overrides */
+[data-theme='amethyst'] .bg-theme-sidebar {
+    border-right: 1px solid rgba(194, 178, 128, 0.3) !important;
+}
+
+/* Quote Box - Dark Acrylic */
+[data-theme='amethyst'] .mc-3d-box {
+    background: linear-gradient(135deg, rgba(20, 10, 20, 0.9), rgba(40, 20, 50, 0.9)) !important;
+    border: 1px solid rgba(194, 178, 128, 0.4) !important;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.8), 0 10px 30px rgba(0,0,0,0.5);
+}
+[data-theme='amethyst'] .mc-3d-box p {
+    color: #C2B280 !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+    letter-spacing: 0.5px;
+}
+
+/* P0 Tag - Glowing Amethyst/Gold */
+[data-theme='amethyst'] .bg-rose-400 {
+    background: #4E345C !important;
+    border: 1px solid #C2B280 !important;
+    color: #C2B280 !important;
+    box-shadow: 0 0 10px rgba(78, 52, 92, 0.5);
+}
+[data-theme='amethyst'] .bg-rose-400 .text-white {
+    color: #C2B280 !important;
+}
+
+/* =========================================================
+   SPECIAL THEME: MEMPHIS (80s Playground)
+   ========================================================= */
+[data-theme='memphis'] {
+  --bg-panel: rgba(255, 255, 255, 0.95);
+  --bg-sidebar: #FFEB3B; /* Sunshine Yellow */
+  --bg-card: #FFFFFF;
+  --bg-card-hover: #F0F0F0;
+  --bg-input: #FFFFFF;
+  --bg-menu: #FFFFFF;
+  
+  --border-theme: #000000;
+  --border-width: 3px;
+  
+  --text-primary: #000000;
+  --text-secondary: #000000;
+  --text-accent: #000000;
+  --accent-bg: #00E5FF; /* Cyan for contrast */
+  
+  --radius-lg: 20px;
+  --radius-md: 10px;
+  --radius-sm: 0px;
+  
+  /* Hard Pop Art Shadow */
+  --shadow-md: 4px 4px 0px #000000;
+  --backdrop-blur: none;
+  
+  --font-main: 'Quicksand', sans-serif;
+  --panel-border: 3px solid #000;
+}
+
+/* Memphis Sidebar Specifics */
+[data-theme='memphis'] .bg-theme-sidebar {
+    border-right: 3px solid #000 !important;
+    /* Create a wavy border illusion or just bold */
+    background-image: radial-gradient(#000 15%, transparent 16%), radial-gradient(#000 15%, transparent 16%);
+    background-size: 20px 20px;
+    background-position: 0 0, 10px 10px;
+    background-color: #FFEB3B !important;
+}
+
+/* Ensure dropdown menu text is readable */
+[data-theme='memphis'] .bg-theme-sidebar nav button {
+    background: #FFFFFF;
+    border: 3px solid #000;
+    margin-bottom: 8px;
+    box-shadow: 4px 4px 0px #000;
+    /* Ensure static positioning flow inside nav */
+    position: relative; 
+    z-index: 1;
+}
+[data-theme='memphis'] .bg-theme-sidebar nav button:hover {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0px #000;
+    background: #00E5FF !important; /* Cyan hover */
+}
+[data-theme='memphis'] .bg-theme-sidebar nav button.bg-theme-accent-bg {
+    background: #FF0055 !important; /* Pink Active */
+    color: #FFF !important;
+}
+
+/* Memphis Theme Switcher Dropdown Fixes */
+[data-theme='memphis'] .bg-theme-menu {
+    border: 3px solid #000 !important;
+    box-shadow: 6px 6px 0px #000 !important;
+    border-radius: 0px !important;
+    padding: 8px !important;
+    /* Force absolute positioning to work by not overriding child styles with wildcards */
+}
+[data-theme='memphis'] .bg-theme-menu button {
+    border: 2px solid transparent; /* Placeholder to prevent layout shift */
+    margin-bottom: 4px;
+    border-radius: 4px !important;
+}
+[data-theme='memphis'] .bg-theme-menu button:hover {
+    background-color: #FFD500 !important; /* Yellow hover */
+    color: #000 !important;
+    border: 2px solid #000 !important;
+    box-shadow: 2px 2px 0 #000;
+    transform: translate(-1px, -1px);
+}
+[data-theme='memphis'] .bg-theme-menu button.bg-theme-accent-bg {
+    background-color: #FF0055 !important; /* Pink active */
+    color: #FFF !important;
+    border: 2px solid #000 !important;
+    box-shadow: 2px 2px 0 #000;
+}
+
+/* Memphis Cards - Tilted & Fun */
+[data-theme='memphis'] .bg-theme-card {
+    border: 3px solid #000 !important;
+    transform: rotate(-1deg);
+    margin-bottom: 12px;
+}
+[data-theme='memphis'] .bg-theme-card:nth-child(even) {
+    transform: rotate(1deg);
+}
+[data-theme='memphis'] .bg-theme-card:hover {
+    transform: rotate(0deg) scale(1.02);
+    box-shadow: 6px 6px 0px #000 !important;
+    z-index: 10;
+}
+
+/* P0 Explosion Tag */
+[data-theme='memphis'] .bg-rose-400 {
+    clip-path: polygon(20% 0%, 0% 20%, 30% 50%, 0% 80%, 20% 100%, 50% 70%, 80% 100%, 100% 80%, 70% 50%, 100% 20%, 80% 0%, 50% 30%);
+    background-color: #FF0055 !important;
+    padding: 10px !important;
+    width: 40px !important;
+    height: 40px !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: visible !important;
+    box-shadow: none !important;
+}
+[data-theme='memphis'] .bg-rose-400 span {
+    font-family: 'Press Start 2P', cursive;
+    font-size: 10px !important;
+    color: #FFF !important;
+    text-shadow: 1px 1px 0 #000;
+}
+
+/* Quote Box - Pixel Bubble */
+[data-theme='memphis'] .mc-3d-box {
+    background: #FFF !important;
+    border: 3px solid #000 !important;
+    box-shadow: 4px 4px 0px #000 !important;
+    border-radius: 0 !important;
+    position: relative;
+}
+[data-theme='memphis'] .mc-3d-box:after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    right: 20px;
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-top: 10px solid #000;
+}
+
+/* General Buttons */
+[data-theme='memphis'] button.bg-theme-accent {
+    background: #00E5FF !important;
+    color: #000 !important;
+    border: 3px solid #000 !important;
+    box-shadow: 4px 4px 0px #000 !important;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+[data-theme='memphis'] button.bg-theme-accent:hover {
+    background: #FFD500 !important;
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0px #000 !important;
+}
+
+/* =========================================================
    SPECIAL THEME: DOPAMINE CANDY_OS (Y2K / Jelly / Vivid)
    ========================================================= */
 [data-theme='dopamine'] {
