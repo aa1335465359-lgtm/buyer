@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { THEME_PROFILES, getThemeProfile } from './data/themeProfiles';
 import { Todo, Priority } from './types';
 import TaskInput from './components/TaskInput';
 import TodoItem from './components/TodoItem';
@@ -48,23 +49,9 @@ const FASHION_QUOTES = [
   "“宝，别太累了，那个只会发‘在吗’的商家不值得你长皱纹。”"
 ];
 
-const THEME_OPTIONS = [
-  { id: 'neo-chinese', name: '中式', color: '#C93F3F' }, // Renamed
-  { id: 'glass', name: '玻璃', color: '#a5b4fc' },
-  { id: 'amethyst', name: '紫晶', color: '#4E345C' },
-  { id: 'memphis', name: '孟菲', color: '#FFEB3B' },
-  { id: 'dopamine', name: '多巴', color: '#002FA7' },
-  { id: 'maillard', name: '美拉', color: '#8B4513' },
-  { id: 'minecraft', name: '方块', color: '#5a8e3d' },
-  { id: 'kawaii', name: '甜心', color: '#f9a8d4' },
-  { id: 'wooden', name: '原木', color: '#d4a373' },
-  { id: 'watercolor', name: '水彩', color: '#93c5fd' },
-  { id: 'oil-slick', name: '虹彩', color: '#FF7B89' },
-  { id: 'neon-billboard', name: '霓虹', color: '#FF3EA6' },
-  { id: 'deepNebula', name: '星云', color: '#4DA6FF' },
-];
 
 const App: React.FC = () => {
+
   // --- STATE ---
   const { theme, setTheme, handleSecretCode } = useThemeState();
   const {
@@ -105,6 +92,7 @@ const App: React.FC = () => {
     const randomQuote = FASHION_QUOTES[Math.floor(Math.random() * FASHION_QUOTES.length)];
     setQuote(randomQuote);
   }, []);
+
 
   useEffect(() => {
     window.localStorage.setItem('performance-mode', performanceMode);
@@ -242,7 +230,7 @@ const App: React.FC = () => {
             display: none !important;
         }
     `}</style>
-    <div className="h-screen w-full flex items-center justify-center p-4 sm:p-8" data-theme={theme} data-performance={performanceMode}>
+    <div className="h-screen w-full flex items-center justify-center p-4 sm:p-8" data-theme={theme} data-performance="lite" data-style-profile={getThemeProfile(theme).styleProfile}>
       <ThemeBackground theme={theme} />
       
       {/* Main Container */}
@@ -271,13 +259,22 @@ const App: React.FC = () => {
             
             {showThemeMenu && (
               <div className="absolute top-full left-6 mt-2 w-48 max-h-[400px] overflow-y-auto bg-theme-menu border border-theme-border border-theme-width rounded-theme shadow-theme p-1 z-50 animate-in fade-in slide-in-from-top-2">
-                {THEME_OPTIONS.map(opt => (
+                {THEME_PROFILES.map(opt => (
                   <button
                     key={opt.id}
                     onClick={() => { setTheme(opt.id); setShowThemeMenu(false); }}
                     className={`w-full text-left px-3 py-2 rounded-theme-sm text-xs font-medium flex items-center gap-2 transition-colors ${theme === opt.id ? 'bg-theme-accent-bg text-theme-accent' : 'text-theme-subtext hover:bg-theme-input'}`}
                   >
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: opt.color }}></div>
+                    <div
+                      className="w-8 h-5 rounded-[6px] border shrink-0"
+                      style={{
+                        background: opt.preview.background,
+                        borderColor: opt.preview.border,
+                        boxShadow: `inset 0 0 0 1px ${opt.preview.border}`
+                      }}
+                    >
+                      <div className="h-1 w-3/4 ml-1 mt-1 rounded-full" style={{ backgroundColor: opt.preview.accent }} />
+                    </div>
                     {opt.name}
                   </button>
                 ))}
