@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { THEME_PROFILES, STYLE_PROFILE_LABELS, getThemeProfile } from './data/themeProfiles';
+import { THEME_PROFILES, getThemeProfile } from './data/themeProfiles';
 import { Todo, Priority } from './types';
 import TaskInput from './components/TaskInput';
 import TodoItem from './components/TodoItem';
@@ -93,6 +93,10 @@ const App: React.FC = () => {
     setQuote(randomQuote);
   }, []);
 
+
+  useEffect(() => {
+    window.localStorage.setItem('performance-mode', performanceMode);
+  }, [performanceMode]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -213,7 +217,6 @@ const App: React.FC = () => {
 
   const activeCount = todos.filter(t => t.status !== 'done').length;
   const p0Count = todos.filter(t => t.status !== 'done' && (t.priority === Priority.P0 || (t.priority as string) === 'HIGH')).length;
-  const selectedTheme = getThemeProfile(theme);
 
   return (
     <>
@@ -227,7 +230,7 @@ const App: React.FC = () => {
             display: none !important;
         }
     `}</style>
-    <div className="h-screen w-full flex items-center justify-center p-4 sm:p-8" data-theme={theme} data-performance="lite" data-style-profile={selectedTheme.styleProfile}>
+    <div className="h-screen w-full flex items-center justify-center p-4 sm:p-8" data-theme={theme} data-performance="lite" data-style-profile={getThemeProfile(theme).styleProfile}>
       <ThemeBackground theme={theme} />
       
       {/* Main Container */}
@@ -255,41 +258,26 @@ const App: React.FC = () => {
             </div>
             
             {showThemeMenu && (
-              <div className="absolute top-full left-6 mt-2 w-[320px] max-h-[430px] overflow-y-auto bg-theme-menu border border-theme-border border-theme-width rounded-theme shadow-theme p-3 z-50 animate-in fade-in slide-in-from-top-2 theme-menu-surface">
-                <div className="mb-3 px-1">
-                  <p className="text-[11px] tracking-[0.18em] uppercase text-theme-subtext/70">当前风格</p>
-                  <div className="mt-1 flex items-center justify-between">
-                    <p className="text-sm font-semibold text-theme-text">{selectedTheme.name} · {selectedTheme.tone}</p>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-theme-input text-theme-subtext">{STYLE_PROFILE_LABELS[selectedTheme.styleProfile]}</span>
-                  </div>
-                  <p className="text-[11px] text-theme-subtext/80 mt-1">{selectedTheme.detail}</p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  {THEME_PROFILES.map(opt => (
-                    <button
-                      key={opt.id}
-                      onClick={() => { setTheme(opt.id); setShowThemeMenu(false); }}
-                      className={`theme-preview-card text-left p-2 rounded-theme-sm border transition-all ${theme === opt.id ? 'bg-theme-accent-bg text-theme-accent border-theme-accent/40' : 'bg-theme-card/50 text-theme-subtext border-theme-border hover:bg-theme-input hover:text-theme-text'}`}
+              <div className="absolute top-full left-6 mt-2 w-48 max-h-[400px] overflow-y-auto bg-theme-menu border border-theme-border border-theme-width rounded-theme shadow-theme p-1 z-50 animate-in fade-in slide-in-from-top-2">
+                {THEME_PROFILES.map(opt => (
+                  <button
+                    key={opt.id}
+                    onClick={() => { setTheme(opt.id); setShowThemeMenu(false); }}
+                    className={`w-full text-left px-3 py-2 rounded-theme-sm text-xs font-medium flex items-center gap-2 transition-colors ${theme === opt.id ? 'bg-theme-accent-bg text-theme-accent' : 'text-theme-subtext hover:bg-theme-input'}`}
+                  >
+                    <div
+                      className="w-8 h-5 rounded-[6px] border shrink-0"
+                      style={{
+                        background: opt.preview.background,
+                        borderColor: opt.preview.border,
+                        boxShadow: `inset 0 0 0 1px ${opt.preview.border}`
+                      }}
                     >
-                      <div
-                        className="h-10 rounded-[8px] border p-1.5 flex flex-col justify-between"
-                        style={{
-                          background: opt.preview.background,
-                          borderColor: opt.preview.border,
-                          boxShadow: `inset 0 0 0 1px ${opt.preview.border}`
-                        }}
-                      >
-                        <div className="h-1.5 w-3/5 rounded-full" style={{ backgroundColor: opt.preview.accent }} />
-                        <div className="h-1 w-4/5 rounded-full bg-black/15" />
-                      </div>
-                      <div className="mt-1.5">
-                        <div className="text-xs font-semibold leading-tight">{opt.name}</div>
-                        <div className="text-[10px] opacity-70">{opt.tone}</div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
+                      <div className="h-1 w-3/4 ml-1 mt-1 rounded-full" style={{ backgroundColor: opt.preview.accent }} />
+                    </div>
+                    {opt.name}
+                  </button>
+                ))}
               </div>
             )}
           </div>
