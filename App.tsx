@@ -237,7 +237,7 @@ const App: React.FC = () => {
       <ThemeBackground theme={theme} />
       
       {/* Main Container */}
-      <div className="w-full max-w-6xl h-full max-h-[900px] bg-theme-panel rounded-theme-lg flex overflow-hidden shadow-theme transition-all duration-300 border-theme border-theme-width backdrop-blur-md relative">
+      <div className="w-full max-w-6xl h-full max-h-[900px] bg-theme-panel rounded-theme-lg flex overflow-hidden shadow-theme transition-colors duration-300 border-theme border-theme-width backdrop-blur-md relative">
         
         {/* === CYBER STORM EFFECT (Injected ONLY here, behind content but on top of panel bg) === */}
         {theme === 'sewer' && <CyberStormEffect />}
@@ -324,7 +324,7 @@ const App: React.FC = () => {
           </nav>
 
           <div className="px-5 mt-auto mb-6">
-             <div className="relative group p-4 bg-theme-card border border-theme-border rounded-theme shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5">
+             <div className="relative group p-4 bg-theme-card border border-theme-border rounded-theme shadow-sm transition-transform transition-opacity hover:opacity-95 hover:-translate-y-0.5">
                 <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-8 h-1.5 bg-theme-border/20 rounded-full"></div>
                 <Heart className="absolute top-3 right-3 text-theme-accent w-4 h-4 opacity-40 group-hover:opacity-80 transition-opacity" />
                 <p className="text-[12px] md:text-[13px] text-theme-text font-medium leading-relaxed relative z-10 quote-vertical opacity-90">
@@ -468,7 +468,7 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ icon, label, count, active, o
     return (
       <button
         onClick={onClick}
-        className={`w-full flex items-center justify-between px-4 py-3 rounded-theme-sm transition-all shadow-md group sidebar-btn-primary ${
+        className={`w-full flex items-center justify-between px-4 py-3 rounded-theme-sm transition-colors shadow-md group sidebar-btn-primary ${
           active 
             ? 'bg-theme-accent text-white font-bold' 
             : 'bg-theme-card text-theme-text hover:brightness-95'
@@ -492,7 +492,7 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ icon, label, count, active, o
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center justify-between px-3 py-2 rounded-theme-sm transition-all group ${
+      className={`w-full flex items-center justify-between px-3 py-2 rounded-theme-sm transition-colors group ${
         active 
           ? 'bg-theme-input font-bold text-theme-text' 
           : 'text-theme-subtext hover:text-theme-text hover:bg-theme-input/50'
