@@ -58,6 +58,174 @@ button, input, textarea, .bg-theme-card {
     transition-duration: 300ms;
 }
 
+
+/* =========================================================
+   STYLE PROFILE SYSTEM (Layout + Shape + Typography)
+   ========================================================= */
+[data-style-profile='minimal'] {
+  --profile-radius-lg: 14px;
+  --profile-radius-md: 12px;
+  --profile-radius-sm: 8px;
+  --profile-divider: 1px solid rgba(148, 163, 184, 0.25);
+  --profile-shadow: 0 2px 12px rgba(15, 23, 42, 0.08);
+  --profile-font-main: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --profile-font-weight: 520;
+}
+
+[data-style-profile='editorial'] {
+  --profile-radius-lg: 6px;
+  --profile-radius-md: 4px;
+  --profile-radius-sm: 2px;
+  --profile-divider: 1px solid rgba(100, 116, 139, 0.22);
+  --profile-shadow: none;
+  --profile-font-main: 'Noto Serif SC', 'Source Serif 4', Georgia, serif;
+  --profile-font-weight: 580;
+}
+
+[data-style-profile='playful'] {
+  --profile-radius-lg: 26px;
+  --profile-radius-md: 18px;
+  --profile-radius-sm: 12px;
+  --profile-divider: 2px dashed rgba(15, 23, 42, 0.2);
+  --profile-shadow: 0 10px 20px rgba(15, 23, 42, 0.15);
+  --profile-font-main: 'Baloo 2', 'Quicksand', 'Trebuchet MS', sans-serif;
+  --profile-font-weight: 640;
+}
+
+[data-style-profile='retro'] {
+  --profile-radius-lg: 0px;
+  --profile-radius-md: 0px;
+  --profile-radius-sm: 0px;
+  --profile-divider: 1px solid rgba(0, 0, 0, 0.45);
+  --profile-shadow: 4px 4px 0 rgba(0, 0, 0, 0.22);
+  --profile-font-main: 'Press Start 2P', 'VT323', monospace;
+  --profile-font-weight: 500;
+}
+
+[data-style-profile='terminal'] {
+  --profile-radius-lg: 4px;
+  --profile-radius-md: 2px;
+  --profile-radius-sm: 0px;
+  --profile-divider: 1px dashed rgba(125, 211, 252, 0.45);
+  --profile-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 0 14px rgba(56, 189, 248, 0.16);
+  --profile-font-main: 'JetBrains Mono', 'VT323', monospace;
+  --profile-font-weight: 500;
+}
+
+[data-style-profile] .bg-theme-panel,
+[data-style-profile] .bg-theme-card,
+[data-style-profile] .bg-theme-menu,
+[data-style-profile] .bg-theme-input,
+[data-style-profile] button,
+[data-style-profile] .todo-card {
+  border-radius: var(--profile-radius-md) !important;
+}
+
+[data-style-profile] .bg-theme-panel {
+  border-radius: var(--profile-radius-lg) !important;
+}
+
+[data-style-profile] .bg-theme-card {
+  box-shadow: var(--profile-shadow) !important;
+}
+
+[data-style-profile] .todo-card {
+  border-bottom: var(--profile-divider) !important;
+}
+
+[data-style-profile] .todo-card:last-child {
+  border-bottom: none !important;
+}
+
+[data-style-profile] .text-theme-text,
+[data-style-profile] button,
+[data-style-profile] input,
+[data-style-profile] textarea,
+[data-style-profile] h1,
+[data-style-profile] h2,
+[data-style-profile] h3 {
+  font-family: var(--profile-font-main) !important;
+  font-weight: var(--profile-font-weight);
+}
+
+/* 6 featured themes: structural differentiation beyond color */
+[data-theme='glass'][data-style-profile='minimal'] .bg-theme-card {
+  backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.45) !important;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08) !important;
+}
+
+[data-theme='glass'][data-style-profile='minimal'] .main-sidebar {
+  border-right: 1px solid rgba(148, 163, 184, 0.2) !important;
+}
+
+[data-theme='neon-billboard'][data-style-profile='terminal'] .bg-theme-panel,
+[data-theme='neon-billboard'][data-style-profile='terminal'] .bg-theme-card {
+  border-radius: 0 !important;
+  image-rendering: pixelated;
+}
+
+[data-theme='neon-billboard'][data-style-profile='terminal'] .bg-theme-card {
+  border: 2px solid #4DADFF !important;
+  box-shadow: 0 0 0 1px #000, 0 0 12px rgba(255, 62, 166, 0.6) !important;
+}
+
+[data-theme='neon-billboard'][data-style-profile='terminal'] .bg-theme-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(180deg, rgba(255,255,255,0.08) 0 2px, transparent 2px 4px);
+}
+
+[data-theme='deepNebula'][data-style-profile='minimal'] .bg-theme-card {
+  border: none !important;
+  box-shadow: none !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+[data-theme='deepNebula'][data-style-profile='minimal'] .todo-card {
+  border-bottom: 1px solid rgba(255,255,255,0.06) !important;
+}
+
+[data-theme='neo-chinese'][data-style-profile='editorial'] .todo-card {
+  border-bottom: 1px solid rgba(43, 32, 27, 0.22) !important;
+  border-radius: 0 !important;
+}
+
+[data-theme='neo-chinese'][data-style-profile='editorial'] .main-sidebar {
+  border-right: 2px solid rgba(43, 32, 27, 0.18) !important;
+}
+
+[data-theme='memphis'][data-style-profile='playful'] .bg-theme-card {
+  transform: rotate(-0.4deg);
+  border-width: 2px !important;
+}
+
+[data-theme='memphis'][data-style-profile='playful'] .bg-theme-card:nth-child(even) {
+  transform: rotate(0.6deg);
+}
+
+[data-theme='minecraft'][data-style-profile='retro'] .bg-theme-card,
+[data-theme='minecraft'][data-style-profile='retro'] .bg-theme-panel,
+[data-theme='minecraft'][data-style-profile='retro'] button {
+  border-radius: 0 !important;
+  box-shadow: 3px 3px 0 #000 !important;
+}
+
+[data-theme='minecraft'][data-style-profile='retro'] .todo-card {
+  border-bottom: 2px solid rgba(0,0,0,0.5) !important;
+}
+
+[data-style-profile] .theme-preview-card {
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.2);
+}
+
+[data-style-profile='terminal'] .theme-preview-card,
+[data-style-profile='retro'] .theme-preview-card {
+  border-radius: 0 !important;
+}
+
 /* =========================================================
    SPECIAL THEME: NEO-CHINESE (新中式 - Ink & Wood)
    ========================================================= */
