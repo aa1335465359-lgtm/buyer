@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { THEME_PROFILES, STYLE_PROFILE_LABELS, getThemeProfile } from './data/themeProfiles';
 import { Todo, Priority } from './types';
 import TaskInput from './components/TaskInput';
 import TodoItem from './components/TodoItem';
@@ -48,23 +49,9 @@ const FASHION_QUOTES = [
   "“宝，别太累了，那个只会发‘在吗’的商家不值得你长皱纹。”"
 ];
 
-const THEME_OPTIONS = [
-  { id: 'neo-chinese', name: '中式', color: '#C93F3F' }, // Renamed
-  { id: 'glass', name: '玻璃', color: '#a5b4fc' },
-  { id: 'amethyst', name: '紫晶', color: '#4E345C' },
-  { id: 'memphis', name: '孟菲', color: '#FFEB3B' },
-  { id: 'dopamine', name: '多巴', color: '#002FA7' },
-  { id: 'maillard', name: '美拉', color: '#8B4513' },
-  { id: 'minecraft', name: '方块', color: '#5a8e3d' },
-  { id: 'kawaii', name: '甜心', color: '#f9a8d4' },
-  { id: 'wooden', name: '原木', color: '#d4a373' },
-  { id: 'watercolor', name: '水彩', color: '#93c5fd' },
-  { id: 'oil-slick', name: '虹彩', color: '#FF7B89' },
-  { id: 'neon-billboard', name: '霓虹', color: '#FF3EA6' },
-  { id: 'deepNebula', name: '星云', color: '#4DA6FF' },
-];
 
 const App: React.FC = () => {
+
   // --- STATE ---
   const { theme, setTheme, handleSecretCode } = useThemeState();
   const {
@@ -100,6 +87,7 @@ const App: React.FC = () => {
     const randomQuote = FASHION_QUOTES[Math.floor(Math.random() * FASHION_QUOTES.length)];
     setQuote(randomQuote);
   }, []);
+
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -220,6 +208,7 @@ const App: React.FC = () => {
 
   const activeCount = todos.filter(t => t.status !== 'done').length;
   const p0Count = todos.filter(t => t.status !== 'done' && (t.priority === Priority.P0 || (t.priority as string) === 'HIGH')).length;
+  const selectedTheme = getThemeProfile(theme);
 
   return (
     <>
@@ -233,7 +222,7 @@ const App: React.FC = () => {
             display: none !important;
         }
     `}</style>
-    <div className="h-screen w-full flex items-center justify-center p-4 sm:p-8" data-theme={theme}>
+    <div className="h-screen w-full flex items-center justify-center p-4 sm:p-8" data-theme={theme} data-performance="lite" data-style-profile={selectedTheme.styleProfile}>
       <ThemeBackground theme={theme} />
       
       {/* Main Container */}
@@ -261,17 +250,41 @@ const App: React.FC = () => {
             </div>
             
             {showThemeMenu && (
-              <div className="absolute top-full left-6 mt-2 w-48 max-h-[400px] overflow-y-auto bg-theme-menu border border-theme-border border-theme-width rounded-theme shadow-theme p-1 z-50 animate-in fade-in slide-in-from-top-2 backdrop-blur-xl">
-                {THEME_OPTIONS.map(opt => (
-                  <button
-                    key={opt.id}
-                    onClick={() => { setTheme(opt.id); setShowThemeMenu(false); }}
-                    className={`w-full text-left px-3 py-2 rounded-theme-sm text-xs font-medium flex items-center gap-2 transition-colors ${theme === opt.id ? 'bg-theme-accent-bg text-theme-accent' : 'text-theme-subtext hover:bg-theme-input'}`}
-                  >
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: opt.color }}></div>
-                    {opt.name}
-                  </button>
-                ))}
+              <div className="absolute top-full left-6 mt-2 w-[320px] max-h-[430px] overflow-y-auto bg-theme-menu border border-theme-border border-theme-width rounded-theme shadow-theme p-3 z-50 animate-in fade-in slide-in-from-top-2 theme-menu-surface">
+                <div className="mb-3 px-1">
+                  <p className="text-[11px] tracking-[0.18em] uppercase text-theme-subtext/70">当前风格</p>
+                  <div className="mt-1 flex items-center justify-between">
+                    <p className="text-sm font-semibold text-theme-text">{selectedTheme.name} · {selectedTheme.tone}</p>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-theme-input text-theme-subtext">{STYLE_PROFILE_LABELS[selectedTheme.styleProfile]}</span>
+                  </div>
+                  <p className="text-[11px] text-theme-subtext/80 mt-1">{selectedTheme.detail}</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  {THEME_PROFILES.map(opt => (
+                    <button
+                      key={opt.id}
+                      onClick={() => { setTheme(opt.id); setShowThemeMenu(false); }}
+                      className={`theme-preview-card text-left p-2 rounded-theme-sm border transition-all ${theme === opt.id ? 'bg-theme-accent-bg text-theme-accent border-theme-accent/40' : 'bg-theme-card/50 text-theme-subtext border-theme-border hover:bg-theme-input hover:text-theme-text'}`}
+                    >
+                      <div
+                        className="h-10 rounded-[8px] border p-1.5 flex flex-col justify-between"
+                        style={{
+                          background: opt.preview.background,
+                          borderColor: opt.preview.border,
+                          boxShadow: `inset 0 0 0 1px ${opt.preview.border}`
+                        }}
+                      >
+                        <div className="h-1.5 w-3/5 rounded-full" style={{ backgroundColor: opt.preview.accent }} />
+                        <div className="h-1 w-4/5 rounded-full bg-black/15" />
+                      </div>
+                      <div className="mt-1.5">
+                        <div className="text-xs font-semibold leading-tight">{opt.name}</div>
+                        <div className="text-[10px] opacity-70">{opt.tone}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -438,7 +451,7 @@ const App: React.FC = () => {
 
             {/* Undo Toast */}
             {showUndo && (
-              <div className="absolute bottom-24 md:bottom-8 left-1/2 -translate-x-1/2 bg-theme-input/90 backdrop-blur-md border border-theme-border text-theme-text px-6 py-3 rounded-full shadow-lg flex items-center gap-4 z-50 animate-in fade-in slide-in-from-bottom-4">
+              <div className="absolute bottom-24 md:bottom-8 left-1/2 -translate-x-1/2 bg-theme-input/90 border border-theme-border text-theme-text px-6 py-3 rounded-full shadow-theme flex items-center gap-4 z-50 animate-in fade-in slide-in-from-bottom-4">
                  <span className="text-sm font-medium">已删除一项任务</span>
                  <button onClick={handleUndoDelete} className="flex items-center gap-1 text-sm font-bold text-theme-accent hover:underline">
                     <Undo2 size={14} /> 撤销
