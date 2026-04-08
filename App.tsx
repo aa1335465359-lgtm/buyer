@@ -13,6 +13,7 @@ import SnowEffect from './components/SnowEffect';
 import MainToolbar from './components/layout/MainToolbar';
 import { useTodos } from './hooks/useTodos';
 import { useThemeState } from './hooks/useThemeState';
+import { themeProfileMap, themeProfiles } from './data/themeProfiles';
 import { 
   Inbox, 
   CheckCircle2, 
@@ -48,21 +49,6 @@ const FASHION_QUOTES = [
   "“宝，别太累了，那个只会发‘在吗’的商家不值得你长皱纹。”"
 ];
 
-const THEME_OPTIONS = [
-  { id: 'neo-chinese', name: '中式', color: '#C93F3F' }, // Renamed
-  { id: 'glass', name: '玻璃', color: '#a5b4fc' },
-  { id: 'amethyst', name: '紫晶', color: '#4E345C' },
-  { id: 'memphis', name: '孟菲', color: '#FFEB3B' },
-  { id: 'dopamine', name: '多巴', color: '#002FA7' },
-  { id: 'maillard', name: '美拉', color: '#8B4513' },
-  { id: 'minecraft', name: '方块', color: '#5a8e3d' },
-  { id: 'kawaii', name: '甜心', color: '#f9a8d4' },
-  { id: 'wooden', name: '原木', color: '#d4a373' },
-  { id: 'watercolor', name: '水彩', color: '#93c5fd' },
-  { id: 'oil-slick', name: '虹彩', color: '#FF7B89' },
-  { id: 'neon-billboard', name: '霓虹', color: '#FF3EA6' },
-  { id: 'deepNebula', name: '星云', color: '#4DA6FF' },
-];
 
 const App: React.FC = () => {
   // --- STATE ---
@@ -77,11 +63,7 @@ const App: React.FC = () => {
     handleUndoDelete,
   } = useTodos();
   const [showThemeMenu, setShowThemeMenu] = useState(false);
-  const [performanceMode, setPerformanceMode] = useState<'lite' | 'full'>(() => {
-    if (typeof window === 'undefined') return 'full';
-    const saved = window.localStorage.getItem('performance-mode');
-    return saved === 'lite' ? 'lite' : 'full';
-  });
+  const currentThemeProfile = themeProfileMap[theme] ?? themeProfileMap.glass;
 
   const [currentView, setCurrentView] = useState<'todos' | 'image-editor' | 'indie-chi' | 'script-matcher' | 'bot' | 'tomato-pdf'>('todos');
   const [filter, setFilter] = useState<'all' | 'p0' | 'completed'>('all');
@@ -242,7 +224,7 @@ const App: React.FC = () => {
             display: none !important;
         }
     `}</style>
-    <div className="h-screen w-full flex items-center justify-center p-4 sm:p-8" data-theme={theme} data-performance={performanceMode}>
+    <div className="h-screen w-full flex items-center justify-center p-4 sm:p-8" data-theme={theme} data-style-profile={currentThemeProfile.styleProfile}>
       <ThemeBackground theme={theme} />
       
       {/* Main Container */}
@@ -270,15 +252,21 @@ const App: React.FC = () => {
             </div>
             
             {showThemeMenu && (
-              <div className="absolute top-full left-6 mt-2 w-48 max-h-[400px] overflow-y-auto bg-theme-menu border border-theme-border border-theme-width rounded-theme shadow-theme p-1 z-50 animate-in fade-in slide-in-from-top-2">
-                {THEME_OPTIONS.map(opt => (
+              <div className="absolute top-full left-6 mt-2 w-48 max-h-[400px] overflow-y-auto bg-theme-menu border border-theme-border border-theme-width rounded-theme shadow-theme p-1 z-50 animate-in fade-in slide-in-from-top-2 backdrop-blur-xl">
+                {themeProfiles.map(opt => (
                   <button
                     key={opt.id}
                     onClick={() => { setTheme(opt.id); setShowThemeMenu(false); }}
-                    className={`w-full text-left px-3 py-2 rounded-theme-sm text-xs font-medium flex items-center gap-2 transition-colors ${theme === opt.id ? 'bg-theme-accent-bg text-theme-accent' : 'text-theme-subtext hover:bg-theme-input'}`}
+                    className={`w-full text-left px-2.5 py-2 rounded-theme-sm text-xs font-medium flex items-center gap-2 transition-colors ${theme === opt.id ? 'bg-theme-accent-bg text-theme-accent' : 'text-theme-subtext hover:bg-theme-input'}`}
                   >
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: opt.color }}></div>
-                    {opt.name}
+                    <div className="theme-preview-card w-8 h-6 rounded-theme-sm border border-theme-border border-theme-width shrink-0 relative overflow-hidden" style={{ backgroundColor: `${opt.color}22` }}>
+                      <div className="theme-preview-line absolute left-1 right-1 top-1 h-[2px] rounded-full" style={{ backgroundColor: opt.color }}></div>
+                      <div className="theme-preview-chip absolute left-1 bottom-1 w-3 h-2 rounded-[2px]" style={{ backgroundColor: `${opt.color}88` }}></div>
+                    </div>
+                    <div className="flex flex-col leading-tight">
+                      <span>{opt.name}</span>
+                      <span className="text-[10px] opacity-65 uppercase tracking-wide">{opt.styleProfile}</span>
+                    </div>
                   </button>
                 ))}
               </div>
