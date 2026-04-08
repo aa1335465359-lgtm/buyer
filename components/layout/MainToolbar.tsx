@@ -51,7 +51,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
             placeholder="搜索..."
             value={searchQuery}
             onChange={e => onSearchChange(e.target.value)}
-            className="pl-9 pr-4 py-2 bg-theme-input border border-theme-border border-theme-width focus:bg-theme-card rounded-theme text-sm outline-none transition-all w-48 focus:w-64 placeholder-theme-subtext/50 shadow-sm text-theme-text"
+            className="pl-9 pr-4 py-2 bg-theme-input border border-theme-border border-theme-width focus:bg-theme-card rounded-theme text-sm outline-none transition-colors w-48 focus:w-64 placeholder-theme-subtext/50 shadow-sm text-theme-text"
           />
         </div>
       </div>
@@ -62,7 +62,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
             <>
               <button
                 onClick={() => setShowSortMenu(!showSortMenu)}
-                className="flex items-center gap-2 text-xs font-medium text-theme-text bg-theme-input hover:bg-theme-card px-3 py-1.5 rounded-theme border border-theme-border border-theme-width shadow-sm transition-all"
+                className="flex items-center gap-2 text-xs font-medium text-theme-text bg-theme-input hover:bg-theme-card px-3 py-1.5 rounded-theme border border-theme-border border-theme-width shadow-sm transition-colors"
               >
                 <span className="text-theme-subtext">排序:</span>
                 <span className="font-semibold">
