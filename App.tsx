@@ -77,11 +77,6 @@ const App: React.FC = () => {
     handleUndoDelete,
   } = useTodos();
   const [showThemeMenu, setShowThemeMenu] = useState(false);
-  const [performanceMode, setPerformanceMode] = useState<'lite' | 'full'>(() => {
-    if (typeof window === 'undefined') return 'full';
-    const saved = window.localStorage.getItem('performance-mode');
-    return saved === 'lite' ? 'lite' : 'full';
-  });
 
   const [currentView, setCurrentView] = useState<'todos' | 'image-editor' | 'indie-chi' | 'script-matcher' | 'bot' | 'tomato-pdf'>('todos');
   const [filter, setFilter] = useState<'all' | 'p0' | 'completed'>('all');
@@ -105,10 +100,6 @@ const App: React.FC = () => {
     const randomQuote = FASHION_QUOTES[Math.floor(Math.random() * FASHION_QUOTES.length)];
     setQuote(randomQuote);
   }, []);
-
-  useEffect(() => {
-    window.localStorage.setItem('performance-mode', performanceMode);
-  }, [performanceMode]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -242,7 +233,7 @@ const App: React.FC = () => {
             display: none !important;
         }
     `}</style>
-    <div className="h-screen w-full flex items-center justify-center p-4 sm:p-8" data-theme={theme} data-performance={performanceMode}>
+    <div className="h-screen w-full flex items-center justify-center p-4 sm:p-8" data-theme={theme}>
       <ThemeBackground theme={theme} />
       
       {/* Main Container */}
@@ -270,7 +261,7 @@ const App: React.FC = () => {
             </div>
             
             {showThemeMenu && (
-              <div className="absolute top-full left-6 mt-2 w-48 max-h-[400px] overflow-y-auto bg-theme-menu border border-theme-border border-theme-width rounded-theme shadow-theme p-1 z-50 animate-in fade-in slide-in-from-top-2">
+              <div className="absolute top-full left-6 mt-2 w-48 max-h-[400px] overflow-y-auto bg-theme-menu border border-theme-border border-theme-width rounded-theme shadow-theme p-1 z-50 animate-in fade-in slide-in-from-top-2 backdrop-blur-xl">
                 {THEME_OPTIONS.map(opt => (
                   <button
                     key={opt.id}
@@ -329,17 +320,6 @@ const App: React.FC = () => {
                      onClick={() => setCurrentView('tomato-pdf')} 
                    />
                </div>
-            </div>
-
-            <div className="pt-4 px-2">
-              <button
-                onClick={() => setPerformanceMode(prev => (prev === 'full' ? 'lite' : 'full'))}
-                className="w-full flex items-center justify-between px-3 py-2 rounded-theme-sm text-xs font-medium border border-theme-border bg-theme-card text-theme-text hover:bg-theme-card-hover transition-colors"
-                aria-label="切换性能模式"
-              >
-                <span>渲染模式</span>
-                <span className="text-theme-accent">{performanceMode === 'lite' ? '流畅优先' : '效果优先'}</span>
-              </button>
             </div>
           </nav>
 
@@ -458,7 +438,7 @@ const App: React.FC = () => {
 
             {/* Undo Toast */}
             {showUndo && (
-              <div className="absolute bottom-24 md:bottom-8 left-1/2 -translate-x-1/2 bg-theme-input/90 border border-theme-border text-theme-text px-6 py-3 rounded-full shadow-theme flex items-center gap-4 z-50 animate-in fade-in slide-in-from-bottom-4">
+              <div className="absolute bottom-24 md:bottom-8 left-1/2 -translate-x-1/2 bg-theme-input/90 backdrop-blur-md border border-theme-border text-theme-text px-6 py-3 rounded-full shadow-lg flex items-center gap-4 z-50 animate-in fade-in slide-in-from-bottom-4">
                  <span className="text-sm font-medium">已删除一项任务</span>
                  <button onClick={handleUndoDelete} className="flex items-center gap-1 text-sm font-bold text-theme-accent hover:underline">
                     <Undo2 size={14} /> 撤销
