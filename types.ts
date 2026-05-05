@@ -1,8 +1,29 @@
 
+export enum Priority {
+  P0 = 'P0',
+  P1 = 'P1',
+  P2 = 'P2',
+  P3 = 'P3',
+  P4 = 'P4'
+}
+
+export type TodoStatus = 'todo' | 'in_progress' | 'done';
+
 export interface Todo {
   id: string;
-  text: string;
-  completed: boolean;
+  text?: string;
+  title?: string;
+  completed?: boolean;
+  isCompleted?: boolean;
+  status?: TodoStatus;
+  aiStatus?: string;
+  priority?: Priority;
+  shopId?: string;
+  createdAt?: number;
+  deadline?: number;
+  quantity?: number | string;
+  actionTime?: string;
+  completedAt?: number;
 }
 
 export interface MemoryResult {
