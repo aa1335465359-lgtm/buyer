@@ -16,11 +16,26 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./*"]
-    }
+    "types": ["node"]
   },
-  "include": ["**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules"]
+  "include": [
+    "App.tsx",
+    "index.tsx",
+    "types.ts",
+    "api/**/*.ts",
+    "hooks/**/*.ts",
+    "services/ai.ts",
+    "services/encryption.ts",
+    "services/gemini.ts",
+    "services/storage.ts",
+    "services/supabase.ts",
+    "components/StealthLayer.tsx",
+    "components/JournalUI.tsx",
+    "components/ChatRoom.tsx",
+    "components/LockScreen.tsx",
+    "components/DevConsole.tsx",
+    "components/journal/**/*.tsx",
+    "components/chat/**/*.tsx"
+  ],
+  "exclude": ["node_modules", "vite.config.ts", "dist", "**/*.spec.ts", "**/*.test.ts"]
 }

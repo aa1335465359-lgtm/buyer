@@ -4,44 +4,28 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Buyermate - 大码买手助理</title>
-    <!-- Tailwind CDN -->
+    <title>悄悄 | Quietly</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Fonts for Themes -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Quicksand:wght@500;700&family=Press+Start+2P&family=VT323&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Patrick+Hand&family=Caveat:wght@400;700&family=Share+Tech+Mono&family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;700&family=Long+Cang&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Noto+Serif+SC:wght@300;400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="prefetch" href="https://www.shein.com">
+    <link rel="prerender" href="https://www.shein.com">
     <script>
       tailwind.config = {
         darkMode: 'class',
         theme: {
           extend: {
             fontFamily: {
-              sans: ['var(--font-main)', 'Inter', 'sans-serif'],
-              mono: ['var(--font-mono)', 'monospace'],
+              serif: ['"Noto Serif SC"', 'serif'],
+              sans: ['"Inter"', 'sans-serif'],
+              mono: ['"JetBrains Mono"', 'monospace'],
             },
             colors: {
-              theme: {
-                panel: 'var(--bg-panel)',
-                sidebar: 'var(--bg-sidebar)',
-                card: 'var(--bg-card)',
-                'card-hover': 'var(--bg-card-hover)',
-                input: 'var(--bg-input)',
-                border: 'var(--border-theme)',
-                text: 'var(--text-primary)',
-                subtext: 'var(--text-secondary)',
-                accent: 'var(--text-accent)',
-                'accent-bg': 'var(--accent-bg)',
-              }
-            },
-            borderRadius: {
-              theme: 'var(--radius-md)',
-              'theme-lg': 'var(--radius-lg)',
-              'theme-sm': 'var(--radius-sm)',
-            },
-            borderWidth: {
-              theme: 'var(--border-width)',
-            },
-            boxShadow: {
-              theme: 'var(--shadow-md)',
+              paper: '#Fdfbf7',
+              ink: '#2d2a2e',
+              'stealth-bg': '#1e1e1e',
+              'stealth-text': '#d4d4d4',
             }
           }
         }
@@ -50,38 +34,25 @@
     <style>
       body {
         margin: 0;
-        padding: 0;
-        font-family: var(--font-main, 'Inter', sans-serif);
-        background: transparent; /* Handled by Decoration Layer */
-        color: var(--text-primary);
-        height: 100vh;
         overflow: hidden;
+        user-select: none;
+        -webkit-user-select: none;
       }
-      /* Custom Scrollbar */
-      ::-webkit-scrollbar { width: 6px; height: 6px; }
-      ::-webkit-scrollbar-track { background: transparent; }
-      ::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.15); border-radius: 10px; }
-      ::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.3); }
-
-      /* Pixel Theme Scrollbar Override */
-      [data-theme='pixel'] ::-webkit-scrollbar-thumb {
-        background: #000;
-        border-radius: 0;
+      .rich-editor {
+        user-select: text;
+        -webkit-user-select: text;
       }
     </style>
-<script type="importmap">
+  <script type="importmap">
 {
   "imports": {
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.555.0",
-    "vite": "https://aistudiocdn.com/vite@^7.2.4",
-    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1",
-    "react-markdown": "https://esm.sh/react-markdown@9?bundle",
-    "remark-gfm": "https://esm.sh/remark-gfm@4?bundle",
-    "path": "https://esm.sh/path@^0.12.7",
-    "@google/genai": "https://esm.sh/@google/genai"
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2",
+    "browser-image-compression": "https://esm.sh/browser-image-compression@2.0.2",
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
   }
 }
 </script>
@@ -89,6 +60,6 @@
 </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
-  </body>
+  <script type="module" src="/index.tsx"></script>
+</body>
 </html>

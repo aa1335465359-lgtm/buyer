@@ -1,63 +1,70 @@
 
-export enum Priority {
-  P0 = 'P0',
-  P1 = 'P1',
-  P2 = 'P2',
-  P3 = 'P3',
-  P4 = 'P4'
+export interface MemoryResult {
+  mood: string;        // e.g. "宁静", "喜悦", "低落"
+  keywords: string[];  // e.g. ["阳光", "咖啡", "希望"]
+  stampText: string;   // e.g. "日色很慢", "又是新的一天"
+  quote: string;       // AI generated poetic short sentence
+  colorTheme: string;  // e.g. "warm", "cool", "neutral", "green", "pink"
+  shapeStyle: string;  // e.g. "organic", "geometric", "minimal"
 }
 
-export type TodoStatus = 'todo' | 'in_progress' | 'done';
-
-export interface Todo {
+export interface JournalEntry {
   id: string;
-  title: string;
-  description?: string;
-  priority: Priority;
-  status: TodoStatus; // Replaces isCompleted boolean logic
-  isCompleted?: boolean; // Deprecated, kept for backward compat during migration if needed
-  createdAt: number;
-  completedAt?: number; // Timestamp when status became 'done'
-  deadline?: number; // timestamp in ms
-  notificationSent?: boolean;
+  content: string;
+  createdAt: number; // Timestamp
+  updatedAt: number;
+  aiSummary?: string; // deprecated
+  aiMood?: string; // deprecated
+  userMood?: string;
+  tags: string[];
+  images?: string[];
+  isPinned?: boolean;
+  memoryResult?: MemoryResult | null;
+}
+
+export interface AppState {
+  entries: JournalEntry[];
+  currentEntryId: string | null;
+  isStealthMode: boolean;
+  isLocked: boolean;
+}
+
+export enum AIAction {
+  SUMMARIZE = 'SUMMARIZE',
+  REFLECT = 'REFLECT',
+  POETRY = 'POETRY',
+  PREDICT = 'PREDICT'
+}
+
+// --- Chat & Ephemeral Types ---
+
+export type ViewMode = 'journal' | 'chat';
+
+export interface ChatMessage {
+  id: string;
+  content: string;
+  senderId: string;
+  senderName?: string;
+  timestamp: number;
+  type: 'text' | 'system' | 'journal-share' | 'purge-user' | 'screenshot-alert';
+  isEphemeral?: boolean; // New: Burn After Reading flag
   
-  // Specific fields for Buyers
-  shopId?: string;      // 店铺ID
-  quantity?: string;    // 多少个
-  actionTime?: string;  // 什么时候 (text description)
-
-  // AI Processing State
-  aiStatus?: 'idle' | 'processing' | 'done' | 'error'; 
-}
-
-export interface AITaskResponse {
-  tasks: {
-    title: string;
-    description: string;
-    priority: 'P0' | 'P1' | 'P2' | 'P3' | 'P4';
-    estimatedMinutes?: number;
-    shopId?: string;
-    quantity?: string;
-    actionTime?: string;
-    deadline?: number; // timestamp
-  }[];
-}
-
-export interface WorkSummaryTheme {
-  title: string;
-  actions: string[];
-}
-
-export interface WorkSummary {
-  rangeLabel: string;
-  stats: {
-    total: number;
-    completed: number;
-    completionRate: string;
-    overdue: number;
-    p0Total: number;
-    p0Completed: number;
+  // Reply / Quote functionality
+  replyTo?: {
+    id: string;
+    senderName: string;
+    contentPreview: string;
+    isEphemeral?: boolean; // Safety: Mark if the original message was ephemeral
   };
-  themes: WorkSummaryTheme[]; // New structure
-  suggestions: string[];
+
+  meta?: {
+    journalTitle?: string;
+    journalId?: string;
+    fullContent?: string;
+  };
+}
+
+export interface ChatRoomConfig {
+  roomId: string;
+  isPanic: boolean;
 }
