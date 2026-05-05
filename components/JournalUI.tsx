@@ -256,7 +256,9 @@ export const JournalUI: React.FC<JournalUIProps> = ({
               />
               
               {/* AI Insight Block */}
-              {(currentEntry.aiSummary || (currentEntry.aiMood && currentEntry.aiMood !== '正在凝结印记...')) && (
+              {(currentEntry.aiSummary || (currentEntry.aiMood && currentEntry.aiMood !== '正在凝结印记...')) && 
+               !currentEntry.aiSummary?.includes('AI连接失败') && 
+               !currentEntry.aiMood?.includes('AI连接失败') && (
                 <div className="bg-white/40 border border-white/60 shadow-sm rounded-3xl p-6 relative overflow-hidden transition-all duration-500 hover:shadow-md hover:bg-white/60 backdrop-blur-md animate-in slide-in-from-bottom-4 shrink-0">
                    <div className="flex flex-col text-[#4A443F]">
                      <div className="flex items-center gap-2.5 mb-5 opacity-60">

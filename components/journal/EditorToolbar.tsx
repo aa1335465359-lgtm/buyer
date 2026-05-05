@@ -81,7 +81,7 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
         
         <div className="w-[1px] h-4 bg-black/10 mx-1"></div>
         
-        <ToolbarButton onClick={() => execCmd('formatBlock', 'DIV')} title="正文"><span className="font-serif text-sm">Aa</span></ToolbarButton>
+        <ToolbarButton onClick={() => execCmd('formatBlock', 'P')} title="正文"><span className="font-serif text-sm">正文</span></ToolbarButton>
         <ToolbarButton onClick={() => execCmd('formatBlock', 'H1')} title="标题 1"><span className="font-serif font-bold text-sm">H1</span></ToolbarButton>
         <ToolbarButton onClick={() => execCmd('formatBlock', 'H2')} title="标题 2"><span className="font-serif font-bold text-xs">H2</span></ToolbarButton>
         <ToolbarButton onClick={() => execCmd('bold')} title="加粗"><span className="font-bold text-sm font-serif">B</span></ToolbarButton>

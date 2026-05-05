@@ -1,4 +1,10 @@
 
+export interface Todo {
+  id: string;
+  text: string;
+  completed: boolean;
+}
+
 export interface MemoryResult {
   mood: string;        // e.g. "宁静", "喜悦", "低落"
   keywords: string[];  // e.g. ["阳光", "咖啡", "希望"]

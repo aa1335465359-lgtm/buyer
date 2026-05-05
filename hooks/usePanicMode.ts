@@ -52,63 +52,20 @@ export const usePanicMode = ({ onPanic, onScreenshot }: PanicConfig = {}) => {
       }
     };
     
-    // 3. 按键检测 (Keydown)
+    // 3. 按键检测 (Keydown) ONLY Printscreen and F12
     const handleKeyDown = (e: KeyboardEvent) => {
-      const k = e.key.toLowerCase();
-      
-      // --- 截图键 ---
       // PrintScreen / F12
       if (e.key === 'PrintScreen' || e.key === 'F12') {
         triggerTemporaryBlur('screenshot');
         return;
       }
-
-      // Windows Snipping: Win + Shift + S
-      if (e.metaKey && e.shiftKey && k === 's') {
-        triggerTemporaryBlur('screenshot');
-        return;
-      }
-
-      // Mac Screenshot: Cmd + Shift + 3/4/5
-      if (e.metaKey && e.shiftKey && (['3', '4', '5'].includes(k))) {
-        triggerTemporaryBlur('screenshot');
-        return;
-      }
-
-      // --- 尝试捕获组合键 (如果未被全局拦截) ---
-      // Ctrl + Alt + A
-      if (e.ctrlKey && e.altKey && k === 'a') {
-        triggerTemporaryBlur('screenshot');
-        return;
-      }
-      
-      // Alt + A
-      if (e.altKey && k === 'a') {
-        triggerTemporaryBlur('screenshot');
-        return;
-      }
-      
-      // Alt + C (自定义复制)
-      if (e.altKey && k === 'c') {
-        triggerTemporaryBlur('copy');
-        return;
-      }
-    };
-
-    const handleKeyUp = (e: KeyboardEvent) => {
-       const k = e.key.toLowerCase();
-       if (k === 'a' && e.altKey) {
-          // KeyUp 检测备用
-       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
     document.addEventListener('copy', handleCopy);
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
       document.removeEventListener('copy', handleCopy);
       if (riskTimerRef.current) clearTimeout(riskTimerRef.current);
     };

@@ -72,7 +72,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                         <div className="flex justify-between items-center mb-2">
                             <span className="text-[10px] text-[#4A443F] font-bold font-serif opacity-80">{formatDate(entry.createdAt)}</span>
                             <button 
-                                onClick={() => { onShareJournal(entry, isEphemeral); setShowJournalSelector(false); }}
+                                onMouseDown={(e) => { e.preventDefault(); onShareJournal(entry, isEphemeral); setShowJournalSelector(false); }}
                                 className={`text-[10px] px-3 py-1 font-bold rounded-full transition-colors ${isEphemeral ? 'bg-[#FDF3F1] text-[#FAAE9D] hover:bg-[#FAAE9D] hover:text-white' : 'bg-[#FAAE9D] text-white hover:bg-[#F6A89E] shadow-sm'}`}
                             >
                                 分享{isEphemeral ? ' (阅后即焚)' : ''}

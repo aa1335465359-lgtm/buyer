@@ -115,7 +115,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
              </button>
           </div>
 
-          <div className="flex gap-4 mb-8 pl-2">
+          <div className="flex gap-4 mb-6 pl-2">
             <button 
               onClick={() => handleViewChange('journal')} 
               className={`text-xs transition-all tracking-widest ${viewMode === 'journal' ? 'text-[#4A443F] font-bold border-b border-[#4A443F]' : 'text-[#958D85] hover:text-[#4A443F]'}`}
@@ -129,6 +129,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
               信箱
             </button>
           </div>
+
+          <button 
+            onClick={onCreate} 
+            className="w-full flex items-center justify-center gap-2 py-3 mb-6 bg-[#FAAE9D] hover:bg-[#F6A89E] text-white rounded-2xl transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <span className="text-xs font-bold tracking-[0.2em]">写新日记</span>
+          </button>
           
           <div className="relative group mb-4">
              <input 
